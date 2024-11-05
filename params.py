@@ -1,7 +1,9 @@
 num_of_ev = 2  # (units)
+time_resolution = 15  # minutes
+start_date = '2019-01-01 00:00:00'
+periods_in_a_day = int((60 / time_resolution) * 24)
+num_of_days = 2
 P_grid_max = 275  # (kW)
 min_SOC = 0.2  # (%)
 max_SOC = 0.9  # (%)
-P_EV_max = 2.4/4  # (kW per 15 minutes)
-EV_consumption = 0.01  # (%SOC per 15 minutes)
-start_date = '2019-01-01 00:00:00'
+P_EV_max = 2.4 / int(60 / time_resolution)  # (kW per time resolution)
