@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 from pprint import pprint
 import params
 import pickle
+
+exec(open('vista_data_cleaning.py').read())
 
 
 class ElectricVehicle:
@@ -37,9 +41,7 @@ class ElectricVehicle:
 with open('ev_data.pkl', 'rb') as f:
     ev_data = pickle.load(f)
 
-
 EV = [ElectricVehicle() for i in range(params.num_of_evs)]
-
 
 np.random.seed(0)
 max_capacity_of_EVs = np.random.choice([i for i in range(35, 60)], size=params.num_of_evs)
@@ -70,37 +72,36 @@ for ev_id in range(params.num_of_evs):
         random_percentage = np.random.uniform(low=0.05, high=0.25)
         EV[ev_id].soc_t_arr[t] = random_percentage * float(EV[ev_id].capacity_of_ev)
 
-
-load_profile = pd.read_csv(filepath_or_buffer='load_profile_7_days_85_households.csv', parse_dates=True, index_col=0)
+household_load = pd.read_csv(filepath_or_buffer='load_profile_7_days_85_households.csv', parse_dates=True, index_col=0)
 # print(load_profile)
 all_ev_profiles = pd.concat(ev_at_home_status_profile_list, axis=1)
 all_ev_profiles['n_connected_ev'] = all_ev_profiles.sum(axis=1).astype(int)
-# print(all_ev_profiles)
-
+# print(all_ev_profiles['n_connected_ev'])
 
 for ev_id in range(params.num_of_evs):
     for t in all_ev_profiles.index:
         # check how much power left after being used for load
-        if params.P_grid_max >= load_profile.loc[t].values:
-            cp_capacity = params.P_grid_max - load_profile.loc[t]
+        if params.P_grid_max >= household_load.loc[t].values:
+            ccp_capacity = params.P_grid_max - household_load.loc[t]
         else:
             grid_overload = ValueError('Demand is higher than the maximum grid capacity.')
             raise grid_overload
 
         # check maximum charging power based on how many evs are connected
         if all_ev_profiles['n_connected_ev'].loc[t] > 0:
-            max_cp_capacity = cp_capacity / all_ev_profiles['n_connected_ev'].loc[t]
+            max_cp_capacity = ccp_capacity / all_ev_profiles['n_connected_ev'].loc[t]
         else:
-            max_cp_capacity = cp_capacity
+            max_cp_capacity = ccp_capacity
 
         # check if ev is at home or not
         if all_ev_profiles[f'EV_ID{ev_id}'].loc[t] == 0:
             EV[ev_id].charging_power.loc[t] = 0
         else:
+            # assign ev charging power when ev is at home
             if max_cp_capacity.values >= EV[ev_id].P_EV_max:
                 EV[ev_id].charging_power.loc[t] = EV[ev_id].P_EV_max
-            else:
-                EV[ev_id].charging_power.loc[t] = max_cp_capacity
+            elif max_cp_capacity.values < EV[ev_id].P_EV_max:
+                EV[ev_id].charging_power.loc[t] = max_cp_capacity.values
 
         # tracking the SOC
         if t == params.start_date_time:
@@ -113,33 +114,55 @@ for ev_id in range(params.num_of_evs):
 
             # make sure soc does not exceed the soc max limit
             if EV[ev_id].soc.loc[t].values <= EV[ev_id].soc_max:
-                continue
+                pass
             else:
                 # calculate how much power needed to charge until soc reaches soc_max
-                remains_to_charge = (EV[ev_id].soc_max -
-                                     EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)].values)
+                remaining_to_charge = (EV[ev_id].soc_max -
+                                       EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)].values)
 
                 EV[ev_id].soc.loc[t] = (EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
-                                        remains_to_charge)
+                                        remaining_to_charge)
 
-                EV[ev_id].charging_power.loc[t] = remains_to_charge
+                EV[ev_id].charging_power.loc[t] = remaining_to_charge
 
         elif (t != params.start_date_time) & (t in EV[ev_id].t_arr):
             EV[ev_id].soc.loc[t] = (EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
                                     EV[ev_id].charging_power.loc[t].values) - EV[ev_id].soc_t_arr[t]
 
-
 # for ev_id in range(params.num_of_evs):
 #     soc_and_power = pd.concat(objs=[EV[ev_id].at_home_status, EV[ev_id].soc, EV[ev_id].charging_power], axis=1)
 
-    # print(f'\nEV_{ev_id + 1}\n')
-    # print('-------------------------------------------\n')
-    # print(soc_and_power[:50])
-    # print(soc_and_power[50:100])
-    # print(soc_and_power[100:150])
-    # print(soc_and_power[150:200])
-    # print('-------------------------------------------\n')
+# print(f'\nEV_{ev_id + 1}\n')
+# print('-------------------------------------------\n')
+# print(soc_and_power[:50])
+# print(soc_and_power[50:100])
+# print(soc_and_power[100:150])
+# print(soc_and_power[150:200])
+# print('-------------------------------------------\n')
 
 ev_power_profile = pd.concat(ev_charging_power_list, axis=1)
-ev_power_profile['total_consumption'] = ev_power_profile.sum(axis=1)
-print(ev_power_profile.head(20))
+ev_power_profile['ev_load'] = ev_power_profile.sum(axis=1)
+# print(ev_power_profile.head(20))
+
+load_profile = pd.concat(objs=[household_load, ev_power_profile['ev_load']], axis=1)
+load_profile['total_load'] = load_profile.sum(axis=1)
+print(load_profile)
+
+max_household_load = load_profile['household_load'].max()
+max_load = load_profile['total_load'].max()
+
+print(f'max_household_load: {max_household_load}')
+print(f'max_total_load: {max_load}')
+print(load_profile.loc[load_profile['total_load'] > params.P_grid_max])
+
+#%%
+import plotly.graph_objects as go
+
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(x=load_profile.index, y=load_profile['household_load'], name='household_load'))
+fig.add_trace(go.Scatter(x=load_profile.index, y=load_profile['total_load'], name='total_load'))
+fig.update_layout(title='Load Profile (85 Households and 50 EVs)',
+                  xaxis_title='Timestamp',
+                  yaxis_title='Load (kW)')
+fig.show()
