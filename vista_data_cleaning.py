@@ -71,8 +71,3 @@ file_path = os.path.join(ev_model_path, file_name)
 
 with open(file_path, 'wb') as f:
     pickle.dump(EV, f)
-
-# with open('ev_data.pkl', 'rb') as f:
-#     ev_data = pickle.load(f)
-#
-# print(len(ev_data))
