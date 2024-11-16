@@ -69,9 +69,9 @@ for ev_id in range(params.num_of_evs):
                 params.EV[ev_id].charging_power.loc[t] = remaining_to_charge
 
         elif (t != params.start_date_time) & (t in params.EV[ev_id].t_arr):
-            params.EV[ev_id].soc.loc[t] = (params.EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
-                                           params.EV[ev_id].charging_power.loc[t].values) - params.EV[ev_id].soc_t_arr[
-                                              t]
+            params.EV[ev_id].soc.loc[t] = ((params.EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
+                                           params.EV[ev_id].charging_power.loc[t].values) -
+                                           params.EV[ev_id].travel_energy_t_arr[t])
 
 # for ev_id in range(params.num_of_evs):
 #     soc_and_power = pd.concat(objs=[EV[ev_id].at_home_status, EV[ev_id].soc, EV[ev_id].charging_power], axis=1)
@@ -86,7 +86,7 @@ for ev_id in range(params.num_of_evs):
 
 ev_power_profile = pd.concat(params.ev_charging_power_list, axis=1)
 ev_power_profile['ev_load'] = ev_power_profile.sum(axis=1)
-# print(ev_power_profile.head(20))
+print(ev_power_profile.head(20))
 
 load_profile = pd.concat(objs=[household_load, ev_power_profile['ev_load']], axis=1)
 load_profile['total_load'] = load_profile.sum(axis=1)
@@ -115,12 +115,12 @@ tmp = load_profile
 
 fig = go.Figure()
 
-fig.add_trace(go.Scatter(x=tmp.index, y=tmp['household_load'], name='Household load'))
-fig.add_trace(go.Scatter(x=tmp.index, y=tmp['total_load'], name='Total household and EV load'))
-fig.add_trace(go.Scatter(x=tmp.index, y=[params.P_grid_max for i in range(len(tmp.index))], name='Maximum grid power'))
+fig.add_trace(go.Scatter(x=tmp.index, y=tmp['household_load'], name='Household Load'))
+fig.add_trace(go.Scatter(x=tmp.index, y=ev_power_profile['ev_load'], name='EV Load'))
+fig.add_trace(go.Scatter(x=tmp.index, y=tmp['total_load'], name='Total Load'))
 fig.add_trace(
-    go.Scatter(x=tmp.index, y=[avg_daily_peak for i in range(len(tmp.index))], name='Average daily household peak'))
-fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs)',
+    go.Scatter(x=tmp.index, y=[avg_daily_peak for i in range(len(tmp.index))], name='Average daily peak'))
+fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
                   xaxis_title='Timestamp',
                   yaxis_title='Load (kW)')
 fig.show()

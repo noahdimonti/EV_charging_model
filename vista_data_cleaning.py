@@ -47,7 +47,8 @@ class ElectricVehicle:
     def __init__(self):
         self.at_home_status = pd.DataFrame
         self.t_arr = []
-        self.soc_t_arr = {}
+        self.t_dep = []
+        self.travel_energy = []
 
 
 EV = [ElectricVehicle() for i in range(params.num_of_evs)]
@@ -56,14 +57,22 @@ for ev_id in range(params.num_of_evs):
     # create different random seed for each ev
     np.random.seed(ev_id)
 
-    # create departure arrival times for one week
-    dep_arr_time = dc.create_one_week_dep_arr_time(weekday_df=work_ev, weekend_df_list=casual_ev_df_list)
+    if params.num_of_days == 7:
+        # create departure arrival times for one week
+        dep_arr_time = dc.create_one_week_dep_arr_time(weekday_df=work_ev, weekend_df_list=casual_ev_df_list)
+    else:
+        # create departure arrival times for however many days
+        dep_arr_time = dc.create_dep_arr_time(df=work_ev, num_of_days=params.num_of_days)
 
     # create at home status profile and save as ev object attribute
     EV[ev_id].at_home_status = dc.create_at_home_pattern(dep_arr_time=dep_arr_time, ev_id=ev_id)
 
     # create t_arr times and save as ev object attribute
     EV[ev_id].t_arr = dc.create_t_arr(dep_arr_time=dep_arr_time)
+
+    # create t_dep times and save as ev object attribute
+    EV[ev_id].t_dep = dc.create_t_dep(dep_arr_time=dep_arr_time)
+
 
 # save EV class in a pickle file
 file_name = 'ev_data.pkl'

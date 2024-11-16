@@ -98,6 +98,13 @@ def create_t_arr(dep_arr_time: list):
     return t_arr
 
 
+def create_t_dep(dep_arr_time: list):
+    # departure times are the even index of dep_arr_time list
+    t_dep = dep_arr_time[0::2]
+
+    return t_dep
+
+
 def create_at_home_pattern(dep_arr_time: list, ev_id: int, time_res=15):
     # create timestamp based on dep_arr_time list
     start_date = min(dep_arr_time).normalize()
