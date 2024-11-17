@@ -88,38 +88,38 @@ ev_power_profile = pd.concat(params.ev_charging_power_list, axis=1)
 ev_power_profile['ev_load'] = ev_power_profile.sum(axis=1)
 print(ev_power_profile.head(20))
 
-load_profile = pd.concat(objs=[household_load, ev_power_profile['ev_load']], axis=1)
-load_profile['total_load'] = load_profile.sum(axis=1)
-print(load_profile)
+df = pd.concat(objs=[household_load, ev_power_profile['ev_load']], axis=1)
+df['total_load'] = df.sum(axis=1)
+print(df)
 
-max_household_load = load_profile['household_load'].max()
-max_load = load_profile['total_load'].max()
+max_household_load = df['household_load'].max()
+max_load = df['total_load'].max()
 
 print(f'max_household_load: {max_household_load}')
 print(f'max_total_load: {max_load}')
-print(load_profile.loc[load_profile['total_load'] > params.P_grid_max])
+print(df.loc[df['total_load'] > params.P_grid_max])
 
 #%%
 import plotly.graph_objects as go
 
 peak_total = []
-for day in set(load_profile.index.day):
-    daily_peak = load_profile.loc[(load_profile.index.day == day), 'household_load'].max()
+for day in set(df.index.day):
+    daily_peak = df.loc[(df.index.day == day), 'household_load'].max()
     peak_total.append(daily_peak)
 
 avg_daily_peak = sum(peak_total) / len(peak_total)
 print(avg_daily_peak)
 
 # tmp = load_profile.loc[load_profile.index.day == min(load_profile.index.day)]
-tmp = load_profile
+tmp = df
 
 fig = go.Figure()
 
-fig.add_trace(go.Scatter(x=tmp.index, y=tmp['household_load'], name='Household Load'))
-fig.add_trace(go.Scatter(x=tmp.index, y=ev_power_profile['ev_load'], name='EV Load'))
-fig.add_trace(go.Scatter(x=tmp.index, y=tmp['total_load'], name='Total Load'))
+fig.add_trace(go.Scatter(x=df.index, y=df['household_load'], name='Household Load'))
+fig.add_trace(go.Scatter(x=df.index, y=df['ev_load'], name='EV Load'))
+fig.add_trace(go.Scatter(x=df.index, y=df['total_load'], name='Total Load'))
 fig.add_trace(
-    go.Scatter(x=tmp.index, y=[avg_daily_peak for i in range(len(tmp.index))], name='Average daily peak'))
+    go.Scatter(x=df.index, y=[avg_daily_peak for i in range(len(df.index))], name='Average daily peak'))
 fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
                   xaxis_title='Timestamp',
                   yaxis_title='Load (kW)')

@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 from pprint import pprint
 
-num_of_evs = 50
+num_of_evs = 85
 '''
 date options:
 '2019-01-01 00:00:00'
@@ -25,8 +25,55 @@ avg_travel_distance = 40  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 
-energy_cost = 0.1  # ($/kW)
+# cost parameters
+energy_cost_flat_tariff = 0.1  # ($/kW)
 grid_operational_cost = 0.1  # ($/kW)
+
+# create ToU tariff data
+'''
+ToU Tariff
+source: https://ieeexplore.ieee.org/abstract/document/9733283
+
+Peak 17-21pm
+Summer: 1.25
+Winter: 0.36
+
+Off peak 10am-15pm
+0.08
+
+Shoulder 6-10am, 15-17pm, 21pm-1am
+0.2
+
+Second shoulder 1-6am
+0.12
+
+Supply charge
+1.1 daily
+
+'''
+
+tou_tariff = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
+                                                      periods=periods_in_a_day * num_of_days,
+                                                      freq=f'{time_resolution}min'),
+                                 'tariff': np.zeros(periods_in_a_day * num_of_days)})
+tou_tariff.set_index('timestamp', inplace=True)
+
+for t in tou_tariff.index:
+    if 1 <= t.hour < 6:  # second shoulder
+        tou_tariff.loc[t, 'tariff'] = 0.12
+    elif 6 <= t.hour < 10:  # shoulder
+        tou_tariff.loc[t, 'tariff'] = 0.2
+    elif 10 <= t.hour < 15:  # off peak
+        tou_tariff.loc[t, 'tariff'] = 0.08
+    elif 15 <= t.hour < 17:  # shoulder
+        tou_tariff.loc[t, 'tariff'] = 0.2
+    elif 17 <= t.hour < 21:  # peak
+        tou_tariff.loc[t, 'tariff'] = 1.25
+    elif 21 <= t.hour <= 23:  # shoulder
+        tou_tariff.loc[t, 'tariff'] = 0.2
+    elif t.hour == 0:  # shoulder
+        tou_tariff.loc[t, 'tariff'] = 0.2
+
 
 exec(open('vista_data_cleaning.py').read())
 
