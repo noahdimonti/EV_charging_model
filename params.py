@@ -3,7 +3,8 @@ import numpy as np
 import pickle
 from pprint import pprint
 
-num_of_evs = 85
+num_of_evs = 50
+num_of_households = 100
 '''
 date options:
 '2019-01-01 00:00:00'
@@ -18,21 +19,22 @@ P_grid_max = 500  # (kW)
 min_SOC = 0.3  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
-P_EV_max_list = [1.3, 2.4, 3.7, 7.2]
-P_EV_max = P_EV_max_list[1] / int(60 / time_resolution)  # (kW per time resolution)
+P_EV_resolution_factor = int(60 / time_resolution)
+P_EV_max_list = [i / P_EV_resolution_factor for i in (1.3, 2.4, 3.7, 7.2)]
+P_EV_max = P_EV_max_list[1]  # (kW per time resolution)
 
+# EV travel distance and travel energy consumption
 avg_travel_distance = 40  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 
 # cost parameters
-energy_cost_flat_tariff = 0.1  # ($/kW)
 grid_operational_cost = 0.1  # ($/kW)
 
-# create ToU tariff data
+# create tariff data
 '''
-ToU Tariff
 source: https://ieeexplore.ieee.org/abstract/document/9733283
+ToU Tariff
 
 Peak 17-21pm
 Summer: 1.25
@@ -50,12 +52,27 @@ Second shoulder 1-6am
 Supply charge
 1.1 daily
 
+---
+
+Flat tariff
+0.378
+
+Supply charge
+0.86 daily
 '''
+
+# tariff in ($/kW)
+flat_tariff_rate = 0.378
+flat_tariff = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
+                                                       periods=periods_in_a_day * num_of_days,
+                                                       freq=f'{time_resolution}min'),
+                            'tariff': [flat_tariff_rate for i in range(periods_in_a_day * num_of_days)]})
+flat_tariff.set_index('timestamp', inplace=True)
 
 tou_tariff = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
                                                       periods=periods_in_a_day * num_of_days,
                                                       freq=f'{time_resolution}min'),
-                                 'tariff': np.zeros(periods_in_a_day * num_of_days)})
+                           'tariff': np.zeros(periods_in_a_day * num_of_days)})
 tou_tariff.set_index('timestamp', inplace=True)
 
 for t in tou_tariff.index:
@@ -75,9 +92,23 @@ for t in tou_tariff.index:
         tou_tariff.loc[t, 'tariff'] = 0.2
 
 
+def set_tariff(tariff):
+    if tariff == 'flat':
+        return flat_tariff
+    elif tariff == 'tou':
+        return tou_tariff
+    elif tariff != 'flat_tariff' & tariff != 'tou_tariff':
+        raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
+
+
+tariff_type = 'flat'
+tariff = set_tariff(tariff_type)
+
+# execute EV data cleaning
 exec(open('vista_data_cleaning.py').read())
 
 
+# create EV class
 class ElectricVehicle:
     def __init__(self):
         self.at_home_status = pd.DataFrame  # (dataframe containing timestamps and binaries)
@@ -110,9 +141,11 @@ class ElectricVehicle:
         self.charging_power.set_index('timestamp', inplace=True)
 
 
+# open data
 with open('ev_data.pkl', 'rb') as f:
     ev_data = pickle.load(f)
 
+# instantiate EV objects in a list
 EV = [ElectricVehicle() for i in range(num_of_evs)]
 
 np.random.seed(0)
@@ -152,8 +185,3 @@ for ev_id in range(num_of_evs):
             EV[ev_id].travel_energy.append(rand_travel_consumption)
 
             EV[ev_id].travel_energy_t_arr[t] = rand_travel_consumption
-
-# pprint(EV[0].travel_energy)
-# pprint(EV[0].travel_energy_t_arr)
-# pprint(EV[0].t_dep)
-# pprint(EV[0].t_arr)

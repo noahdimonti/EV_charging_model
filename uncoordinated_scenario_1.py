@@ -6,17 +6,18 @@ from pprint import pprint
 import params
 import pickle
 
+
 # initiate EV parameters
 exec(open('params.py').read())
 
 # create load profile
-household_load = pd.read_csv(filepath_or_buffer='load_profile_7_days_85_households.csv', parse_dates=True, index_col=0)
-# print(load_profile)
+household_load_path = f'load_profile_7_days_{params.num_of_households}_households.csv'
+household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 
 # create ev at home pattern profile
 all_ev_profiles = pd.concat(params.ev_at_home_status_profile_list, axis=1)
 all_ev_profiles['n_connected_ev'] = all_ev_profiles.sum(axis=1).astype(int)
-# print(all_ev_profiles['n_connected_ev'])
+
 
 # uncoordinated charging scenario algorithm
 for ev_id in range(params.num_of_evs):
@@ -45,12 +46,14 @@ for ev_id in range(params.num_of_evs):
                 params.EV[ev_id].charging_power.loc[t] = max_cp_capacity.values
 
         # tracking the SOC
+        time_delta = pd.Timedelta(minutes=params.time_resolution)
+
         if t == params.start_date_time:
             params.EV[ev_id].soc.loc[t] = params.EV[ev_id].soc_init
             params.EV[ev_id].charging_power.loc[t] = 0
 
         elif (t != params.start_date_time) & (t not in params.EV[ev_id].t_arr):
-            params.EV[ev_id].soc.loc[t] = (params.EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
+            params.EV[ev_id].soc.loc[t] = (params.EV[ev_id].soc.loc[t - time_delta] +
                                            params.EV[ev_id].charging_power.loc[t].values)
 
             # make sure soc does not exceed the soc max limit
@@ -58,31 +61,17 @@ for ev_id in range(params.num_of_evs):
                 pass
             else:
                 # calculate how much power needed to charge until soc reaches soc_max
-                remaining_to_charge = (params.EV[ev_id].soc_max -
-                                       params.EV[ev_id].soc.loc[
-                                           t - pd.Timedelta(minutes=params.time_resolution)].values)
+                remaining_to_charge = (params.EV[ev_id].soc_max - params.EV[ev_id].soc.loc[t - time_delta].values)
 
-                params.EV[ev_id].soc.loc[t] = (
-                            params.EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
-                            remaining_to_charge)
+                params.EV[ev_id].soc.loc[t] = (params.EV[ev_id].soc.loc[t - time_delta] + remaining_to_charge)
 
                 params.EV[ev_id].charging_power.loc[t] = remaining_to_charge
 
         elif (t != params.start_date_time) & (t in params.EV[ev_id].t_arr):
-            params.EV[ev_id].soc.loc[t] = ((params.EV[ev_id].soc.loc[t - pd.Timedelta(minutes=params.time_resolution)] +
+            params.EV[ev_id].soc.loc[t] = ((params.EV[ev_id].soc.loc[t - time_delta] +
                                            params.EV[ev_id].charging_power.loc[t].values) -
                                            params.EV[ev_id].travel_energy_t_arr[t])
 
-# for ev_id in range(params.num_of_evs):
-#     soc_and_power = pd.concat(objs=[EV[ev_id].at_home_status, EV[ev_id].soc, EV[ev_id].charging_power], axis=1)
-
-# print(f'\nEV_{ev_id + 1}\n')
-# print('-------------------------------------------\n')
-# print(soc_and_power[:50])
-# print(soc_and_power[50:100])
-# print(soc_and_power[100:150])
-# print(soc_and_power[150:200])
-# print('-------------------------------------------\n')
 
 ev_power_profile = pd.concat(params.ev_charging_power_list, axis=1)
 ev_power_profile['ev_load'] = ev_power_profile.sum(axis=1)
@@ -95,12 +84,13 @@ print(df)
 max_household_load = df['household_load'].max()
 max_load = df['total_load'].max()
 
+print(f'P_EV_max: {params.P_EV_max}')
 print(f'max_household_load: {max_household_load}')
 print(f'max_total_load: {max_load}')
 print(df.loc[df['total_load'] > params.P_grid_max])
 
-#%%
-import plotly.graph_objects as go
+
+# ------------------- results visualisation ------------------- #
 
 peak_total = []
 for day in set(df.index.day):
@@ -110,9 +100,6 @@ for day in set(df.index.day):
 avg_daily_peak = sum(peak_total) / len(peak_total)
 print(avg_daily_peak)
 
-# tmp = load_profile.loc[load_profile.index.day == min(load_profile.index.day)]
-tmp = df
-
 fig = go.Figure()
 
 fig.add_trace(go.Scatter(x=df.index, y=df['household_load'], name='Household Load'))
@@ -120,7 +107,7 @@ fig.add_trace(go.Scatter(x=df.index, y=df['ev_load'], name='EV Load'))
 fig.add_trace(go.Scatter(x=df.index, y=df['total_load'], name='Total Load'))
 fig.add_trace(
     go.Scatter(x=df.index, y=[avg_daily_peak for i in range(len(df.index))], name='Average daily peak'))
-fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
+fig.update_layout(title=f'Load Profile ({params.num_of_households} Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
                   xaxis_title='Timestamp',
                   yaxis_title='Load (kW)')
 fig.show()

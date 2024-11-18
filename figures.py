@@ -25,7 +25,7 @@ fig.add_trace(go.Scatter(x=df1.index,
                          y=[avg_daily_peak1 for i in range(len(df1.index))],
                          name='Average daily peak',
                          legendgroup='1'), row=1, col=1)
-# fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
+# fig.update_layout(title=f'Load Profile ({params.num_of_households} Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
 #                   xaxis_title='Timestamp',
 #                   yaxis_title='Load (kW)')
 

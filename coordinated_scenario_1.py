@@ -69,11 +69,9 @@ model.EV_ID = pyo.Set(initialize=[i for i in range(params.num_of_evs)])
 
 # initialise parameters
 # household load
-household_load = pd.read_csv(filepath_or_buffer='load_profile_7_days_85_households.csv', parse_dates=True, index_col=0)
+household_load_path = f'load_profile_7_days_{params.num_of_households}_households.csv'
+household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 model.P_household_load = pyo.Param(model.TIME, initialize=household_load)
-
-# for t in model.TIME:
-#     print(model.P_household_load[t])
 
 # EV
 model.P_EV_min = pyo.Param(initialize=0)
@@ -99,8 +97,7 @@ model.min_required_SOC = pyo.Param(model.EV_ID, model.TIME,
 
 # cost
 model.grid_operational_cost = pyo.Param(initialize=params.grid_operational_cost)
-model.flat_tariff = pyo.Param(model.TIME, initialize=params.energy_cost_flat_tariff)
-model.tou_tariff = pyo.Param(model.TIME, initialize=params.tou_tariff)
+model.tariff = pyo.Param(model.TIME, initialize=params.tariff)
 
 # expression for tariff variations
 model.ev_charging_cost = pyo.Expression(expr=0)
@@ -139,9 +136,9 @@ def P_EV_max_choice_constraint(model):
 model.P_EV_max_choice_constraint = pyo.Constraint(rule=P_EV_max_choice_constraint)
 
 
-# constraints
+# CP constraint
 def cp_constraint(model, t):
-    return model.P_cp[t] <= model.P_grid[t] - model.P_household_load[t]
+    return model.P_cp[t] == model.P_grid[t] - model.P_household_load[t]
 
 model.cp_constraint = pyo.Constraint(model.TIME, rule=cp_constraint)
 
@@ -205,7 +202,6 @@ def soc_evolution(model, i, t):
         previous_time = model.TIME.prev(t)
         return model.SOC_EV[i, t] == model.SOC_EV[i, previous_time] + model.P_EV[i, t]
 
-
 model.soc_evolution = pyo.Constraint(model.EV_ID, model.TIME, rule=soc_evolution)
 
 
@@ -215,87 +211,56 @@ def final_soc_constraint(model, i):
 model.final_soc = pyo.Constraint(model.EV_ID, rule=final_soc_constraint)
 
 
-# set ev charging cost options
-def set_ev_charging_cost(model, tariff_type):
-
-    if tariff_type == 'flat_tariff':
-        model.ev_charging_cost = pyo.Expression(
-            expr=sum(model.flat_tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
-        )
-
-    elif tariff_type == 'tou_tariff':
-        model.ev_charging_cost = pyo.Expression(
-            expr=sum(model.tou_tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
-        )
-
-    elif tariff_type != 'flat_tariff' & tariff_type != 'tou_tariff':
-        raise ValueError("Invalid tariff_type. Use 'flat_tariff' or 'tou_tariff'.")
-
-
 # objective function
 def obj_function(model):
-    # ev_charging_cost = sum(model.flat_tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
-    # ev_charging_cost = sum(model.tou_tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
-
+    ev_charging_cost = sum(model.tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
     grid_operational_cost = sum(model.grid_operational_cost * model.P_grid[t] for t in model.TIME)
     continuity_penalty = sum(0.1 * model.delta_P_EV[i, t] for i in model.EV_ID for t in model.TIME)
 
-    return model.ev_charging_cost + grid_operational_cost + continuity_penalty
+    return ev_charging_cost + grid_operational_cost + continuity_penalty
 
 model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
 
-# run model for different tariffs
-tariff_types = ['flat_tariff', 'tou_tariff']
 
-# create dictionary of values for each model
-results = {}
+# solve the model
+solver = pyo.SolverFactory('gurobi')
+solver.solve(model, tee=True)
+# model.display()
+# model.P_cp.display()
+# model.P_grid.display()
 
-for tariff in tariff_types:
-    # Set the EV charging cost based on the tariff
-    set_ev_charging_cost(model, tariff)
+# model.SOC_EV.display()
+# model.P_EV.display()
+
+print(f'Tariff type: {params.tariff_type}')
+print(f'\nOptimal cost: ${pyo.value(model.obj_function)}')
+print(f'\nP_EV_max: {pyo.value(model.P_EV_max * params.P_EV_resolution_factor)} kW')
 
 
-    # solve the model
-    solver = pyo.SolverFactory('gurobi')
-    solver.solve(model, tee=True)
-    # model.display()
-    # model.P_cp.display()
-    # model.P_grid.display()
 
-    # model.SOC_EV.display()
-    # model.P_EV.display()
+# ------------------- results visualisation ------------------- #
 
-    results[tariff] = {
-        'P_EV_max': f'{pyo.value(model.P_EV_max)} kW',
-        'Optimal value': f'${pyo.value(model.obj_function)}'
-    }
-
-    # print(f'Tariff type: {tariff}')
-    # print(f'\nObjective function: ${pyo.value(model.obj_function)}')
-    # print(f'\nP_EV_max: {pyo.value(model.P_EV_max)} kW')
-
-pprint(results)
-
-# results visualisation
 p_ev_dict = {}
 for i in model.EV_ID:
     p_ev_dict[i] = []
     for t in model.TIME:
         p_ev_dict[i].append(pyo.value(model.P_EV[i, t]))
 
-df = pd.DataFrame(p_ev_dict, index=model.TIME)
+df = pd.DataFrame(p_ev_dict, index=[t for t in model.TIME])
 df['ev_load'] = df.sum(axis=1)
 df['cp'] = [pyo.value(model.P_cp[t]) for t in model.TIME]
+df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
 df['household_load'] = household_load['household_load']
 df['total_load'] = df['household_load'] + df['ev_load']
 print(df)
 print(f'EV load: {df.ev_load.max()}')
 print(f'CP load: {df.cp.max()}')
+print(f'Grid: {df.grid.max()}')
 
 peak_total = []
-for day in set(household_load.index.day):
-    daily_peak = household_load.loc[(household_load.index.day == day), 'household_load'].max()
+for day in set(df.index.day):
+    daily_peak = df.loc[(df.index.day == day), 'total_load'].max()
     peak_total.append(daily_peak)
 
 avg_daily_peak = sum(peak_total) / len(peak_total)
@@ -311,10 +276,10 @@ fig.add_trace(go.Scatter(x=[t for t in model.TIME],
                          y=[avg_daily_peak for i in range(len(model.TIME))],
                          name='Average daily peak'))
 
-fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Coordinated Scenario',
+fig.update_layout(title=f'Load Profile ({params.num_of_households} Households and {params.num_of_evs} EVs) - Coordinated Scenario',
                   xaxis_title='Timestamp',
                   yaxis_title='Load (kW)')
-# fig.show()
+fig.show()
 
 
 
@@ -344,7 +309,7 @@ fig.add_trace(go.Scatter(x=[t for t in model.TIME],
                          name='ToU tariff'),
                          secondary_y=True)
 
-fig.update_layout(title=f'Load Profile (85 Households and {params.num_of_evs} EVs) - Coordinated Scenario')
+fig.update_layout(title=f'Load Profile ({params.num_of_households} Households and {params.num_of_evs} EVs) - Coordinated Scenario')
 
 # Set x-axis title
 fig.update_xaxes(title_text='Timestamp')
