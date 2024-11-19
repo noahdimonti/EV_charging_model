@@ -3,8 +3,6 @@ import numpy as np
 import pickle
 from pprint import pprint
 
-num_of_evs = 50
-num_of_households = 100
 '''
 date options:
 '2019-01-01 00:00:00'
@@ -14,22 +12,36 @@ start_date_time = pd.Timestamp('2022-02-21 00:00:00')
 num_of_days = 7
 time_resolution = 15  # minutes
 periods_in_a_day = int((60 / time_resolution) * 24)
+timestamps =pd.date_range(start=start_date_time,
+                          periods=periods_in_a_day * num_of_days,
+                          freq=f'{time_resolution}min')
 
 P_grid_max = 500  # (kW)
 min_SOC = 0.3  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
 P_EV_resolution_factor = int(60 / time_resolution)
-P_EV_max_list = [i / P_EV_resolution_factor for i in (1.3, 2.4, 3.7, 7.2)]
+max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
+P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
 P_EV_max = P_EV_max_list[1]  # (kW per time resolution)
 
 # EV travel distance and travel energy consumption
-avg_travel_distance = 40  # (km)
+travel_distance_list = [20, 30, 40]
+avg_travel_distance = travel_distance_list[2]  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 
 # cost parameters
-grid_operational_cost = 0.1  # ($/kW)
+'''
+Cost of EV charger installation
+
+Wall socket (1.3kW and 2.4kW): $200
+Schneider EV Link (source: https://www.solarchoice.net.au/products/ev-chargers/schneider-evlink-home/)
+3.7kW: $1,350
+7.2kW: $1,500
+
+Charger maintenance cost for L1 and L2 chargers per year: $400
+'''
 
 # create tariff data
 '''
@@ -62,25 +74,27 @@ Supply charge
 '''
 
 # tariff in ($/kW)
+# flat tariff
 flat_tariff_rate = 0.378
-flat_tariff = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
-                                                       periods=periods_in_a_day * num_of_days,
-                                                       freq=f'{time_resolution}min'),
+flat_tariff = pd.DataFrame({'timestamp': timestamps,
                             'tariff': [flat_tariff_rate for i in range(periods_in_a_day * num_of_days)]})
 flat_tariff.set_index('timestamp', inplace=True)
 
-tou_tariff = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
-                                                      periods=periods_in_a_day * num_of_days,
-                                                      freq=f'{time_resolution}min'),
+flat_daily_supply_charge = 0.86
+
+# ToU tariff
+tou_tariff = pd.DataFrame({'timestamp': timestamps,
                            'tariff': np.zeros(periods_in_a_day * num_of_days)})
 tou_tariff.set_index('timestamp', inplace=True)
+
+tou_daily_supply_charge = 1.1
 
 for t in tou_tariff.index:
     if 1 <= t.hour < 6:  # second shoulder
         tou_tariff.loc[t, 'tariff'] = 0.12
     elif 6 <= t.hour < 10:  # shoulder
         tou_tariff.loc[t, 'tariff'] = 0.2
-    elif 10 <= t.hour < 15:  # off peak
+    elif 10 <= t.hour < 15:  # off-peak
         tou_tariff.loc[t, 'tariff'] = 0.08
     elif 15 <= t.hour < 17:  # shoulder
         tou_tariff.loc[t, 'tariff'] = 0.2
@@ -92,17 +106,42 @@ for t in tou_tariff.index:
         tou_tariff.loc[t, 'tariff'] = 0.2
 
 
-def set_tariff(tariff):
-    if tariff == 'flat':
+def set_tariff(type_of_tariff):
+    if type_of_tariff == 'flat':
         return flat_tariff
-    elif tariff == 'tou':
+    elif type_of_tariff == 'tou':
         return tou_tariff
-    elif tariff != 'flat_tariff' & tariff != 'tou_tariff':
+    elif type_of_tariff != 'flat' or type_of_tariff != 'tou':
         raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
 
 
+def set_daily_supply_charge(type_of_tariff):
+    if type_of_tariff == 'flat':
+        return flat_daily_supply_charge
+    elif type_of_tariff == 'tou':
+        return tou_daily_supply_charge
+    elif type_of_tariff != 'flat' or type_of_tariff != 'tou':
+        raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
+
+
+num_of_evs = 10
+num_of_households = 100
 tariff_type = 'flat'
 tariff = set_tariff(tariff_type)
+daily_supply_charge = set_daily_supply_charge(tariff_type) * num_of_evs * num_of_days
+charging_continuity_penalty = 0.1
+
+investment_cost = [200, 200, 1350, 1500]  # list of investment cost for each max_charging_power_options
+
+maintenance_cost = 400 / 365 * num_of_evs * num_of_days  # charger maintenance cost for the model's timeframe per Charging Point (CP)
+
+grid_operational_cost = 0.2  # ($/kW)
+
+
+# create household load profile
+household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'
+household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+
 
 # execute EV data cleaning
 exec(open('vista_data_cleaning.py').read())

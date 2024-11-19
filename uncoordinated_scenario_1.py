@@ -11,8 +11,7 @@ import pickle
 exec(open('params.py').read())
 
 # create load profile
-household_load_path = f'load_profile_7_days_{params.num_of_households}_households.csv'
-household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+household_load = params.household_load
 
 # create ev at home pattern profile
 all_ev_profiles = pd.concat(params.ev_at_home_status_profile_list, axis=1)
