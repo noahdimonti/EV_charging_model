@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from pprint import pprint
 import params
-import pickle
 
 
 # initiate EV parameters

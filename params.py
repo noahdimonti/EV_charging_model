@@ -124,19 +124,17 @@ def set_daily_supply_charge(type_of_tariff):
         raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
 
 
-num_of_evs = 10
+num_of_evs = 50
+num_of_cps = num_of_evs
 num_of_households = 100
 tariff_type = 'flat'
 tariff = set_tariff(tariff_type)
-daily_supply_charge = set_daily_supply_charge(tariff_type) * num_of_evs * num_of_days
-charging_continuity_penalty = 0.1
+daily_supply_charge = set_daily_supply_charge(tariff_type) * num_of_days * num_of_cps
+charging_continuity_penalty = 0.01
 
 investment_cost = [200, 200, 1350, 1500]  # list of investment cost for each max_charging_power_options
 
-maintenance_cost = 400 / 365 * num_of_evs * num_of_days  # charger maintenance cost for the model's timeframe per Charging Point (CP)
-
-grid_operational_cost = 0.2  # ($/kW)
-
+maintenance_cost = 400 / 365 * num_of_days * num_of_cps  # charger maintenance cost for the model's timeframe per Charging Point (CP)
 
 # create household load profile
 household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'

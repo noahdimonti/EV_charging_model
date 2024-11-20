@@ -62,7 +62,6 @@ model = pyo.ConcreteModel()
 # initialise sets
 model.TIME = pyo.Set(initialize=params.timestamps)
 model.EV_ID = pyo.Set(initialize=[i for i in range(params.num_of_evs)])
-# model.DAYS = pyo.Set(initialize=sorted(list(set(timestamps.day))))
 
 # initialise parameters
 # household load
@@ -100,7 +99,7 @@ model.SOC_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals,
 
 model.delta_P_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals)
 
-# model.daily_peak_power = pyo.Var(model.DAYS, within=pyo.NonNegativeReals)
+model.P_peak = pyo.Var(within=pyo.NonNegativeReals)
 
 # P_EV_max optimisation choice (integer)
 model.P_EV_max_selection = pyo.Var(range(len(params.P_EV_max_list)), within=pyo.Binary)
@@ -130,6 +129,11 @@ def cp_constraint(model, t):
 
 model.cp_constraint = pyo.Constraint(model.TIME, rule=cp_constraint)
 
+# grid constraint
+def grid_constraint(model, t):
+    return model.P_grid[t] == model.P_household_load[t] + sum(model.P_EV[i, t] for i in model.EV_ID)
+
+model.grid_constraint = pyo.Constraint(model.TIME, rule=grid_constraint)
 
 # P_EV constraint
 def max_available_charging_power(model, t):
@@ -198,46 +202,44 @@ def final_soc_constraint(model, i):
 
 model.final_soc = pyo.Constraint(model.EV_ID, rule=final_soc_constraint)
 
-
-# def daily_peak_power_constraint(model, d, t):
-#     # Ensure that the daily peak power is greater than or equal to the total power at each timestamp
-#     if t.date() == d:  # Only enforce this for timestamps in the same day
-#         return model.daily_peak_power[d] >= sum(model.P_EV[i, t] for i in model.EV_ID) + model.P_household_load[t]
-#     return pyo.Constraint.Skip  # Skip for timestamps not in day `d`
-#
-# model.daily_peak_power_constraint = pyo.Constraint(model.DAYS, model.TIME, rule=daily_peak_power_constraint)
-#
-# model.avg_daily_peak_power = pyo.Expression(expr=sum(model.daily_peak_power[d] for d in model.DAYS) / len(model.DAYS))
+# constraint that defines peak power in linear terms
+def peak_power_constraint(model, t):
+    return model.P_peak >= sum(model.P_EV[i, t] for i in model.EV_ID) + model.P_household_load[t]
+model.peak_power_constraint = pyo.Constraint(model.TIME, rule=peak_power_constraint)
 
 
 # objective function
 def obj_function(model):
+    # investment and maintenance costs
     investment_cost = params.num_of_evs * sum(params.investment_cost[p] * model.P_EV_max_selection[p]
                                               for p in range(len(params.P_EV_max_list)))
-    grid_operational_cost = sum(params.grid_operational_cost * model.P_grid[t] for t in model.TIME)
     maintenance_cost = params.maintenance_cost
 
+    # electricity purchase costs
+    household_load_cost = sum(model.tariff[t] * model.P_household_load[t] for t in model.TIME)
     ev_charging_cost = sum(model.tariff[t] * model.P_EV[i, t] for i in model.EV_ID for t in model.TIME)
+    grid_import_cost = household_load_cost + ev_charging_cost
+
+    # other costs
     daily_supply_charge = params.daily_supply_charge
+    charging_continuity_penalty = sum(params.charging_continuity_penalty * model.delta_P_EV[i, t]
+                                      for i in model.EV_ID
+                                      for t in model.TIME)
 
-    continuity_penalty = sum(params.charging_continuity_penalty * model.delta_P_EV[i, t]
-                             for i in model.EV_ID
-                             for t in model.TIME)
-
-    return (investment_cost + grid_operational_cost + maintenance_cost +
-            ev_charging_cost + daily_supply_charge + continuity_penalty)
+    return (investment_cost + maintenance_cost +
+            grid_import_cost + daily_supply_charge +
+            charging_continuity_penalty + model.P_peak)
 
 model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
 
 # solve the model
-solver = pyo.SolverFactory('gurobi')
-solver.solve(model, tee=True)
+def solve_model():
+    solver = pyo.SolverFactory('gurobi')
+    solver.solve(model, tee=True)
 
-# print(f'Avg daily peak power: {pyo.value(model.avg_daily_peak_power)}')
 
 # results data collection
-model.P_grid.display()
 def print_results():
     p_ev_dict = {}
     for i in model.EV_ID:
@@ -263,25 +265,33 @@ def print_results():
 
     investment_cost = params.num_of_evs * sum(params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
                                               for p in range(len(params.P_EV_max_list)))
-    grid_operational_cost = sum(params.grid_operational_cost * pyo.value(model.P_grid[t]) for t in model.TIME)
     maintenance_cost = params.maintenance_cost
 
+    household_cost = sum(model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME)
     ev_charging_cost = sum(model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME)
+    grid_import_cost = household_cost + ev_charging_cost
+
     daily_supply_charge = params.daily_supply_charge
 
     continuity_penalty = sum(params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
                              for i in model.EV_ID
                              for t in model.TIME)
-    print(f'Investment cost: ${investment_cost}')
-    print(f'Grid operational cost: ${grid_operational_cost}')
+
+    print(f'\nInvestment cost: ${investment_cost}')
     print(f'Maintenance cost: ${maintenance_cost}')
+    print(f'Household load cost: ${household_cost}')
     print(f'Total EV charging cost: ${ev_charging_cost}')
+    print(f'Grid import cost: ${grid_import_cost}')
     print(f'Daily supply charge: ${daily_supply_charge}')
     print(f'Continuity penalty cost: ${continuity_penalty}')
 
-    print(f'Peak EV load: {df.ev_load.max()}')
+    avg_ev_charging_cost = ev_charging_cost / params.num_of_evs
+    print(f'Average EV charging cost: ${avg_ev_charging_cost}')
+
+    print(f'\nPeak EV load: {df.ev_load.max()}')
     print(f'Peak total load: {df.total_load.max()}')
     print(f'Peak grid import: {df.grid.max()}')
+    print(f'Peak power var: {pyo.value(model.P_peak)}')
 
     peak_total = []
     for day in set(df.index.day):
@@ -294,11 +304,13 @@ def print_results():
     peak_to_average = df['total_load'].max() / df['total_load'].mean()
     print(f'Peak to average ratio: {peak_to_average}')
 
-print_results()
+    return df, avg_daily_peak
+
+# df, avg_daily_peak = print_results()
 
 # ------------------- results visualisation ------------------- #
 
-def visualise_results():
+def visualise_results(df, avg_daily_peak):
     # flat tariff plot
     flat_tariff_fig = go.Figure()
     flat_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME], y=df.household_load, name='Household Load'))
@@ -372,20 +384,21 @@ def visualise_results():
             tou_tariff_fig.show()
 
 
-    # plot_results()
+    plot_results()
 
+# visualise_results(df, avg_daily_peak)
 
-    def plot_each_ev(ev_id):
-        fig = go.Figure()
+def plot_each_ev(ev_id):
+    fig = go.Figure()
 
-        fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.SOC_EV[ev_id, t]) for t in model.TIME],
-                                 name='SOC'))
-        fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.P_EV[ev_id, t]) for t in model.TIME],
-                                 name='Charging Power'))
+    fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.SOC_EV[ev_id, t]) for t in model.TIME],
+                             name='SOC'))
+    fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.P_EV[ev_id, t]) for t in model.TIME],
+                             name='Charging Power'))
 
-        fig.update_layout(title=f'SOC and Charging Power of EV_ID{ev_id} - Coordinated Scenario',
-                          xaxis_title='Timestamp')
-        fig.show()
+    fig.update_layout(title=f'SOC and Charging Power of EV_ID{ev_id} - Coordinated Scenario',
+                      xaxis_title='Timestamp')
+    fig.show()
 
-    # for i in range(params.num_of_evs):
-    #     plot_each_ev(i)
+# for i in range(params.num_of_evs):
+#     plot_each_ev(i)
