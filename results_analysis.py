@@ -40,13 +40,18 @@ print(df_power)
 
 # Coordinated Scenario 1
 for tariff in params.tariff_types_list:
-    cs1_model = cs1.create_model(tariff)
+    num_of_evs = 50
+    avg_travel_distance = 40
+    cs1_model = cs1.create_model(tariff, num_of_evs, avg_travel_distance)
     cs1.solve_model(cs1_model)
     cs1_df = cs1.get_results_df(cs1_model)
-    df_cost[f'CS1_{tariff}_tariff'] = cs1.get_cost_results(cs1_model, tariff)
-    df_power[f'CS1_{tariff}_tariff'] = cs1.get_power_results(cs1_model, cs1_df)
+    df_cost[f'CS1_{tariff}_tariff'] = cs1.get_cost_results(cs1_model, tariff, num_of_evs)
+    df_power[f'CS1_{tariff}_tariff'] = cs1.get_power_results(cs1_model, cs1_df, num_of_evs)
 
+print(f'\n================ Cost Analysis ================\n')
 print(df_cost)
+
+print(f'\n================ Power Analysis ================\n')
 print(df_power)
 
 

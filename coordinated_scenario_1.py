@@ -7,9 +7,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pprint import pprint
 import params
+import create_ev_data
 
-# initiate EV parameters
-exec(open('params.py').read())
 
 '''
 Nodes and constraints:
@@ -28,10 +27,21 @@ There's a cost associated with every kW of P_EV. Minimise this cost.
 obj = sum( cost * P_EV_i_t ), for all i and t
 '''
 
+# Retrieve other parameters from params.py
+num_of_days = params.num_of_days
+timestamps = params.timestamps
+household_load = params.household_load
+tariff_dict = params.tariff_dict
+P_grid_max = params.P_grid_max
+P_EV_max_list = params.P_EV_max_list
+annual_maintenance_cost = params.annual_maintenance_cost
+daily_supply_charge_dict = params.daily_supply_charge_dict
+P_EV_resolution_factor = params.P_EV_resolution_factor
 
-def create_model(tariff_type: str, num_of_evs: int):
+
+def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float):
     # instantiate EV objects
-    EV = params.EV
+    EV = create_ev_data.main(num_of_evs, avg_travel_distance)
 
     # create dictionaries of ev parameters, key: ev id, value: the parameter value
     soc_min_dict = {}
@@ -64,7 +74,7 @@ def create_model(tariff_type: str, num_of_evs: int):
     model = pyo.ConcreteModel()
 
     # initialise sets
-    model.TIME = pyo.Set(initialize=params.timestamps)
+    model.TIME = pyo.Set(initialize=timestamps)
     model.EV_ID = pyo.Set(initialize=[i for i in range(num_of_evs)])
 
     # initialise parameters
@@ -72,7 +82,7 @@ def create_model(tariff_type: str, num_of_evs: int):
     num_of_cps = num_of_evs  # the num of CP in this model is the same as num of EV, however, it can be different
 
     # household load
-    model.P_household_load = pyo.Param(model.TIME, initialize=params.household_load)
+    model.P_household_load = pyo.Param(model.TIME, initialize=household_load)
 
     # EV
     model.SOC_EV_min = pyo.Param(model.EV_ID, initialize=soc_min_dict)
@@ -94,18 +104,18 @@ def create_model(tariff_type: str, num_of_evs: int):
                                        within=pyo.NonNegativeReals)
 
     # costs
-    model.tariff = pyo.Param(model.TIME, within=pyo.NonNegativeReals, initialize=params.tariff_dict[tariff_type])
+    model.tariff = pyo.Param(model.TIME, within=pyo.NonNegativeReals, initialize=tariff_dict[tariff_type])
 
     # initialise variables
-    model.P_grid = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
-    model.P_cp = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
+    model.P_grid = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, P_grid_max))
+    model.P_cp = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, P_grid_max))
     model.SOC_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals,
                            bounds=lambda model, i, t: (model.min_required_SOC[i, t], model.SOC_EV_max[i]))
     model.delta_P_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals)
     model.P_peak = pyo.Var(within=pyo.NonNegativeReals)
 
     # P_EV_max optimisation choice (integer)
-    model.P_EV_max_selection = pyo.Var(range(len(params.P_EV_max_list)), within=pyo.Binary)
+    model.P_EV_max_selection = pyo.Var(range(len(P_EV_max_list)), within=pyo.Binary)
     model.P_EV_max = pyo.Var(within=pyo.NonNegativeReals)
     model.P_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals)
 
@@ -113,14 +123,14 @@ def create_model(tariff_type: str, num_of_evs: int):
     # constraint to define P_EV_max
     def P_EV_max_selection_rule(model):
         return model.P_EV_max == sum(
-            model.P_EV_max_selection[j] * params.P_EV_max_list[j] for j in range(len(params.P_EV_max_list))
+            model.P_EV_max_selection[j] * P_EV_max_list[j] for j in range(len(P_EV_max_list))
         )
 
     model.P_EV_max_selection_rule = pyo.Constraint(rule=P_EV_max_selection_rule)
 
     # constraint to ensure only one P_EV_max variable is selected
     def mutual_exclusivity_rule(model):
-        return sum(model.P_EV_max_selection[j] for j in range(len(params.P_EV_max_list))) == 1
+        return sum(model.P_EV_max_selection[j] for j in range(len(P_EV_max_list))) == 1
 
     model.mutual_exclusivity_rule = pyo.Constraint(rule=mutual_exclusivity_rule)
 
@@ -209,11 +219,14 @@ def create_model(tariff_type: str, num_of_evs: int):
 
     # initialise objective function
     def obj_function(model):
+        investment_cost = params.investment_cost
+        charging_continuity_penalty = params.charging_continuity_penalty
+
         # investment and maintenance costs
-        investment_cost = num_of_cps * sum(params.investment_cost[p] * model.P_EV_max_selection[p]
-                                           for p in range(len(params.P_EV_max_list)))
+        total_investment_cost = num_of_cps * sum(investment_cost[p] * model.P_EV_max_selection[p]
+                                           for p in range(len(P_EV_max_list)))
         # per charging point for the duration
-        maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * num_of_cps
+        maintenance_cost = annual_maintenance_cost / 365 * num_of_days * num_of_cps
 
         # electricity purchase costs
         household_load_cost = sum(model.tariff[t] * model.P_household_load[t] for t in model.TIME)
@@ -221,14 +234,14 @@ def create_model(tariff_type: str, num_of_evs: int):
         grid_import_cost = household_load_cost + ev_charging_cost
 
         # other costs
-        daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-        charging_continuity_penalty = sum(params.charging_continuity_penalty * model.delta_P_EV[i, t]
+        daily_supply_charge = daily_supply_charge_dict[tariff_type]
+        total_charging_continuity_penalty = sum(charging_continuity_penalty * model.delta_P_EV[i, t]
                                           for i in model.EV_ID
                                           for t in model.TIME)
 
-        return (investment_cost + maintenance_cost +
-                grid_import_cost +
-                charging_continuity_penalty + model.P_peak)
+        return (total_investment_cost + maintenance_cost +
+                grid_import_cost + daily_supply_charge +
+                total_charging_continuity_penalty + model.P_peak)
 
     model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
@@ -269,7 +282,7 @@ def get_cost_results(model, tariff_type: str, num_of_evs: int):
 
     investment_cost = num_of_cps * sum(params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
                                        for p in range(len(params.P_EV_max_list)))
-    maintenance_cost = params.maintenance_cost
+    maintenance_cost = annual_maintenance_cost / 365 * num_of_days * num_of_cps
     investment_and_maintenance_cost = investment_cost + maintenance_cost
 
     household_cost = sum(model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME)
