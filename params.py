@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 from pprint import pprint
 
+
+# Time settings
 '''
 date options:
 '2019-01-01 00:00:00'
@@ -16,22 +18,21 @@ timestamps =pd.date_range(start=start_date_time,
                           periods=periods_in_a_day * num_of_days,
                           freq=f'{time_resolution}min')
 
+# Power grid settings
 P_grid_max = 500  # (kW)
+
+# EV SOC settings
 min_SOC = 0.3  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
+
+# EV charging power settings
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
 P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
 P_EV_max = P_EV_max_list[1]  # (kW per time resolution)
 
-# EV travel distance and travel energy consumption
-travel_distance_list = [20, 30, 40]
-avg_travel_distance = travel_distance_list[2]  # (km)
-travel_dist_std_dev = 5  # (km)
-energy_consumption_per_km = 0.2  # (kWh/km)
-
-# cost parameters
+# Cost of EV charger installation
 '''
 Cost of EV charger installation
 
@@ -73,20 +74,18 @@ Supply charge
 0.86 daily
 '''
 
-# tariff in ($/kW)
+# Tariff rates ($/kW)
 # flat tariff
 flat_tariff_rate = 0.378
 flat_tariff = pd.DataFrame({'timestamp': timestamps,
                             'tariff': [flat_tariff_rate for i in range(periods_in_a_day * num_of_days)]})
 flat_tariff.set_index('timestamp', inplace=True)
-
 flat_daily_supply_charge = 0.86
 
 # ToU tariff
 tou_tariff = pd.DataFrame({'timestamp': timestamps,
                            'tariff': np.zeros(periods_in_a_day * num_of_days)})
 tou_tariff.set_index('timestamp', inplace=True)
-
 tou_daily_supply_charge = 1.1
 
 for t in tou_tariff.index:
@@ -106,39 +105,38 @@ for t in tou_tariff.index:
         tou_tariff.loc[t, 'tariff'] = 0.2
 
 
-def set_tariff(type_of_tariff):
-    if type_of_tariff == 'flat':
-        return flat_tariff
-    elif type_of_tariff == 'tou':
-        return tou_tariff
-    elif type_of_tariff != 'flat' or type_of_tariff != 'tou':
-        raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
+tariff_dict = {
+    'flat': flat_tariff,
+    'tou': tou_tariff
+}
 
+daily_supply_charge_dict = {
+    'flat': flat_daily_supply_charge,
+    'tou': tou_daily_supply_charge
+}
 
-def set_daily_supply_charge(type_of_tariff):
-    if type_of_tariff == 'flat':
-        return flat_daily_supply_charge
-    elif type_of_tariff == 'tou':
-        return tou_daily_supply_charge
-    elif type_of_tariff != 'flat' or type_of_tariff != 'tou':
-        raise ValueError("Invalid tariff_type. Use 'flat' or 'tou'.")
-
-
-num_of_evs = 50
-num_of_cps = num_of_evs
-num_of_households = 100
-tariff_type = 'flat'
-tariff = set_tariff(tariff_type)
-daily_supply_charge = set_daily_supply_charge(tariff_type) * num_of_days * num_of_cps
 charging_continuity_penalty = 0.01
 
-investment_cost = [200, 200, 1350, 1500]  # list of investment cost for each max_charging_power_options
+# Investment and maintenance cost parameters
+investment_cost = [200, 200, 1350, 1500]  # per EV charger
+annual_maintenance_cost = 400
 
-maintenance_cost = 400 / 365 * num_of_days * num_of_cps  # charger maintenance cost for the model's timeframe per Charging Point (CP)
+# EV travel settings
+travel_dist_std_dev = 5  # (km)
+energy_consumption_per_km = 0.2  # (kWh/km)
 
-# create household load profile
+# Household load profile
+num_of_households = 100
 household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'
 household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+
+# Parameters varied in each model
+ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the number of households
+travel_distances = [15, 25, 35, 45]
+
+tariff_types_list = ['flat', 'tou']
+num_of_evs_list = [int(np.floor(num_of_households * ev_penetration)) for ev_penetration in ev_penetration_percentage]
+num_of_evs = 5
 
 
 # execute EV data cleaning
@@ -165,15 +163,11 @@ class ElectricVehicle:
         self.soc_max = max_SOC  # (kWh)
         self.P_EV_max = P_EV_max  # (kW per 15 minutes)
 
-        self.soc = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
-                                                            periods=periods_in_a_day * num_of_days,
-                                                            freq=f'{time_resolution}min'),
+        self.soc = pd.DataFrame({'timestamp': timestamps,
                                  'soc': np.zeros(periods_in_a_day * num_of_days)})
         self.soc.set_index('timestamp', inplace=True)
 
-        self.charging_power = pd.DataFrame({'timestamp': pd.date_range(start=start_date_time,
-                                                                       periods=periods_in_a_day * num_of_days,
-                                                                       freq=f'{time_resolution}min'),
+        self.charging_power = pd.DataFrame({'timestamp': timestamps,
                                             'charging_power': np.zeros(periods_in_a_day * num_of_days)})
         self.charging_power.set_index('timestamp', inplace=True)
 
@@ -182,43 +176,56 @@ class ElectricVehicle:
 with open('ev_data.pkl', 'rb') as f:
     ev_data = pickle.load(f)
 
-# instantiate EV objects in a list
-EV = [ElectricVehicle() for i in range(num_of_evs)]
 
-np.random.seed(0)
-max_capacity_of_EVs = np.random.choice([i for i in range(35, 60)], size=num_of_evs)
-random_SOC_init = np.random.uniform(low=min_SOC, high=max_SOC, size=num_of_evs)
+def initialise_ev_data(num_of_evs: int, avg_travel_distance: float):
+    # instantiate EV objects in a list
+    ev_list = [ElectricVehicle() for _ in range(num_of_evs)]
 
-ev_at_home_status_profile_list = []
-ev_charging_power_list = []
+    np.random.seed(0)
+    max_capacity_of_EVs = np.random.choice([i for i in range(35, 60)], size=num_of_evs)
+    random_SOC_init = np.random.uniform(low=min_SOC, high=max_SOC, size=num_of_evs)
 
-# take data from pickle file and put them in EV class attributes
-for ev_id in range(num_of_evs):
-    # initialise ev parameters
-    EV[ev_id].at_home_status = ev_data[ev_id].at_home_status
-    EV[ev_id].t_arr = ev_data[ev_id].t_arr
-    EV[ev_id].t_dep = ev_data[ev_id].t_dep
-    EV[ev_id].travel_energy = ev_data[ev_id].travel_energy
+    ev_at_home_status_profile_list = []
+    ev_charging_power_list = []
 
-    EV[ev_id].capacity_of_ev = max_capacity_of_EVs[ev_id]
-    EV[ev_id].soc_init = random_SOC_init[ev_id] * EV[ev_id].capacity_of_ev
-    EV[ev_id].soc_max = max_SOC * EV[ev_id].capacity_of_ev
-    EV[ev_id].soc_min = min_SOC * EV[ev_id].capacity_of_ev
-    EV[ev_id].soc_final = final_SOC * EV[ev_id].capacity_of_ev
+    # take data from pickle file and put them in EV class attributes
+    for ev_id in range(num_of_evs):
+        # initialise ev parameters
+        ev_list[ev_id].at_home_status = ev_data[ev_id].at_home_status
+        ev_list[ev_id].t_arr = ev_data[ev_id].t_arr
+        ev_list[ev_id].t_dep = ev_data[ev_id].t_dep
+        ev_list[ev_id].travel_energy = ev_data[ev_id].travel_energy
 
-    # create a list of ev at home status dataframes
-    ev_at_home_status_profile_list.append(EV[ev_id].at_home_status)
+        ev_list[ev_id].capacity_of_ev = max_capacity_of_EVs[ev_id]
+        ev_list[ev_id].soc_init = random_SOC_init[ev_id] * ev_list[ev_id].capacity_of_ev
+        ev_list[ev_id].soc_max = max_SOC * ev_list[ev_id].capacity_of_ev
+        ev_list[ev_id].soc_min = min_SOC * ev_list[ev_id].capacity_of_ev
+        ev_list[ev_id].soc_final = final_SOC * ev_list[ev_id].capacity_of_ev
 
-    # create a list of ev charging power dataframes
-    ev_charging_power_list.append(EV[ev_id].charging_power)
+        # create a list of ev at home status dataframes
+        ev_at_home_status_profile_list.append(ev_list[ev_id].at_home_status)
 
-    np.random.seed(ev_id)
-    # set travel_energy_consumption
-    if len(EV[ev_id].t_dep) == len(EV[ev_id].t_arr):
-        for idx, t in enumerate(EV[ev_id].t_arr):
-            rand_distance = np.random.normal(loc=avg_travel_distance, scale=travel_dist_std_dev, size=1)
-            rand_travel_consumption = energy_consumption_per_km * rand_distance  # in kWh
+        # create a list of ev charging power dataframes
+        ev_charging_power_list.append(ev_list[ev_id].charging_power)
 
-            EV[ev_id].travel_energy.append(rand_travel_consumption)
+        np.random.seed(ev_id)
+        # set travel_energy_consumption
+        if len(ev_list[ev_id].t_dep) == len(ev_list[ev_id].t_arr):
+            for idx, t in enumerate(ev_list[ev_id].t_arr):
+                rand_distance = np.random.normal(loc=avg_travel_distance, scale=travel_dist_std_dev, size=1)
+                rand_travel_consumption = energy_consumption_per_km * rand_distance  # in kWh
 
-            EV[ev_id].travel_energy_t_arr[t] = rand_travel_consumption
+                ev_list[ev_id].travel_energy.append(rand_travel_consumption)
+
+                ev_list[ev_id].travel_energy_t_arr[t] = rand_travel_consumption
+
+    return ev_list
+
+
+
+EV = initialise_ev_data(num_of_evs, 25)
+print(EV[4].travel_energy_t_arr)
+
+
+
+
