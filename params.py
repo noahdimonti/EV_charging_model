@@ -22,7 +22,7 @@ timestamps = pd.date_range(start=start_date_time,
 P_grid_max = 500  # (kW)
 
 # EV SOC settings
-min_SOC = 0.3  # (%)
+min_SOC = 0.4  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
 
@@ -74,45 +74,54 @@ Supply charge
 0.86 daily
 '''
 
-# Tariff rates ($/kW)
-# flat tariff
+# Tariff settings
 flat_tariff_rate = 0.378
-flat_tariff = pd.DataFrame({'timestamp': timestamps,
-                            'tariff': [flat_tariff_rate for i in range(periods_in_a_day * num_of_days)]})
-flat_tariff.set_index('timestamp', inplace=True)
 flat_daily_supply_charge = 0.86
+tou_peak_rate = 1.25
+tou_shoulder_rate = 0.2
+tou_second_shoulder_rate = 0.12
+tou_off_peak_rate = 0.08
 
-# ToU tariff
-tou_tariff = pd.DataFrame({'timestamp': timestamps,
-                           'tariff': np.zeros(periods_in_a_day * num_of_days)})
-tou_tariff.set_index('timestamp', inplace=True)
 tou_daily_supply_charge = 1.1
 
-for t in tou_tariff.index:
-    if 1 <= t.hour < 6:  # second shoulder
-        tou_tariff.loc[t, 'tariff'] = 0.12
-    elif 6 <= t.hour < 10:  # shoulder
-        tou_tariff.loc[t, 'tariff'] = 0.2
-    elif 10 <= t.hour < 15:  # off-peak
-        tou_tariff.loc[t, 'tariff'] = 0.08
-    elif 15 <= t.hour < 17:  # shoulder
-        tou_tariff.loc[t, 'tariff'] = 0.2
-    elif 17 <= t.hour < 21:  # peak
-        tou_tariff.loc[t, 'tariff'] = 1.25
-    elif 21 <= t.hour <= 23:  # shoulder
-        tou_tariff.loc[t, 'tariff'] = 0.2
-    elif t.hour == 0:  # shoulder
-        tou_tariff.loc[t, 'tariff'] = 0.2
+
+# Generate flat and ToU tariff data
+def create_flat_tariff(timestamps):
+    return pd.DataFrame({
+        'timestamp': timestamps,
+        'tariff': [flat_tariff_rate] * len(timestamps)
+    }).set_index('timestamp')
+
+
+def create_tou_tariff(timestamps):
+    df = pd.DataFrame({
+        'timestamp': timestamps,
+        'tariff': np.zeros(len(timestamps))
+    }).set_index('timestamp')
+
+    for t in df.index:
+        if 1 <= t.hour < 6:
+            df.loc[t, 'tariff'] = tou_second_shoulder_rate
+        elif 6 <= t.hour < 10 or 15 <= t.hour < 17 or 21 <= t.hour <= 23 or t.hour == 0:
+            df.loc[t, 'tariff'] = tou_shoulder_rate
+        elif 10 <= t.hour < 15:
+            df.loc[t, 'tariff'] = tou_off_peak_rate
+        elif 17 <= t.hour < 21:
+            df.loc[t, 'tariff'] = tou_peak_rate
+
+    return df
+
 
 tariff_dict = {
-    'flat': flat_tariff,
-    'tou': tou_tariff
+    'flat': create_flat_tariff(timestamps),
+    'tou': create_tou_tariff(timestamps)
 }
 
 daily_supply_charge_dict = {
     'flat': flat_daily_supply_charge,
     'tou': tou_daily_supply_charge
 }
+
 
 charging_continuity_penalty = 0.01
 
@@ -127,12 +136,16 @@ energy_consumption_per_km = 0.2  # (kWh/km)
 # Household load profile
 num_of_households = 100
 household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'
-household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+try:
+    household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+except FileNotFoundError:
+    print(f'Warning: Household load file not found at {household_load_path}.')
+
+# EV penetration
+ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the number of households
 
 # Parameters varied in each model
-ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the number of households
-travel_distances = [15, 25, 35, 45]
-
 tariff_types_list = ['flat', 'tou']
 num_of_evs_list = [int(np.floor(num_of_households * ev_penetration)) for ev_penetration in ev_penetration_percentage]
+travel_distance_list = [15, 25, 35, 45]
 

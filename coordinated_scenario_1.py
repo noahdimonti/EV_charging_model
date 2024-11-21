@@ -1,5 +1,4 @@
 import pyomo.environ as pyo
-from pyomo.opt import SolverFactory
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,9 +38,9 @@ daily_supply_charge_dict = params.daily_supply_charge_dict
 P_EV_resolution_factor = params.P_EV_resolution_factor
 
 
-def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float):
+def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
-    EV = create_ev_data.main(num_of_evs, avg_travel_distance)
+    EV = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)
 
     # create dictionaries of ev parameters, key: ev id, value: the parameter value
     soc_min_dict = {}
@@ -67,6 +66,7 @@ def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float):
         for idx, dep_time in enumerate(dep_time_dict[ev_id]):
             # take the value according to dep_time index
             travel_energy_dict[(ev_id, dep_time)] = EV[ev_id].travel_energy[idx]
+
 
     # ------------------- model construction ------------------- #
 
