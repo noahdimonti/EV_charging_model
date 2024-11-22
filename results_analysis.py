@@ -4,46 +4,11 @@ import pyomo.environ as pyo
 import params
 # import uncoordinated_scenario_1 as us1
 import coordinated_scenario_1 as cs1
+from ModelOutputs import ModelOutputs
 
 
 
-def create_empty_df():
-    cost_metrics_list = [
-        'Model Name',
-        'Tariff type',
-        'Total optimal cost ($)',
-        'Investment & maintenance cost ($)',
-        'Total household load cost ($)',
-        'Total EV charging cost ($)',
-        'Grid import cost ($)',
-        'Other costs ($)',  # daily supply charge + continuity penalty costs
-        'Average EV charging cost ($)'
-    ]
 
-    power_metrics_list = [
-        'Model Name',
-        'Number of households',
-        'Number of EVs',
-        'Number of CPs',
-        'Max charging power (kW)',
-        'Peak EV load (kW)',
-        'Peak total demand (kW)',
-        'Peak grid import (kW)',
-        'Average daily peak (kW)',
-        'Peak-to-average power ratio (PAPR)'
-    ]
-
-    # initialise empty dataframes
-    df_cost = pd.DataFrame(columns=cost_metrics_list)
-    df_power = pd.DataFrame(columns=power_metrics_list)
-
-    return df_cost, df_power
-
-
-df_cost, df_power = create_empty_df()
-df_cost['Model name'] = [1]
-df_power['Model name'] = [1]
-print(df_cost, df_power)
 
 # collect results
 # Coordinated Scenario 1
