@@ -79,7 +79,7 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
             # create departure arrival times for one week
             dep_arr_time = dc.create_one_week_dep_arr_time(weekday_df=work_ev, weekend_df_list=casual_ev_list)
         elif num_of_days <= 5:
-            # create departure arrival times for however many days
+            # create departure arrival times for weekdays
             dep_arr_time = dc.create_dep_arr_time(df=work_ev, num_of_days=num_of_days)
         elif num_of_days > 7:
             '''

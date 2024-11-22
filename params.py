@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
-import pickle
-from ElectricVehicle import ElectricVehicle
-from pprint import pprint
 
-# Time settings
+# --------------------------
+# Time and Simulation Settings
+# --------------------------
 '''
 date options:
 '2019-01-01 00:00:00'
@@ -18,19 +17,24 @@ timestamps = pd.date_range(start=start_date_time,
                            periods=periods_in_a_day * num_of_days,
                            freq=f'{time_resolution}min')
 
-# Power grid settings
+# --------------------------
+# Power Grid Settings
+# --------------------------
 P_grid_max = 500  # (kW)
 
-# EV SOC settings
+# --------------------------
+# EV SOC Settings
+# --------------------------
 min_SOC = 0.4  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
 
-# EV charging power settings
+# --------------------------
+# EV Charging Power Settings
+# --------------------------
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
 P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
-P_EV_max = P_EV_max_list[1]  # (kW per time resolution)
 
 # Cost of EV charger installation
 '''
@@ -44,7 +48,7 @@ Schneider EV Link (source: https://www.solarchoice.net.au/products/ev-chargers/s
 Charger maintenance cost for L1 and L2 chargers per year: $400
 '''
 
-# create tariff data
+# Tariff rates data
 '''
 source: https://ieeexplore.ieee.org/abstract/document/9733283
 ToU Tariff
@@ -74,14 +78,16 @@ Supply charge
 0.86 daily
 '''
 
-# Tariff settings
+# --------------------------
+# Tariff Settings
+# --------------------------
 flat_tariff_rate = 0.378
 flat_daily_supply_charge = 0.86
+
 tou_peak_rate = 1.25
 tou_shoulder_rate = 0.2
 tou_second_shoulder_rate = 0.12
 tou_off_peak_rate = 0.08
-
 tou_daily_supply_charge = 1.1
 
 
@@ -122,29 +128,39 @@ daily_supply_charge_dict = {
     'tou': tou_daily_supply_charge
 }
 
-
+# --------------------------
+# Penalty Costs
+# --------------------------
 charging_continuity_penalty = 0.01
 
-# Investment and maintenance cost parameters
+# --------------------------
+# Investment and Maintenance Costs
+# --------------------------
 investment_cost = [200, 200, 1350, 1500]  # per EV charger
 annual_maintenance_cost = 400
 
-# EV travel settings
+# --------------------------
+# EV Travel Settings
+# --------------------------
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 
-# Household load profile
+#  --------------------------
+# Household Load Profile
+# --------------------------
 num_of_households = 100
 household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'
+
 try:
     household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 except FileNotFoundError:
     print(f'Warning: Household load file not found at {household_load_path}.')
 
-# EV penetration
+# --------------------------
+# Parameters varied in each model
+# --------------------------
 ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the number of households
 
-# Parameters varied in each model
 tariff_types_list = ['flat', 'tou']
 num_of_evs_list = [int(np.floor(num_of_households * ev_penetration)) for ev_penetration in ev_penetration_percentage]
 travel_distance_list = [15, 25, 35, 45]

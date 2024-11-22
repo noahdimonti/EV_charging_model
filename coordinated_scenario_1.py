@@ -40,7 +40,7 @@ P_EV_resolution_factor = params.P_EV_resolution_factor
 num_of_households = params.num_of_households
 
 
-def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
+def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
     EV = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)
 
@@ -261,7 +261,7 @@ def solve_model(model, solver='gurobi', verbose=True):
     solver.solve(model, tee=verbose)
 
 
-# results data collection
+# ------------------- results output collection ------------------- #
 
 def collect_model_outputs(model, tariff_type, num_of_evs, avg_travel_distance, min_soc):
     """
@@ -299,10 +299,14 @@ def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
     """
     Calculates cost-related metrics for the model and updates the ModelOutputs instance.
     """
+    print(pyo.value(model.obj_function))
     model_outputs.total_optimal_cost = pyo.value(model.obj_function)
 
-    # Investment and maintenance costs
+    # Set number of CPs and households
     model_outputs.num_of_cps = num_of_evs
+    model_outputs.num_of_households = num_of_households
+
+    # Investment and maintenance costs
     investment_cost = model_outputs.num_of_cps * sum(
         params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
         for p in range(len(params.P_EV_max_list))
@@ -375,110 +379,3 @@ def _create_load_profiles(model):
 
     return df
 
-
-def test_drive_model():
-    model = create_model('flat', 10, 20, 0.4)
-    solve_model(model)
-    print(pyo.value(model.P_EV_max) * params.P_EV_resolution_factor)
-    print([pyo.value(model.P_EV_max_selection[i]) for i in range(len(params.P_EV_max_list))])
-    print(model.name)
-    model_output = collect_model_outputs(model, 'flat', 10, 20, 0.4)
-    pprint(model_output[0].to_dict())
-
-
-test_drive_model()
-
-
-
-# ------------------- results visualisation ------------------- #
-
-def visualise_results(model, df, avg_daily_peak, num_of_evs):
-    # flat tariff plot
-    flat_tariff_fig = go.Figure()
-    flat_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME], y=df.household_load, name='Household Load'))
-    flat_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME], y=df.ev_load, name='EV Load'))
-    flat_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME], y=df.total_load, name='Total Load'))
-    flat_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                         y=[avg_daily_peak for i in range(len(model.TIME))],
-                                         name='Average daily peak'))
-
-    flat_tariff_fig.update_layout(
-        title=f'Load Profile ({params.num_of_households} Households and {num_of_evs} EVs) - '
-              f'Coordinated Scenario - {params.tariff_type.title()} Tariff',
-        xaxis_title='Timestamp',
-        yaxis_title='Load (kW)')
-
-    # ToU tariff plot
-    # Create figure with secondary y-axis
-    # tou_tariff_fig = make_subplots(specs=[[{"secondary_y": True}]])
-    tou_tariff_fig = make_subplots(rows=2, cols=1,
-                                   subplot_titles=(
-                                       f'Load Profile ({params.num_of_households} Households and {num_of_evs} EVs) - '
-                                       f'Coordinated Scenario - {params.tariff_type.title()} Tariff', 'Price Signal'))
-
-    tou_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                        y=df.household_load,
-                                        name='Household Load'),
-                             # secondary_y=False,
-                             row=1, col=1)
-    tou_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                        y=df.ev_load,
-                                        name='EV Load'),
-                             # secondary_y=False,
-                             row=1, col=1)
-    tou_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                        y=df.total_load,
-                                        name='Total Load'),
-                             # secondary_y=False,
-                             row=1, col=1)
-    tou_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                        y=[avg_daily_peak for i in range(len(model.TIME))],
-                                        name='Average daily peak'),
-                             # secondary_y=False,
-                             row=1, col=1)
-    tou_tariff_fig.add_trace(go.Scatter(x=[t for t in model.TIME],
-                                        y=[i for i in params.tou_tariff['tariff']],
-                                        name='ToU tariff'),
-                             # secondary_y=True,
-                             row=2, col=1)
-
-    tou_tariff_fig.update_layout(xaxis2_title='Timestamp',
-                                 yaxis1_title='Load (kW)',
-                                 yaxis2_title='Price ($/kW)')
-
-    # tou_tariff_fig.update_layout(
-    #     title=f'Load Profile ({params.num_of_households} Households and {num_of_evs} EVs) - '
-    #           f'Coordinated Scenario - {params.tariff_type.title()} Tariff')
-
-    # Set x-axis title
-    # tou_tariff_fig.update_xaxes(title_text='Timestamp')
-
-    # Set y-axes titles
-    # tou_tariff_fig.update_yaxes(title_text='Tariff ($/kW)', secondary_y=True)
-    # tou_tariff_fig.update_yaxes(title_text='Load (kW)', secondary_y=False)
-
-    def plot_results():
-        if params.tariff_type == 'flat':
-            flat_tariff_fig.show()
-        elif params.tariff_type == 'tou':
-            tou_tariff_fig.show()
-
-    plot_results()
-
-
-# visualise_results(df, avg_daily_peak)
-
-def plot_each_ev(model, ev_id):
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.SOC_EV[ev_id, t]) for t in model.TIME],
-                             name='SOC'))
-    fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model.P_EV[ev_id, t]) for t in model.TIME],
-                             name='Charging Power'))
-
-    fig.update_layout(title=f'SOC and Charging Power of EV_ID{ev_id} - Coordinated Scenario',
-                      xaxis_title='Timestamp')
-    fig.show()
-
-# for i in range(num_of_evs):
-#     plot_each_ev(i)
