@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 
 # --------------------------
 # Time and Simulation Settings
@@ -149,12 +150,21 @@ energy_consumption_per_km = 0.2  # (kWh/km)
 # Household Load Profile
 # --------------------------
 num_of_households = 100
-household_load_path = f'input_data/load_profile_7_days_{num_of_households}_households.csv'
+
+
+# Get the absolute path of the project root directory
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+
+# Define the input data directory and file path relative to the project root
+household_load_dir = os.path.join(project_root, 'input_data')
+household_load_file = f'load_profile_7_days_{num_of_households}_households.csv'
+household_load_path = os.path.join(household_load_dir, household_load_file)
 
 try:
     household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 except FileNotFoundError:
     print(f'Warning: Household load file not found at {household_load_path}.')
+
 
 # --------------------------
 # Parameters varied in each model
@@ -164,4 +174,3 @@ ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the 
 tariff_types_list = ['flat', 'tou']
 num_of_evs_list = [int(np.floor(num_of_households * ev_penetration)) for ev_penetration in ev_penetration_percentage]
 travel_distance_list = [15, 25, 35, 45]
-
