@@ -1,4 +1,5 @@
 import pandas as pd
+
 import output_collection
 from solve_optimisation_model import solve_optimisation_model
 
@@ -64,7 +65,7 @@ def generate_results(
 
     # Save the combined DataFrame to a CSV file
     combined_df.to_csv(output_csv_path, index=True)
-    print(f"Results saved to {output_csv_path}")
+    print(f'Results saved to {output_csv_path}\n')
 
     return combined_df
 
@@ -74,7 +75,7 @@ models = [cs1]
 tariffs = ['flat']
 num_evs = [50]
 avg_dist = [30]
-min_soc = [0.3, 0.4, 0.5]
+min_soc = [0.3, 0.4]
 
 # Generate and print results
 df = generate_results(models, tariffs, num_evs, avg_dist, min_soc)

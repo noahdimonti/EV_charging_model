@@ -44,7 +44,7 @@ class ModelOutputs:
             'Tariff type': self.tariff_type,
             'Number of EVs': self.num_of_evs,
             'Average travel distance (km)': self.avg_travel_distance,
-            'Minimum SOC (%)': self.min_soc,
+            'Minimum SOC (%)': (self.min_soc * 100),
             'Number of households': self.num_of_households,
             'Number of CPs': self.num_of_cps,
             'Max charging power (kW)': self.max_charging_power,
@@ -73,7 +73,7 @@ class ModelOutputs:
         output_dict = self.to_dict()
 
         # Extract the model name and remove it from the dictionary
-        model_name = output_dict.pop('Model Name')
+        model_name = output_dict.pop('Model Name').replace("'", "")
 
         # Create a DataFrame where attributes are rows and the model_name is the column header
         idx_col_name = 'Metric'
