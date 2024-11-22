@@ -24,7 +24,7 @@ class ModelOutputs:
         self.peak_total_demand = 0.0
         self.peak_grid_import = 0.0
         self.avg_daily_peak = 0.0
-        self.papr = 0.0
+        self.peak_to_average = 0.0
 
     def calculate_average_ev_charging_cost(self):
         if self.num_of_evs > 0:
@@ -54,5 +54,5 @@ class ModelOutputs:
             'Peak total demand (kW)': self.peak_total_demand,
             'Peak grid import (kW)': self.peak_grid_import,
             'Average daily peak (kW)': self.avg_daily_peak,
-            'Peak-to-average power ratio (PAPR)': self.papr
+            'Peak-to-average power ratio (PAPR)': self.peak_to_average
         }

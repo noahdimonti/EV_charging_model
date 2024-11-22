@@ -73,7 +73,7 @@ def create_model(tariff_type: str, num_of_evs: int, avg_travel_distance: float, 
     # ------------------- model construction ------------------- #
 
     # instantiate concrete model
-    model = pyo.ConcreteModel(name=f'CS1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_{min_soc}minSOC')
+    model = pyo.ConcreteModel(name=f'CS1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{min_soc}')
 
     # initialise sets
     model.TIME = pyo.Set(initialize=timestamps)
@@ -261,96 +261,113 @@ def solve_model(model, solver='gurobi', verbose=True):
     solver.solve(model, tee=verbose)
 
 
-model = create_model('flat', 10, 20, 0.4)
-solve_model(model)
-print(pyo.value(model.P_EV_max) * params.P_EV_resolution_factor)
-print([pyo.value(model.P_EV_max_selection[i]) for i in range(len(params.P_EV_max_list))])
-print(model.name)
-
-
 # results data collection
 
 def collect_model_outputs(model, tariff_type, num_of_evs, avg_travel_distance, min_soc):
-    all_model_outputs = []
+    """
+    Collects and calculates outputs for a single model simulation.
 
-    # Example of populating metrics for a single model
-    model_outputs = ModelOutputs(model_name=model.name, tariff_type=tariff_type, num_of_evs=num_of_evs,
-                                 avg_travel_distance=avg_travel_distance, min_soc=min_soc)
+    Args:
+        model: The optimization model object.
+        tariff_type: The tariff type used in the simulation ('flat' or 'tou').
+        num_of_evs: Number of EVs in the simulation.
+        avg_travel_distance: Average travel distance per EV (km).
+        min_soc: Minimum state of charge for EVs.
+
+    Returns:
+        List of ModelOutputs objects containing metrics for the model.
+    """
+    # Create a ModelOutputs instance
+    model_outputs = ModelOutputs(
+        model_name=model.name,
+        tariff_type=tariff_type,
+        num_of_evs=num_of_evs,
+        avg_travel_distance=avg_travel_distance,
+        min_soc=min_soc,
+    )
+
+    # Calculate cost metrics
+    _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs)
+
+    # Calculate power metrics
+    _calculate_power_metrics(model, model_outputs)
+
+    return model_outputs
+
+
+def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
+    """
+    Calculates cost-related metrics for the model and updates the ModelOutputs instance.
+    """
     model_outputs.total_optimal_cost = pyo.value(model.obj_function)
 
+    # Investment and maintenance costs
     model_outputs.num_of_cps = num_of_evs
-    investment_cost = model_outputs.num_of_cps * sum(params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
-                                       for p in range(len(params.P_EV_max_list)))
+    investment_cost = model_outputs.num_of_cps * sum(
+        params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
+        for p in range(len(params.P_EV_max_list))
+    )
     maintenance_cost = annual_maintenance_cost / 365 * num_of_days * model_outputs.num_of_cps
-    investment_and_maintenance_cost = investment_cost + maintenance_cost
-    model_outputs.investment_maintenance_cost = investment_and_maintenance_cost
+    model_outputs.investment_maintenance_cost = investment_cost + maintenance_cost
 
-    model_outputs.household_load_cost = sum(model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME)
-    model_outputs.ev_charging_cost = sum(model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME)
-    model_outputs.grid_import_cost = model_outputs.household_load_cost + model_outputs.ev_charging_cost
+    # Household load and EV charging costs
+    model_outputs.household_load_cost = sum(
+        model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME
+    )
+    model_outputs.ev_charging_cost = sum(
+        model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME
+    )
+    model_outputs.grid_import_cost = (
+            model_outputs.household_load_cost + model_outputs.ev_charging_cost
+    )
 
+    # Other costs (daily supply charge + continuity penalty)
     daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-    continuity_penalty = sum(params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
-                             for i in model.EV_ID
-                             for t in model.TIME)
+    continuity_penalty = sum(
+        params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
+        for i in model.EV_ID for t in model.TIME
+    )
     model_outputs.other_costs = daily_supply_charge + continuity_penalty
+
+    # Calculate average EV charging cost
     model_outputs.calculate_average_ev_charging_cost()
 
-    model_outputs.num_households = num_of_households
+
+def _calculate_power_metrics(model, model_outputs):
+    """
+    Calculates power-related metrics for the model and updates the ModelOutputs instance.
+    """
+    # Load profiles for EVs, households, grid, and total load
+    load_profiles = _create_load_profiles(model)
     model_outputs.max_charging_power = pyo.value(model.P_EV_max * params.P_EV_resolution_factor)
+    model_outputs.peak_ev_load = load_profiles['ev_load'].max()
+    model_outputs.peak_total_demand = load_profiles['total_load'].max()
+    model_outputs.peak_grid_import = load_profiles['grid'].max()
 
-    p_ev_dict = {}
-    for i in model.EV_ID:
-        p_ev_dict[f'EV_ID{i}'] = []
-        for t in model.TIME:
-            p_ev_dict[f'EV_ID{i}'].append(pyo.value(model.P_EV[i, t]))
+    # Calculate average daily peak power
+    daily_peaks = load_profiles.resample('D').max()['total_load']
+    model_outputs.avg_daily_peak = daily_peaks.mean()
 
+    # Peak-to-average power ratio
+    model_outputs.peak_to_average = (
+            load_profiles['total_load'].max() / load_profiles['total_load'].mean()
+    )
+
+
+def _create_load_profiles(model):
+    """
+    Creates load profiles (EV load, household load, grid load, total load) for the model.
+
+    Returns:
+        A DataFrame containing load profiles indexed by time.
+    """
+    # Collect EV power consumption data
+    p_ev_dict = {
+        f'EV_ID{i}': [pyo.value(model.P_EV[i, t]) for t in model.TIME] for i in model.EV_ID
+    }
     df = pd.DataFrame(p_ev_dict, index=[t for t in model.TIME])
-    df['ev_load'] = df.sum(axis=1)
-    df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
-    df['household_load'] = params.household_load['household_load']
-    df['total_load'] = df['household_load'] + df['ev_load']
 
-    model_outputs.peak_ev_load = df['ev_load'].max()
-    model_outputs.peak_total_demand = df['total_load'].max()
-    model_outputs.peak_grid_import = df['grid'].max()
-
-    # calculate average daily peak power
-    daily_peaks = []
-    # get peak power for each day
-    for day in set(df.index.day):
-        daily_peak = df.loc[(df.index.day == day), 'total_load'].max()
-        daily_peaks.append(daily_peak)
-
-    model_outputs.avg_daily_peak = sum(daily_peaks) / len(daily_peaks)
-
-    model_outputs.peak_to_average = df['total_load'].max() / df['total_load'].mean()
-
-    # Append to the list
-    all_model_outputs.append(model_outputs)
-
-    return all_model_outputs
-
-
-def get_model_output_df(all_model_outputs: list):
-    # Convert all metrics to a DataFrame
-    metrics_df = pd.DataFrame([model.to_dict() for model in all_model_outputs])
-
-    # Save to CSV if needed
-    metrics_df.to_csv("model_outputs.csv", index=False)
-
-    # Analyze metrics
-    print(metrics_df.describe())
-
-
-def get_results_df(model):
-    p_ev_dict = {}
-    for i in model.EV_ID:
-        p_ev_dict[f'EV_ID{i}'] = []
-        for t in model.TIME:
-            p_ev_dict[f'EV_ID{i}'].append(pyo.value(model.P_EV[i, t]))
-
-    df = pd.DataFrame(p_ev_dict, index=[t for t in model.TIME])
+    # Aggregate EV load and combine with other loads
     df['ev_load'] = df.sum(axis=1)
     df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
     df['household_load'] = params.household_load['household_load']
@@ -359,55 +376,18 @@ def get_results_df(model):
     return df
 
 
-def get_cost_results(model, tariff_type: str, num_of_evs: int):
-    num_of_cps = num_of_evs
-    total_optimal_cost = pyo.value(model.obj_function)
-
-    investment_cost = num_of_cps * sum(params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
-                                       for p in range(len(params.P_EV_max_list)))
-    maintenance_cost = annual_maintenance_cost / 365 * num_of_days * num_of_cps
-    investment_and_maintenance_cost = investment_cost + maintenance_cost
-
-    household_cost = sum(model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME)
-    ev_charging_cost = sum(model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME)
-    grid_import_cost = household_cost + ev_charging_cost
-
-    daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-    continuity_penalty = sum(params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
-                             for i in model.EV_ID
-                             for t in model.TIME)
-    other_costs = daily_supply_charge + continuity_penalty
-
-    avg_ev_charging_cost = ev_charging_cost / num_of_evs
-
-    values_list = [tariff_type, total_optimal_cost, investment_and_maintenance_cost, household_cost, ev_charging_cost,
-                   grid_import_cost, other_costs, avg_ev_charging_cost]
-
-    return values_list
+def test_drive_model():
+    model = create_model('flat', 10, 20, 0.4)
+    solve_model(model)
+    print(pyo.value(model.P_EV_max) * params.P_EV_resolution_factor)
+    print([pyo.value(model.P_EV_max_selection[i]) for i in range(len(params.P_EV_max_list))])
+    print(model.name)
+    model_output = collect_model_outputs(model, 'flat', 10, 20, 0.4)
+    pprint(model_output[0].to_dict())
 
 
-def get_power_results(model, df: pd.DataFrame, num_of_evs):
-    num_of_cps = num_of_evs
-    max_charging_power = pyo.value(model.P_EV_max * params.P_EV_resolution_factor)
-    peak_ev_load = df['ev_load'].max()
-    peak_total_demand = df['total_load'].max()
-    peak_grid_import = df['grid'].max()
+test_drive_model()
 
-    # calculate average daily peak power
-    daily_peaks = []
-    # get peak power for each day
-    for day in set(df.index.day):
-        daily_peak = df.loc[(df.index.day == day), 'total_load'].max()
-        daily_peaks.append(daily_peak)
-
-    avg_daily_peak = sum(daily_peaks) / len(daily_peaks)
-
-    peak_to_average = df['total_load'].max() / df['total_load'].mean()
-
-    values_list = [params.num_of_households, num_of_evs, num_of_cps, max_charging_power, peak_ev_load,
-                   peak_total_demand, peak_grid_import, avg_daily_peak, peak_to_average]
-
-    return values_list
 
 
 # ------------------- results visualisation ------------------- #
