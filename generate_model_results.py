@@ -1,13 +1,9 @@
-import numpy as np
 import pandas as pd
-import pyomo.environ as pyo
-from pprint import pprint
-import params
-from output_collection import collect_model_outputs
+import output_collection
 from solve_optimisation_model import solve_optimisation_model
 
 # import uncoordinated_scenario_1 as us1
-import coordinated_scenario_1 as cs1
+from models import coordinated_scenario_1 as cs1
 
 
 def generate_results(
@@ -16,7 +12,7 @@ def generate_results(
     num_of_evs_list: list[int],
     avg_travel_distance_list: list[float],
     min_soc_list: list[float],
-    output_csv_path: str = "model_results.csv"
+    output_csv_path: str = 'results_data/model_results.csv'
 ):
     """
     Collects results from multiple model runs, compiles them into a single DataFrame,
@@ -28,7 +24,7 @@ def generate_results(
         num_of_evs_list (list[int]): List of EV quantities to test.
         avg_travel_distance_list (list[float]): List of average travel distances (in km).
         min_soc_list (list[float]): List of minimum SOC requirements (as fractions).
-        output_csv_path (str): Path to save the resulting CSV file. Default is 'model_results.csv'.
+        output_csv_path (str): Path to save the resulting CSV file. Default is 'model_results'.
 
     Returns:
         pd.DataFrame: Combined DataFrame of all model results.
@@ -51,7 +47,7 @@ def generate_results(
                             solve_optimisation_model(model_instance)
 
                             # Collect outputs and convert them to a DataFrame
-                            model_output = collect_model_outputs(
+                            model_output = output_collection.collect_model_outputs(
                                 model_instance, tariff_type, num_of_evs, avg_travel_distance, min_soc
                             )
                             output_df = model_output.to_dataframe()

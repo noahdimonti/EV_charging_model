@@ -6,9 +6,6 @@ from pprint import pprint
 import params
 
 
-# initiate EV parameters
-exec(open('params.py').read())
-
 # create load profile
 household_load = params.household_load
 
@@ -90,25 +87,3 @@ print(f'max_household_load: {max_household_load}')
 print(f'max_total_load: {max_load}')
 print(df.loc[df['total_load'] > params.P_grid_max])
 
-
-# ------------------- results visualisation ------------------- #
-
-peak_total = []
-for day in set(df.index.day):
-    daily_peak = df.loc[(df.index.day == day), 'household_load'].max()
-    peak_total.append(daily_peak)
-
-avg_daily_peak = sum(peak_total) / len(peak_total)
-print(avg_daily_peak)
-
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(x=df.index, y=df['household_load'], name='Household Load'))
-fig.add_trace(go.Scatter(x=df.index, y=df['ev_load'], name='EV Load'))
-fig.add_trace(go.Scatter(x=df.index, y=df['total_load'], name='Total Load'))
-fig.add_trace(
-    go.Scatter(x=df.index, y=[avg_daily_peak for i in range(len(df.index))], name='Average daily peak'))
-fig.update_layout(title=f'Load Profile ({params.num_of_households} Households and {params.num_of_evs} EVs) - Uncoordinated Scenario',
-                  xaxis_title='Timestamp',
-                  yaxis_title='Load (kW)')
-fig.show()

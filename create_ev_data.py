@@ -15,7 +15,6 @@ work_ev_path = ('/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartme
 casual_ev_path = ('/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling '
                   'Data/Potential Datasets/vista/VISTA_Time_HomeDeAr_CasualVehicle.csv')
 ev_model_path = '/Users/noahdimonti/Developer/PycharmProjects/EV_model_test/'
-pickle_filename = 'ev_data.pkl'
 
 
 # data initialisation and cleaning functions
@@ -73,7 +72,7 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
             dep_arr_time = dc.create_dep_arr_time(df=work_ev, num_of_days=num_of_days)
         elif num_of_days > 7:
             '''
-            Fix this later for data more than one week
+            Fix this later for number of days more than one week
             '''
             pass
 

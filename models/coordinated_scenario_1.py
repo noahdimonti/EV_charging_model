@@ -27,6 +27,7 @@ Objective:
 Minimise cost
 '''
 
+
 def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
     EV = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)

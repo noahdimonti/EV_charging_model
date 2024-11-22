@@ -149,7 +149,7 @@ energy_consumption_per_km = 0.2  # (kWh/km)
 # Household Load Profile
 # --------------------------
 num_of_households = 100
-household_load_path = f'load_profile_7_days_{num_of_households}_households.csv'
+household_load_path = f'input_data/load_profile_7_days_{num_of_households}_households.csv'
 
 try:
     household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
