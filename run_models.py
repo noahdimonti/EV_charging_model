@@ -5,7 +5,6 @@ from pprint import pprint
 import params
 # import uncoordinated_scenario_1 as us1
 import coordinated_scenario_1 as cs1
-from ModelOutputs import ModelOutputs
 
 
 def collect_results(
@@ -44,7 +43,7 @@ def collect_results(
                         model_instance = model_framework.create_model_instance(
                             tariff_type, num_of_evs, avg_travel_distance, min_soc
                         )
-                        model_framework.solve_model(model_instance)
+                        model_framework.solve_model(model_instance, verbose=True)
 
                         # Collect outputs and convert them to a DataFrame
                         model_output = model_framework.collect_model_outputs(

@@ -10,6 +10,7 @@ import create_ev_data
 from ModelOutputs import ModelOutputs
 
 
+# Model brief description
 '''
 Nodes and constraints:
 - Household load -> param (P_household_load_t)
@@ -23,11 +24,10 @@ Nodes and constraints:
 
 
 Objective:
-There's a cost associated with every kW of P_EV. Minimise this cost.
-obj = sum( cost * P_EV_i_t ), for all i and t
+Minimise cost
 '''
 
-# Retrieve other parameters from params.py
+# Retrieve parameters from params.py
 num_of_days = params.num_of_days
 timestamps = params.timestamps
 household_load = params.household_load
@@ -39,6 +39,8 @@ daily_supply_charge_dict = params.daily_supply_charge_dict
 P_EV_resolution_factor = params.P_EV_resolution_factor
 num_of_households = params.num_of_households
 
+
+# ------------------- model construction ------------------- #
 
 def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
@@ -253,12 +255,33 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
 # ------------------- model optimisation results ------------------- #
 
 # solve the model
-def solve_model(model, solver='gurobi', verbose=True):
+def solve_model(model, solver='gurobi', verbose=False):
     solver = pyo.SolverFactory(solver)
     print(f'\n======================================================\n'
-          f'Solving model ...'
+          f'Solving {model.name} model ...'
           f'\n======================================================\n')
-    solver.solve(model, tee=verbose)
+    solver_results = solver.solve(model, tee=verbose)
+
+    # Define colours to differentiate whether optimal solution is found
+    RESET = "\033[0m"  # Reset to default
+    RED = '\033[31m'  # Red color (e.g., for warning or error)
+    GREEN = '\033[32m'  # Green color (e.g., for success)
+
+    # Check solver status and termination condition
+    solver_status = solver_results.solver.status
+    termination_condition = solver_results.solver.termination_condition
+
+    # Print the status and termination condition
+    print(f'Solver Status: {solver_status}')
+    print(f'Termination Condition: {termination_condition}')
+
+    # Check if the solver was successful
+    if solver_status == pyo.SolverStatus.ok and termination_condition == pyo.TerminationCondition.optimal:
+        print(f'{GREEN}Solver found an optimal solution.{RESET}')
+    else:
+        print(f'{RED}Solver did not find an optimal solution.{RESET}')
+
+    print(f'---------------------------------------------------------\n')
 
 
 # ------------------- results output collection ------------------- #
@@ -299,7 +322,6 @@ def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
     """
     Calculates cost-related metrics for the model and updates the ModelOutputs instance.
     """
-    print(pyo.value(model.obj_function))
     model_outputs.total_optimal_cost = pyo.value(model.obj_function)
 
     # Set number of CPs and households

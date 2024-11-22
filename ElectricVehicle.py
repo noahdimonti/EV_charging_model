@@ -3,7 +3,7 @@ import numpy as np
 
 
 class ElectricVehicle:
-    def __init__(self, timestamps, periods_in_a_day, num_of_days, min_soc, max_soc, p_ev_max):
+    def __init__(self, timestamps, periods_in_a_day, num_of_days, min_soc, max_soc):
         # Initialize attributes with default values
         self.at_home_status = pd.DataFrame()  # DataFrame containing timestamps and binaries
         self.soc = pd.DataFrame()  # DataFrame containing timestamps and zeros initially
@@ -19,7 +19,6 @@ class ElectricVehicle:
         self.soc_final = None  # Final state of charge (kWh)
         self.soc_min = min_soc  # Minimum state of charge (kWh)
         self.soc_max = max_soc  # Maximum state of charge (kWh)
-        self.P_EV_max = p_ev_max  # Maximum charging power (kW per 15 minutes)
 
         # Create SOC and charging power dataframes
         self.soc = pd.DataFrame({

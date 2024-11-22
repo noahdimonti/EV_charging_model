@@ -15,7 +15,6 @@ max_SOC = params.max_SOC
 final_SOC = params.final_SOC
 travel_dist_std_dev = params.travel_dist_std_dev
 energy_consumption_per_km = params.energy_consumption_per_km
-P_EV_max = params.P_EV_max
 
 # files and folders path
 vista_raw_path = '/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling Data/Potential Datasets/vista/T_VISTA1218_V1.csv'
@@ -67,7 +66,6 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
             num_of_days=num_of_days,
             min_soc=min_soc,
             max_soc=max_SOC,
-            p_ev_max=P_EV_max
         ) for _ in range(num_of_evs)
     ]
 

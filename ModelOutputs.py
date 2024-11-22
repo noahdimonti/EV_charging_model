@@ -76,7 +76,8 @@ class ModelOutputs:
         model_name = output_dict.pop('Model Name')
 
         # Create a DataFrame where attributes are rows and the model_name is the column header
-        df = pd.DataFrame(list(output_dict.items()), columns=['Metric', model_name]).set_index('Metric')
+        idx_col_name = 'Metric'
+        df = pd.DataFrame(list(output_dict.items()), columns=[idx_col_name, model_name]).set_index(idx_col_name)
 
         return df
 
