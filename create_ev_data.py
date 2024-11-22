@@ -7,14 +7,6 @@ from ElectricVehicle import ElectricVehicle
 from pprint import pprint
 import params
 
-# initialise data
-timestamps = params.timestamps
-periods_in_a_day = params.periods_in_a_day
-num_of_days = params.num_of_days
-max_SOC = params.max_SOC
-final_SOC = params.final_SOC
-travel_dist_std_dev = params.travel_dist_std_dev
-energy_consumption_per_km = params.energy_consumption_per_km
 
 # files and folders path
 vista_raw_path = '/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling Data/Potential Datasets/vista/T_VISTA1218_V1.csv'
@@ -61,11 +53,11 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
     # instantiate EV objects in a list
     ev_data = [
         ElectricVehicle(
-            timestamps=timestamps,
-            periods_in_a_day=periods_in_a_day,
+            timestamps=params.timestamps,
+            periods_in_a_day=params.periods_in_a_day,
             num_of_days=num_of_days,
             min_soc=min_soc,
-            max_soc=max_SOC,
+            max_soc=params.max_SOC,
         ) for _ in range(num_of_evs)
     ]
 
@@ -101,16 +93,16 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
     # set random seed for maximum capacity and soc of evs
     np.random.seed(0)
     max_capacity_of_EVs = np.random.choice([i for i in range(35, 60)], size=num_of_evs)
-    random_SOC_init = np.random.uniform(low=min_soc, high=max_SOC, size=num_of_evs)
+    random_SOC_init = np.random.uniform(low=min_soc, high=params.max_SOC, size=num_of_evs)
 
     # take data from pickle file and put them in EV class attributes
     for ev_id in range(num_of_evs):
         # initialise ev parameters
         ev_data[ev_id].capacity_of_ev = max_capacity_of_EVs[ev_id]
         ev_data[ev_id].soc_init = random_SOC_init[ev_id] * ev_data[ev_id].capacity_of_ev
-        ev_data[ev_id].soc_max = max_SOC * ev_data[ev_id].capacity_of_ev
+        ev_data[ev_id].soc_max = params.max_SOC * ev_data[ev_id].capacity_of_ev
         ev_data[ev_id].soc_min = min_soc * ev_data[ev_id].capacity_of_ev
-        ev_data[ev_id].soc_final = final_SOC * ev_data[ev_id].capacity_of_ev
+        ev_data[ev_id].soc_final = params.final_SOC * ev_data[ev_id].capacity_of_ev
 
         # set different random seed for each EV
         np.random.seed(ev_id)
@@ -118,8 +110,8 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
         if len(ev_data[ev_id].t_dep) == len(ev_data[ev_id].t_arr):
             for time in ev_data[ev_id].t_arr:
                 # set random travel distance and convert it to consumed energy
-                rand_distance = np.random.normal(loc=avg_travel_distance, scale=travel_dist_std_dev, size=1)
-                rand_travel_consumption = energy_consumption_per_km * rand_distance  # in kWh
+                rand_distance = np.random.normal(loc=avg_travel_distance, scale=params.travel_dist_std_dev, size=1)
+                rand_travel_consumption = params.energy_consumption_per_km * rand_distance  # in kWh
 
                 # append travel energy to attributes
                 ev_data[ev_id].travel_energy.append(rand_travel_consumption)
@@ -135,7 +127,7 @@ def main(num_of_evs, avg_travel_distance, min_soc):
     casual_ev_list = initialise_and_clean_casual_ev()
 
     # create ev instances
-    ev_data = create_ev_instances(num_of_evs, min_soc, num_of_days, work_ev, casual_ev_list)
+    ev_data = create_ev_instances(num_of_evs, min_soc, params.num_of_days, work_ev, casual_ev_list)
 
     # initialise ev_list
     ev_list = initialise_ev_data(ev_data, num_of_evs, avg_travel_distance, min_soc)

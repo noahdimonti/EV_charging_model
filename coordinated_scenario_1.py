@@ -27,21 +27,6 @@ Objective:
 Minimise cost
 '''
 
-# Retrieve parameters from params.py
-num_of_days = params.num_of_days
-timestamps = params.timestamps
-household_load = params.household_load
-tariff_dict = params.tariff_dict
-P_grid_max = params.P_grid_max
-P_EV_max_list = params.P_EV_max_list
-annual_maintenance_cost = params.annual_maintenance_cost
-daily_supply_charge_dict = params.daily_supply_charge_dict
-P_EV_resolution_factor = params.P_EV_resolution_factor
-num_of_households = params.num_of_households
-
-
-# ------------------- model construction ------------------- #
-
 def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
     EV = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)
@@ -71,14 +56,13 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
             # take the value according to dep_time index
             travel_energy_dict[(ev_id, dep_time)] = EV[ev_id].travel_energy[idx]
 
-
     # ------------------- model construction ------------------- #
 
     # instantiate concrete model
     model = pyo.ConcreteModel(name=f'CS1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{min_soc}')
 
     # initialise sets
-    model.TIME = pyo.Set(initialize=timestamps)
+    model.TIME = pyo.Set(initialize=params.timestamps)
     model.EV_ID = pyo.Set(initialize=[i for i in range(num_of_evs)])
 
     # initialise parameters
@@ -86,7 +70,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     num_of_cps = num_of_evs  # the num of CP in this model is the same as num of EV, however, it can be different
 
     # household load
-    model.P_household_load = pyo.Param(model.TIME, initialize=household_load)
+    model.P_household_load = pyo.Param(model.TIME, initialize=params.household_load)
 
     # EV
     model.SOC_EV_min = pyo.Param(model.EV_ID, initialize=soc_min_dict)
@@ -108,18 +92,20 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
                                        within=pyo.NonNegativeReals)
 
     # costs
-    model.tariff = pyo.Param(model.TIME, within=pyo.NonNegativeReals, initialize=tariff_dict[tariff_type])
+    model.tariff = pyo.Param(
+        model.TIME, within=pyo.NonNegativeReals, initialize=params.tariff_dict[tariff_type]
+    )
 
     # initialise variables
-    model.P_grid = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, P_grid_max))
-    model.P_cp = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, P_grid_max))
+    model.P_grid = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
+    model.P_cp = pyo.Var(model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
     model.SOC_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals,
                            bounds=lambda model, i, t: (model.min_required_SOC[i, t], model.SOC_EV_max[i]))
     model.delta_P_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals)
     model.P_peak = pyo.Var(within=pyo.NonNegativeReals)
 
     # P_EV_max optimisation choice (integer)
-    model.P_EV_max_selection = pyo.Var(range(len(P_EV_max_list)), within=pyo.Binary)
+    model.P_EV_max_selection = pyo.Var(range(len(params.P_EV_max_list)), within=pyo.Binary)
     model.P_EV_max = pyo.Var(within=pyo.NonNegativeReals)
     model.P_EV = pyo.Var(model.EV_ID, model.TIME, within=pyo.NonNegativeReals)
 
@@ -127,14 +113,14 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     # constraint to define P_EV_max
     def P_EV_max_selection_rule(model):
         return model.P_EV_max == sum(
-            model.P_EV_max_selection[j] * P_EV_max_list[j] for j in range(len(P_EV_max_list))
+            model.P_EV_max_selection[j] * params.P_EV_max_list[j] for j in range(len(params.P_EV_max_list))
         )
 
     model.P_EV_max_selection_rule = pyo.Constraint(rule=P_EV_max_selection_rule)
 
     # constraint to ensure only one P_EV_max variable is selected
     def mutual_exclusivity_rule(model):
-        return sum(model.P_EV_max_selection[j] for j in range(len(P_EV_max_list))) == 1
+        return sum(model.P_EV_max_selection[j] for j in range(len(params.P_EV_max_list))) == 1
 
     model.mutual_exclusivity_rule = pyo.Constraint(rule=mutual_exclusivity_rule)
 
@@ -228,9 +214,9 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
 
         # investment and maintenance costs
         total_investment_cost = num_of_cps * sum(investment_cost[p] * model.P_EV_max_selection[p]
-                                           for p in range(len(P_EV_max_list)))
+                                           for p in range(len(params.P_EV_max_list)))
         # per charging point for the duration
-        maintenance_cost = annual_maintenance_cost / 365 * num_of_days * num_of_cps
+        maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * num_of_cps
 
         # electricity purchase costs
         household_load_cost = sum(model.tariff[t] * model.P_household_load[t] for t in model.TIME)
@@ -238,7 +224,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
         grid_import_cost = household_load_cost + ev_charging_cost
 
         # other costs
-        daily_supply_charge = daily_supply_charge_dict[tariff_type]
+        daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
         total_charging_continuity_penalty = sum(charging_continuity_penalty * model.delta_P_EV[i, t]
                                           for i in model.EV_ID
                                           for t in model.TIME)
@@ -250,154 +236,4 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
     return model
-
-
-# ------------------- model optimisation results ------------------- #
-
-# solve the model
-def solve_model(model, solver='gurobi', verbose=False):
-    solver = pyo.SolverFactory(solver)
-    print(f'\n======================================================\n'
-          f'Solving {model.name} model ...'
-          f'\n======================================================\n')
-    solver_results = solver.solve(model, tee=verbose)
-
-    # Define colours to differentiate whether optimal solution is found
-    RESET = "\033[0m"  # Reset to default
-    RED = '\033[31m'  # Red color (e.g., for warning or error)
-    GREEN = '\033[32m'  # Green color (e.g., for success)
-
-    # Check solver status and termination condition
-    solver_status = solver_results.solver.status
-    termination_condition = solver_results.solver.termination_condition
-
-    # Print the status and termination condition
-    print(f'Solver Status: {solver_status}')
-    print(f'Termination Condition: {termination_condition}')
-
-    # Check if the solver was successful
-    if solver_status == pyo.SolverStatus.ok and termination_condition == pyo.TerminationCondition.optimal:
-        print(f'{GREEN}Solver found an optimal solution.{RESET}')
-    else:
-        print(f'{RED}Solver did not find an optimal solution.{RESET}')
-
-    print(f'---------------------------------------------------------\n')
-
-
-# ------------------- results output collection ------------------- #
-
-def collect_model_outputs(model, tariff_type, num_of_evs, avg_travel_distance, min_soc):
-    """
-    Collects and calculates outputs for a single model simulation.
-
-    Args:
-        model: The optimization model object.
-        tariff_type: The tariff type used in the simulation ('flat' or 'tou').
-        num_of_evs: Number of EVs in the simulation.
-        avg_travel_distance: Average travel distance per EV (km).
-        min_soc: Minimum state of charge for EVs.
-
-    Returns:
-        List of ModelOutputs objects containing metrics for the model.
-    """
-    # Create a ModelOutputs instance
-    model_outputs = ModelOutputs(
-        model_name=model.name,
-        tariff_type=tariff_type,
-        num_of_evs=num_of_evs,
-        avg_travel_distance=avg_travel_distance,
-        min_soc=min_soc,
-    )
-
-    # Calculate cost metrics
-    _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs)
-
-    # Calculate power metrics
-    _calculate_power_metrics(model, model_outputs)
-
-    return model_outputs
-
-
-def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
-    """
-    Calculates cost-related metrics for the model and updates the ModelOutputs instance.
-    """
-    model_outputs.total_optimal_cost = pyo.value(model.obj_function)
-
-    # Set number of CPs and households
-    model_outputs.num_of_cps = num_of_evs
-    model_outputs.num_of_households = num_of_households
-
-    # Investment and maintenance costs
-    investment_cost = model_outputs.num_of_cps * sum(
-        params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
-        for p in range(len(params.P_EV_max_list))
-    )
-    maintenance_cost = annual_maintenance_cost / 365 * num_of_days * model_outputs.num_of_cps
-    model_outputs.investment_maintenance_cost = investment_cost + maintenance_cost
-
-    # Household load and EV charging costs
-    model_outputs.household_load_cost = sum(
-        model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME
-    )
-    model_outputs.ev_charging_cost = sum(
-        model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME
-    )
-    model_outputs.grid_import_cost = (
-            model_outputs.household_load_cost + model_outputs.ev_charging_cost
-    )
-
-    # Other costs (daily supply charge + continuity penalty)
-    daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-    continuity_penalty = sum(
-        params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
-        for i in model.EV_ID for t in model.TIME
-    )
-    model_outputs.other_costs = daily_supply_charge + continuity_penalty
-
-    # Calculate average EV charging cost
-    model_outputs.calculate_average_ev_charging_cost()
-
-
-def _calculate_power_metrics(model, model_outputs):
-    """
-    Calculates power-related metrics for the model and updates the ModelOutputs instance.
-    """
-    # Load profiles for EVs, households, grid, and total load
-    load_profiles = _create_load_profiles(model)
-    model_outputs.max_charging_power = pyo.value(model.P_EV_max * params.P_EV_resolution_factor)
-    model_outputs.peak_ev_load = load_profiles['ev_load'].max()
-    model_outputs.peak_total_demand = load_profiles['total_load'].max()
-    model_outputs.peak_grid_import = load_profiles['grid'].max()
-
-    # Calculate average daily peak power
-    daily_peaks = load_profiles.resample('D').max()['total_load']
-    model_outputs.avg_daily_peak = daily_peaks.mean()
-
-    # Peak-to-average power ratio
-    model_outputs.peak_to_average = (
-            load_profiles['total_load'].max() / load_profiles['total_load'].mean()
-    )
-
-
-def _create_load_profiles(model):
-    """
-    Creates load profiles (EV load, household load, grid load, total load) for the model.
-
-    Returns:
-        A DataFrame containing load profiles indexed by time.
-    """
-    # Collect EV power consumption data
-    p_ev_dict = {
-        f'EV_ID{i}': [pyo.value(model.P_EV[i, t]) for t in model.TIME] for i in model.EV_ID
-    }
-    df = pd.DataFrame(p_ev_dict, index=[t for t in model.TIME])
-
-    # Aggregate EV load and combine with other loads
-    df['ev_load'] = df.sum(axis=1)
-    df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
-    df['household_load'] = params.household_load['household_load']
-    df['total_load'] = df['household_load'] + df['ev_load']
-
-    return df
 
