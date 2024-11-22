@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
 import data_cleaning as dc
-import pickle
-import os
-from ElectricVehicle import ElectricVehicle
-from pprint import pprint
+from classes.ElectricVehicle import ElectricVehicle
 import params
 
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import pyomo.environ as pyo
-from ModelOutputs import ModelOutputs
+from classes.ModelOutputs import ModelOutputs
 import params
 
 
