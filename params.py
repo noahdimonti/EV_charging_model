@@ -29,6 +29,8 @@ P_grid_max = 500  # (kW)
 min_SOC = 0.4  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
+min_initial_soc = 0.3  # (%)
+max_initial_soc = 0.6  # (%)
 
 # --------------------------
 # EV Charging Power Settings
@@ -36,6 +38,7 @@ final_SOC = 0.5  # (%)
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
 P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
+# P_EV_max_list = max_charging_power_options
 
 # Cost of EV charger installation
 '''
@@ -94,27 +97,31 @@ tou_daily_supply_charge = 1.1
 
 # Generate flat and ToU tariff data
 def create_flat_tariff(timestamps):
-    return pd.DataFrame({
-        'timestamp': timestamps,
-        'tariff': [flat_tariff_rate] * len(timestamps)
-    }).set_index('timestamp')
+    # return pd.DataFrame({
+    #     'timestamp': timestamps,
+    #     'tariff': [flat_tariff_rate] * len(timestamps)
+    # }).set_index('timestamp')
+
+    return pd.Series([flat_tariff_rate] * len(timestamps), index=timestamps)
 
 
 def create_tou_tariff(timestamps):
-    df = pd.DataFrame({
-        'timestamp': timestamps,
-        'tariff': np.zeros(len(timestamps))
-    }).set_index('timestamp')
+    # df = pd.DataFrame({
+    #     'timestamp': timestamps,
+    #     'tariff': np.zeros(len(timestamps))
+    # }).set_index('timestamp')
+
+    df = pd.Series([np.zeros] * len(timestamps), index=timestamps)
 
     for t in df.index:
         if 1 <= t.hour < 6:
-            df.loc[t, 'tariff'] = tou_second_shoulder_rate
+            df.loc[t] = tou_second_shoulder_rate
         elif 6 <= t.hour < 10 or 15 <= t.hour < 17 or 21 <= t.hour <= 23 or t.hour == 0:
-            df.loc[t, 'tariff'] = tou_shoulder_rate
+            df.loc[t] = tou_shoulder_rate
         elif 10 <= t.hour < 15:
-            df.loc[t, 'tariff'] = tou_off_peak_rate
+            df.loc[t] = tou_off_peak_rate
         elif 17 <= t.hour < 21:
-            df.loc[t, 'tariff'] = tou_peak_rate
+            df.loc[t] = tou_peak_rate
 
     return df
 
@@ -137,7 +144,9 @@ charging_continuity_penalty = 0.01
 # --------------------------
 # Investment and Maintenance Costs
 # --------------------------
-investment_cost = [200, 200, 1350, 1500]  # per EV charger
+investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
+investment_cost = {P_EV_max: investment_cost
+                   for P_EV_max, investment_cost in zip(P_EV_max_list, investment_cost_list)}
 annual_maintenance_cost = 400
 
 # --------------------------

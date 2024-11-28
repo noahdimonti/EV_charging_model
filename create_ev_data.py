@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import truncnorm
 import data_cleaning as dc
 from classes.ElectricVehicle import ElectricVehicle
 import params
@@ -86,10 +87,16 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
 
 
 def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: float, min_soc: float):
-    # set random seed for maximum capacity and soc of evs
-    np.random.seed(0)
-    max_capacity_of_EVs = np.random.choice([i for i in range(35, 60)], size=num_of_evs)
-    random_SOC_init = np.random.uniform(low=min_soc, high=params.max_SOC, size=num_of_evs)
+    # set random generator value for maximum capacity and soc of evs
+    seed = 0
+    rng = np.random.default_rng(seed)
+    max_capacity_of_EVs = rng.choice([i for i in range(35, 60)], size=num_of_evs)
+
+    rng = np.random.default_rng(seed)
+    random_SOC_init = rng.uniform(low=params.min_initial_soc, high=params.max_initial_soc, size=num_of_evs)
+
+    # print(f'max capacity: {max_capacity_of_EVs}')
+    # print(f'soc init: {random_SOC_init}')
 
     # take data from pickle file and put them in EV class attributes
     for ev_id in range(num_of_evs):
@@ -100,14 +107,27 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
         ev_data[ev_id].soc_min = min_soc * ev_data[ev_id].capacity_of_ev
         ev_data[ev_id].soc_final = params.final_SOC * ev_data[ev_id].capacity_of_ev
 
-        # set different random seed for each EV
-        np.random.seed(ev_id)
         # set travel_energy_consumption
         if len(ev_data[ev_id].t_dep) == len(ev_data[ev_id].t_arr):
             for time in ev_data[ev_id].t_arr:
-                # set random travel distance and convert it to consumed energy
-                rand_distance = np.random.normal(loc=avg_travel_distance, scale=params.travel_dist_std_dev, size=1)
-                rand_travel_consumption = params.energy_consumption_per_km * rand_distance  # in kWh
+                # set different random seed for each EV
+                rng = np.random.default_rng(ev_id)
+
+                # Define the range, mean, and standard deviation
+                lower, upper = 0, np.inf
+                mean, std_dev = avg_travel_distance, params.travel_dist_std_dev
+
+                # Calculate the parameters for truncnorm
+                a, b = (lower - mean) / std_dev, (upper - mean) / std_dev
+
+                # Generate truncated normal data
+                rand_distance = float(truncnorm.rvs(a, b, loc=mean, scale=std_dev, size=1, random_state=rng))
+                # rand_distance = float(rng.normal(loc=avg_travel_distance, scale=params.travel_dist_std_dev, size=1))
+
+                # convert travel distance to consumed energy
+                rand_travel_consumption = float(params.energy_consumption_per_km * rand_distance)  # in kWh
+                # print(f'distance: {rand_distance}')
+                # print(f'energy: {rand_travel_consumption}')
 
                 # append travel energy to attributes
                 ev_data[ev_id].travel_energy.append(rand_travel_consumption)

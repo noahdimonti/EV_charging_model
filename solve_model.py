@@ -1,7 +1,6 @@
 import pyomo.environ as pyo
 
 
-# solve model
 def solve_optimisation_model(model, solver='gurobi', verbose=False):
     solver = pyo.SolverFactory(solver)
     print(f'\n======================================================\n'
@@ -35,3 +34,9 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False):
         print(f'An error occurred: {e}.{RESET}')
 
     print(f'---------------------------------------------------------\n')
+
+
+def simulate_uncoordinated_model(model):
+    print(f'\n======================================================\n'
+          f'Running {model.name} model ...'
+          f'\n======================================================\n')

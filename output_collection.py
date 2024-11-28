@@ -4,12 +4,13 @@ from classes.ModelOutputs import ModelOutputs
 import params
 
 
-def collect_model_outputs(model, tariff_type, num_of_evs, avg_travel_distance, min_soc):
+def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel_distance, min_soc):
     """
     Collects and calculates outputs for a single model simulation.
 
     Args:
         model: The optimization model object.
+        model_type: The type of model ('uncoordinated' or 'coordinated')
         tariff_type: The tariff type used in the simulation ('flat' or 'tou').
         num_of_evs: Number of EVs in the simulation.
         avg_travel_distance: Average travel distance per EV (km).
@@ -27,20 +28,31 @@ def collect_model_outputs(model, tariff_type, num_of_evs, avg_travel_distance, m
         min_soc=min_soc,
     )
 
-    # Calculate cost metrics
-    _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs)
+    if model_type == 'uncoordinated':
+        # Calculate cost metrics
+        _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type, num_of_evs)
 
-    # Calculate power metrics
-    _calculate_power_metrics(model, model_outputs)
+        # Calculate power metrics
+        _calculate_power_metrics_uncoordinated_model(model, model_outputs)
+
+    elif model_type == 'coordinated':
+        # Calculate cost metrics
+        _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type, num_of_evs)
+
+        # Calculate power metrics
+        _calculate_power_metrics_coordinated_model(model, model_outputs)
+
+    elif model_type != 'uncoordinated' or model_type != 'coordinated':
+        raise ValueError('Model type must be either "uncoordinated" or "coordinated".')
 
     return model_outputs
 
 
-def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
+def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type, num_of_evs):
     """
     Calculates cost-related metrics for the model and updates the ModelOutputs instance.
     """
-    model_outputs.total_optimal_cost = pyo.value(model.obj_function)
+    model_outputs.total_cost = pyo.value(model.obj_function)
 
     # Set number of CPs and households
     model_outputs.num_of_cps = num_of_evs
@@ -49,7 +61,7 @@ def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
     # Investment and maintenance costs
     investment_cost = model_outputs.num_of_cps * sum(
         params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
-        for p in range(len(params.P_EV_max_list))
+        for p in params.P_EV_max_list
     )
     maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * model_outputs.num_of_cps
     model_outputs.investment_maintenance_cost = investment_cost + maintenance_cost
@@ -77,13 +89,17 @@ def _calculate_cost_metrics(model, model_outputs, tariff_type, num_of_evs):
     model_outputs.calculate_average_ev_charging_cost()
 
 
-def _calculate_power_metrics(model, model_outputs):
+def _calculate_power_metrics_coordinated_model(model, model_outputs):
     """
     Calculates power-related metrics for the model and updates the ModelOutputs instance.
     """
     # Load profiles for EVs, households, grid, and total load
     load_profiles = _create_load_profiles(model)
-    model_outputs.max_charging_power = pyo.value(model.P_EV_max * params.P_EV_resolution_factor)
+    model_outputs.max_charging_power = pyo.value(model.P_EV_max) * params.P_EV_resolution_factor
+    model_outputs.total_ev_load = load_profiles['ev_load'].sum()
+    print('coordinated ev load')
+    print(load_profiles['ev_load'])
+    print(f'total ev load: {load_profiles['ev_load'].sum()}')
     model_outputs.peak_ev_load = load_profiles['ev_load'].max()
     model_outputs.peak_total_demand = load_profiles['total_load'].max()
     model_outputs.peak_grid_import = load_profiles['grid'].max()
@@ -113,9 +129,62 @@ def _create_load_profiles(model):
 
     # Aggregate EV load and combine with other loads
     df['ev_load'] = df.sum(axis=1)
-    df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
     df['household_load'] = params.household_load['household_load']
+    df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
     df['total_load'] = df['household_load'] + df['ev_load']
 
     return df
+
+
+def _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type, num_of_evs):
+    """
+    Calculates cost-related metrics for the model and updates the ModelOutputs instance.
+    """
+    # Set number of CPs and households
+    model_outputs.num_of_cps = model.num_of_cps
+    model_outputs.num_of_households = params.num_of_households
+
+    # Investment and maintenance costs
+    investment_cost = model_outputs.num_of_cps * params.investment_cost[model.p_ev_max / params.P_EV_resolution_factor]
+    maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * model_outputs.num_of_cps
+    model_outputs.investment_maintenance_cost = investment_cost + maintenance_cost
+
+    # Household load and EV charging costs
+    model_outputs.household_load_cost = (model.household_load * params.tariff_dict[tariff_type]).sum()
+    model_outputs.ev_charging_cost = (model.ev_load * params.tariff_dict[tariff_type]).sum()
+    model_outputs.grid_import_cost = model_outputs.household_load_cost + model_outputs.ev_charging_cost
+
+    # Other costs (daily supply charge)
+    daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
+    model_outputs.other_costs = daily_supply_charge
+
+    # Total cost: investment, maintenance, energy purchase, daily supply charge
+    model_outputs.total_cost = investment_cost + maintenance_cost + model_outputs.grid_import_cost + daily_supply_charge
+
+    # Calculate average EV charging cost
+    model_outputs.calculate_average_ev_charging_cost()
+
+
+def _calculate_power_metrics_uncoordinated_model(model, model_outputs):
+    """
+    Calculates power-related metrics for the model and updates the ModelOutputs instance.
+    """
+    # Load profiles for EVs, households, grid, and total load
+    model_outputs.max_charging_power = model.p_ev_max
+    model_outputs.total_ev_load = model.ev_load.sum()
+    print('uncoordinated ev load')
+    print(model.ev_load)
+    print(f'total ev load: {model.ev_load.sum()}')
+    model_outputs.peak_ev_load = model.ev_load.max()
+    model_outputs.peak_total_demand = model.total_load.max()
+    model_outputs.peak_grid_import = model.grid.max()
+
+    # Calculate average daily peak power
+    daily_peaks = model.total_load.resample('D').max()
+    model_outputs.avg_daily_peak = daily_peaks.mean()
+
+    # Peak-to-average power ratio
+    model_outputs.peak_to_average = (
+            model.total_load.max() / model.total_load.mean()
+    )
 

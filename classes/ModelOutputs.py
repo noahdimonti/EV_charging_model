@@ -11,7 +11,7 @@ class ModelOutputs:
         self.min_soc = min_soc
 
         # Cost metrics
-        self.total_optimal_cost = 0.0
+        self.total_cost = 0.0
         self.investment_maintenance_cost = 0.0
         self.household_load_cost = 0.0
         self.ev_charging_cost = 0.0
@@ -23,6 +23,7 @@ class ModelOutputs:
         self.num_of_households = 0
         self.num_of_cps = 0
         self.max_charging_power = 0.0
+        self.total_ev_load = 0.0
         self.peak_ev_load = 0.0
         self.peak_total_demand = 0.0
         self.peak_grid_import = 0.0
@@ -31,7 +32,6 @@ class ModelOutputs:
 
         # Output dictionary
         self.output_dict = {}
-
 
     def calculate_average_ev_charging_cost(self):
         if self.num_of_evs > 0:
@@ -43,30 +43,29 @@ class ModelOutputs:
             'Model Name': self.model_name,
             'Tariff type': self.tariff_type,
             'Number of EVs': self.num_of_evs,
-            'Average travel distance (km)': self.avg_travel_distance,
-            'Minimum SOC (%)': (self.min_soc * 100),
+            'Average travel distance (km)': f'{self.avg_travel_distance} km',
+            'Minimum SOC (%)': f'{int(self.min_soc * 100)}%',
             'Number of households': self.num_of_households,
             'Number of CPs': self.num_of_cps,
-            'Max charging power (kW)': self.max_charging_power,
+            'Max charging power (kW)': f'{self.max_charging_power:,.2f} kW',
 
-            'Total optimal cost ($)': self.total_optimal_cost,
-            'Investment & maintenance cost ($)': self.investment_maintenance_cost,
-            'Total household load cost ($)': self.household_load_cost,
-            'Total EV charging cost ($)': self.ev_charging_cost,
-            'Grid import cost ($)': self.grid_import_cost,
-            'Other costs ($)': self.other_costs,
-            'Average EV charging cost ($)': self.average_ev_charging_cost,
+            'Total cost ($)': f'${self.total_cost:,.2f}',
+            'Investment & maintenance cost ($)': f'${self.investment_maintenance_cost:,.2f}',
+            'Total household load cost ($)': f'${self.household_load_cost:,.2f}',
+            'Total EV charging cost ($)': f'${self.ev_charging_cost:,.2f}',
+            'Grid import cost ($)': f'${self.grid_import_cost:,.2f}',
+            'Other costs ($)': f'${self.other_costs:,.2f}',
+            'Average EV charging cost ($)': f'${self.average_ev_charging_cost:,.2f}',
 
-            'Peak EV load (kW)': self.peak_ev_load,
-            'Peak total demand (kW)': self.peak_total_demand,
-            'Peak grid import (kW)': self.peak_grid_import,
-            'Average daily peak (kW)': self.avg_daily_peak,
-            'Peak-to-average power ratio (PAPR)': self.peak_to_average
+            'Total EV load (kW)': f'{self.total_ev_load:,.2f} kW',
+            'Peak EV load (kW)': f'{self.peak_ev_load:,.2f} kW',
+            'Peak total demand (kW)': f'{self.peak_total_demand:,.2f} kW',
+            'Peak grid import (kW)': f'{self.peak_grid_import:,.2f} kW',
+            'Average daily peak (kW)': f'{self.avg_daily_peak:,.2f} kW',
+            'Peak-to-average power ratio (PAPR)': f'{self.peak_to_average:,.2f}'
         }
 
         return self.output_dict
-
-        # return self.__dict__
 
     def to_dataframe(self):
         # Create dictionary of output

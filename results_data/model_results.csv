@@ -1,20 +1,21 @@
-Metric,CS1_flat_50EVs_30km_SOCmin30%,CS1_flat_50EVs_30km_SOCmin40%
-Tariff type,flat,flat
-Number of EVs,50,50
-Average travel distance (km),30,30
-Minimum SOC (%),30.0,40.0
-Number of households,100,100
-Number of CPs,50,50
-Max charging power (kW),2.4,2.4
-Total optimal cost ($),31120.764096246996,31071.314629496406
-Investment & maintenance cost ($),10383.561643835616,10383.561643835616
-Total household load cost ($),19669.42216514016,19669.42216514016
-Total EV charging cost ($),909.5150548367758,860.0758662665946
-Grid import cost ($),20578.937219976935,20529.498031406754
-Other costs ($),1.229415867771817,1.2191376874014588
-Average EV charging cost ($),18.190301096735517,17.201517325331892
-Peak EV load (kW),9.176629796314318,8.31897515723017
-Peak total demand (kW),157.03581656666665,157.03581656666665
-Peak grid import (kW),157.03581656666665,157.03581656666665
-Average daily peak (kW),137.81858535274574,137.6868693469702
-Peak-to-average power ratio (PAPR),1.9383707503745942,1.94303873966981
+Metric,CS1_flat_100EVs_30km_SOCmin30%,CS1_flat_100EVs_30km_SOCmin40%,CS1_flat_100EVs_30km_SOCmin50%
+Tariff type,flat,flat,flat
+Number of EVs,100,100,100
+Average travel distance (km),30 km,30 km,30 km
+Minimum SOC (%),30%,40%,50%
+Number of households,100,100,100
+Number of CPs,100,100,100
+Max charging power (kW),2.40 kW,2.40 kW,7.20 kW
+Total cost ($),"$42,627.17","$42,627.24","$172,627.39"
+Investment & maintenance cost ($),"$20,767.12","$20,767.12","$150,767.12"
+Total household load cost ($),"$19,669.42","$19,669.42","$19,669.42"
+Total EV charging cost ($),"$2,031.90","$2,031.90","$2,031.90"
+Grid import cost ($),"$21,701.32","$21,701.32","$21,701.32"
+Other costs ($),$1.69,$1.76,$1.91
+Average EV charging cost ($),$20.32,$20.32,$20.32
+Total EV load (kW),"5,375.40 kW","5,375.40 kW","5,375.40 kW"
+Peak EV load (kW),17.05 kW,18.84 kW,27.31 kW
+Peak total demand (kW),157.04 kW,157.04 kW,157.04 kW
+Peak grid import (kW),157.04 kW,157.04 kW,157.04 kW
+Average daily peak (kW),138.97 kW,138.73 kW,138.62 kW
+Peak-to-average power ratio (PAPR),1.84,1.84,1.84
