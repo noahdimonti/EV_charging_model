@@ -9,6 +9,7 @@ class ModelOutputs:
         self.num_of_evs = num_of_evs
         self.avg_travel_distance = avg_travel_distance
         self.min_soc = min_soc
+        self.n_connected_ev = pd.Series()
 
         # Cost metrics
         self.total_cost = 0.0
@@ -29,6 +30,7 @@ class ModelOutputs:
         self.peak_grid_import = 0.0
         self.avg_daily_peak = 0.0
         self.peak_to_average = 0.0
+        self.ev_load = pd.Series()
 
         # Output dictionary
         self.output_dict = {}

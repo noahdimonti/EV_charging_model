@@ -83,7 +83,9 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type,
         params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
         for i in model.EV_ID for t in model.TIME
     )
-    model_outputs.other_costs = daily_supply_charge + continuity_penalty
+    peak_penalty = params.peak_penalty * pyo.value(model.P_peak)
+
+    model_outputs.other_costs = daily_supply_charge + continuity_penalty + peak_penalty
 
     # Calculate average EV charging cost
     model_outputs.calculate_average_ev_charging_cost()
@@ -97,12 +99,11 @@ def _calculate_power_metrics_coordinated_model(model, model_outputs):
     load_profiles = _create_load_profiles(model)
     model_outputs.max_charging_power = pyo.value(model.P_EV_max) * params.P_EV_resolution_factor
     model_outputs.total_ev_load = load_profiles['ev_load'].sum()
-    print('coordinated ev load')
-    print(load_profiles['ev_load'])
-    print(f'total ev load: {load_profiles['ev_load'].sum()}')
     model_outputs.peak_ev_load = load_profiles['ev_load'].max()
     model_outputs.peak_total_demand = load_profiles['total_load'].max()
     model_outputs.peak_grid_import = load_profiles['grid'].max()
+    model_outputs.ev_load = load_profiles['ev_load']
+    model_outputs.n_connected_ev = model.EV_at_home_status
 
     # Calculate average daily peak power
     daily_peaks = load_profiles.resample('D').max()['total_load']
@@ -172,12 +173,11 @@ def _calculate_power_metrics_uncoordinated_model(model, model_outputs):
     # Load profiles for EVs, households, grid, and total load
     model_outputs.max_charging_power = model.p_ev_max
     model_outputs.total_ev_load = model.ev_load.sum()
-    print('uncoordinated ev load')
-    print(model.ev_load)
-    print(f'total ev load: {model.ev_load.sum()}')
     model_outputs.peak_ev_load = model.ev_load.max()
     model_outputs.peak_total_demand = model.total_load.max()
     model_outputs.peak_grid_import = model.grid.max()
+    model_outputs.ev_load = model.ev_load
+    model_outputs.n_connected_ev = model.at_home_status
 
     # Calculate average daily peak power
     daily_peaks = model.total_load.resample('D').max()

@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+import params
+
 
 def clean_raw_data(df):
 
@@ -49,15 +51,18 @@ def remove_outliers(df):
             prev_arr_col = df.columns[i - 1]  # The previous arrival column (e.g., arr1 for dep2)
             mask &= df[dep_col] > df[prev_arr_col]  # dep2 > arr1, dep3 > arr2, etc.
 
+            # Ensure the time difference between dep2 and arr1 is at least 1.5 hours
+            mask &= (df[dep_col] - df[prev_arr_col]) >= pd.Timedelta(minutes=params.time_resolution * 6)
+
     # Filter the rows based on the mask
     df_cleaned = df[mask]
 
     return df_cleaned
 
 
-def create_dep_arr_time(df, num_of_days: int):
+def create_dep_arr_time(df, num_of_days: int, rand_seed: int):
     # take sample of dataframes according to how many number of days needed
-    sample = df.sample(num_of_days)
+    sample = df.sample(num_of_days, random_state=rand_seed)  # set random seed
 
     dep_arr_time = []
     # collect departure and arrival times by iterating through rows and columns of the dataframe
@@ -69,16 +74,16 @@ def create_dep_arr_time(df, num_of_days: int):
     return dep_arr_time
 
 
-def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list):
-    rand_travel_freq = np.random.choice([0, 1, 2], p=[0.4, 0.4, 0.2])
-
+def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list, rand_seed: int):
     # create weekdays departure arrival times
-    weekdays = create_dep_arr_time(df=weekday_df, num_of_days=5)
+    weekdays = create_dep_arr_time(df=weekday_df, num_of_days=5, rand_seed=rand_seed)
 
     # create weekends departure arrival times
+    rng = np.random.default_rng(rand_seed)  # set random seed
+    rand_travel_freq = rng.choice([0, 1, 2], p=list(params.travel_freq_probability.values()))
     weekends = []
     for i in range(2):
-        new_time = create_dep_arr_time(df=weekend_df_list[rand_travel_freq], num_of_days=1)
+        new_time = create_dep_arr_time(df=weekend_df_list[rand_travel_freq], num_of_days=1, rand_seed=rand_seed)
         new_time = [timestamp + pd.Timedelta(days=5+i) for timestamp in new_time]
         weekends.append(new_time)
 

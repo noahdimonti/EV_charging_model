@@ -1,9 +1,6 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import params
-from models.uncoordinated_scenario_1 import df as df1
-from models.uncoordinated_scenario_1 import avg_daily_peak as avg_daily_peak1
-from models.coordinated_scenario_1 import (model, df, avg_daily_peak)
 
 
 # graph colours

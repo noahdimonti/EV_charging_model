@@ -93,6 +93,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     model.household_load = df['household_load']
     model.grid = df['grid']
     model.total_load = df['total_load']
+    model.at_home_status = all_ev_profiles['n_ev_at_home']
 
     model.p_ev_max = p_ev_max
     model.num_of_cps = num_of_evs

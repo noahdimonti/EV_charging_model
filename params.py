@@ -26,11 +26,12 @@ P_grid_max = 500  # (kW)
 # --------------------------
 # EV SOC Settings
 # --------------------------
-min_SOC = 0.4  # (%)
 max_SOC = 0.9  # (%)
 final_SOC = 0.5  # (%)
-min_initial_soc = 0.3  # (%)
-max_initial_soc = 0.6  # (%)
+min_initial_soc = 0.4  # (%)
+max_initial_soc = 0.7  # (%)
+ev_capacity_range_low = 35  # (kWh)
+ev_capacity_range_high = 60  # (kWh)
 
 # --------------------------
 # EV Charging Power Settings
@@ -38,7 +39,6 @@ max_initial_soc = 0.6  # (%)
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
 P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
-# P_EV_max_list = max_charging_power_options
 
 # Cost of EV charger installation
 '''
@@ -140,6 +140,7 @@ daily_supply_charge_dict = {
 # Penalty Costs
 # --------------------------
 charging_continuity_penalty = 0.01
+peak_penalty = 0.01
 
 # --------------------------
 # Investment and Maintenance Costs
@@ -154,6 +155,11 @@ annual_maintenance_cost = 400
 # --------------------------
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
+travel_freq_probability = {
+    'once': 0.7,
+    'twice': 0.2,
+    'thrice': 0.1
+}
 
 #  --------------------------
 # Household Load Profile
@@ -166,20 +172,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 # Define the input data directory and file path relative to the project root
 household_load_dir = os.path.join(project_root, 'input_data')
-household_load_file = f'load_profile_7_days_{num_of_households}_households.csv'
+household_load_file = f'load_profile_{num_of_days}_days_{num_of_households}_households.csv'
 household_load_path = os.path.join(household_load_dir, household_load_file)
 
 try:
     household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 except FileNotFoundError:
     print(f'Warning: Household load file not found at {household_load_path}.')
-
-
-# --------------------------
-# Parameters varied in each model
-# --------------------------
-ev_penetration_percentage = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]  # percentage of the number of households
-
-tariff_types_list = ['flat', 'tou']
-num_of_evs_list = [int(np.floor(num_of_households * ev_penetration)) for ev_penetration in ev_penetration_percentage]
-travel_distance_list = [15, 25, 35, 45]

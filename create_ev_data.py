@@ -42,7 +42,9 @@ def initialise_and_clean_casual_ev():
                    'Three_3rd_DEPTIME', 'Three_3rd_ARRTIME']]
     ]
 
-    return [dc.remove_outliers(df) for df in casual_ev_df_list]
+    df_list = [dc.remove_outliers(df) for df in casual_ev_df_list]
+
+    return df_list
 
 
 # EV creation function
@@ -64,10 +66,10 @@ def create_ev_instances(num_of_evs: int, min_soc: float, num_of_days: int, work_
 
         if num_of_days == 7:
             # create departure arrival times for one week
-            dep_arr_time = dc.create_one_week_dep_arr_time(weekday_df=work_ev, weekend_df_list=casual_ev_list)
+            dep_arr_time = dc.create_one_week_dep_arr_time(weekday_df=work_ev, weekend_df_list=casual_ev_list, rand_seed=ev_id)
         elif num_of_days <= 5:
             # create departure arrival times for weekdays
-            dep_arr_time = dc.create_dep_arr_time(df=work_ev, num_of_days=num_of_days)
+            dep_arr_time = dc.create_dep_arr_time(df=work_ev, num_of_days=num_of_days, rand_seed=ev_id)
         elif num_of_days > 7:
             '''
             Fix this later for number of days more than one week
@@ -90,13 +92,12 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
     # set random generator value for maximum capacity and soc of evs
     seed = 0
     rng = np.random.default_rng(seed)
-    max_capacity_of_EVs = rng.choice([i for i in range(35, 60)], size=num_of_evs)
+    max_capacity_of_EVs = rng.choice(
+        [i for i in range(params.ev_capacity_range_low, params.ev_capacity_range_high)], size=num_of_evs
+    )
 
     rng = np.random.default_rng(seed)
     random_SOC_init = rng.uniform(low=params.min_initial_soc, high=params.max_initial_soc, size=num_of_evs)
-
-    # print(f'max capacity: {max_capacity_of_EVs}')
-    # print(f'soc init: {random_SOC_init}')
 
     # take data from pickle file and put them in EV class attributes
     for ev_id in range(num_of_evs):
@@ -110,9 +111,6 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
         # set travel_energy_consumption
         if len(ev_data[ev_id].t_dep) == len(ev_data[ev_id].t_arr):
             for time in ev_data[ev_id].t_arr:
-                # set different random seed for each EV
-                rng = np.random.default_rng(ev_id)
-
                 # Define the range, mean, and standard deviation
                 lower, upper = 0, np.inf
                 mean, std_dev = avg_travel_distance, params.travel_dist_std_dev
@@ -120,14 +118,14 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
                 # Calculate the parameters for truncnorm
                 a, b = (lower - mean) / std_dev, (upper - mean) / std_dev
 
+                # set different random seed for each EV
+                rng = np.random.default_rng(ev_id)
+
                 # Generate truncated normal data
                 rand_distance = float(truncnorm.rvs(a, b, loc=mean, scale=std_dev, size=1, random_state=rng))
-                # rand_distance = float(rng.normal(loc=avg_travel_distance, scale=params.travel_dist_std_dev, size=1))
 
                 # convert travel distance to consumed energy
                 rand_travel_consumption = float(params.energy_consumption_per_km * rand_distance)  # in kWh
-                # print(f'distance: {rand_distance}')
-                # print(f'energy: {rand_travel_consumption}')
 
                 # append travel energy to attributes
                 ev_data[ev_id].travel_energy.append(rand_travel_consumption)
