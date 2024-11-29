@@ -60,14 +60,16 @@ def generate_results(
                                 model_instance, model_type, tariff_type, num_of_evs, avg_travel_distance, min_soc
                             )
 
-                            print(f'{model_type} ev load')
-                            print(f'ev load: {model_output.ev_load}')
+                            # print(f'{model_type} ev load')
+                            # print(f'ev load: {model_output.ev_load}')
                             print(f'total ev load: {model_output.total_ev_load}')
+                            print(f'peak ev load: {model_output.peak_ev_load}')
                             print(f'p ev max: {model_output.max_charging_power}')
 
                             fig = go.Figure()
 
-                            fig.add_trace(go.Scatter(x=params.timestamps, y=model_output.ev_load))
+                            fig.add_trace(go.Scatter(x=params.timestamps, y=model_output.ev_load, name='EV Load'))
+                            fig.add_trace(go.Scatter(x=params.timestamps, y=[model_output.peak_ev_load for _ in range(len(params.timestamps))], name='Peak EV Load'))
                             fig.update_layout(title=f'EV Load - {model_output.model_name}',
                                               xaxis_title=f'Timestamp',
                                               yaxis_title=f'EV Load (kW)',)
@@ -99,50 +101,43 @@ models = {
     cs1: 'coordinated',
 }
 tariffs = ['flat', 'tou']
-num_evs = [50]
-avg_dist = [30]
-min_soc = [0.3, 0.5, 0.7, 0.9]
+num_evs = [50, 100]
+avg_dist = [15, 25, 35]
+min_soc = [0.4, 0.6, 0.8]
 
 # Generate and print results
-df = generate_results(models, tariffs, num_evs, avg_dist, min_soc)
+# df = generate_results(models, tariffs, num_evs, avg_dist, min_soc)
+# print(df)
+
+
+
+
+num_ev = [100]
+avg_distance = [30]
+minim_soc = [0.9]
+
+df = generate_results(models, ['flat'], num_ev, avg_distance, minim_soc)
 print(df)
 
-# instance = cs1.create_model_instance('flat', 10, 30, 0.3)
-# opt.solve_optimisation_model(instance)
-# print(pyo.value(instance.P_EV_max))
 
-num_ev = 100
-avg_distance = 30
-minim_soc = 0.9
+# model_2 = cs1.create_model_instance('flat', num_ev, avg_distance, minim_soc)
+# solve_model.solve_optimisation_model(model_2)
+#
+#
+# for ev_id in range(40, 45):
+#     fig = go.Figure()
+#
+#     fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model_2.P_EV[ev_id, t]) for t in model_2.TIME]))
+#     fig.update_layout(title=f'EV Load - EV_ID{ev_id}',
+#                       xaxis_title=f'Timestamp',
+#                       yaxis_title=f'EV Load (kW)',)
+#     fig.show()
 
-
-# model_1 = cs1.create_model_instance('flat', num_ev, 40, 0.2)
-# solve_model.solve_optimisation_model(model_1)
-
-model_2 = cs1.create_model_instance('flat', num_ev, avg_distance, minim_soc)
-solve_model.solve_optimisation_model(model_2)
-
-
-for ev_id in range(40, 45):
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model_2.P_EV[ev_id, t]) for t in model_2.TIME]))
-    fig.update_layout(title=f'EV Load - EV_ID{ev_id}',
-                      xaxis_title=f'Timestamp',
-                      yaxis_title=f'EV Load (kW)',)
-    fig.show()
-
-
-
-# model_1.SOC_EV.display()
-# # model_1.P_EV.display()
-# # model_1.obj_function.display()
-# # model_1.P_EV_max.display()
 
 # model_2.SOC_EV.display()
 # model_2.P_EV.display()
 # model_2.soc_min_priority_constraint.display()
 # model_2.EV_at_home_status.display()
 # # model_2.obj_function.display()
-model_2.P_EV_max.display()
+# model_2.P_EV_max.display()
 # model_2.display()

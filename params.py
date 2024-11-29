@@ -27,9 +27,9 @@ P_grid_max = 500  # (kW)
 # EV SOC Settings
 # --------------------------
 max_SOC = 0.9  # (%)
-final_SOC = 0.5  # (%)
 min_initial_soc = 0.4  # (%)
 max_initial_soc = 0.7  # (%)
+final_SOC_default = 0.5  # (%)
 ev_capacity_range_low = 35  # (kWh)
 ev_capacity_range_high = 60  # (kWh)
 
@@ -39,6 +39,17 @@ ev_capacity_range_high = 60  # (kWh)
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
 P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
+
+# --------------------------
+# EV Travel Settings
+# --------------------------
+travel_dist_std_dev = 5  # (km)
+energy_consumption_per_km = 0.2  # (kWh/km)
+travel_freq_probability = {
+    'once': 0.7,
+    'twice': 0.2,
+    'thrice': 0.1
+}
 
 # Cost of EV charger installation
 '''
@@ -97,20 +108,10 @@ tou_daily_supply_charge = 1.1
 
 # Generate flat and ToU tariff data
 def create_flat_tariff(timestamps):
-    # return pd.DataFrame({
-    #     'timestamp': timestamps,
-    #     'tariff': [flat_tariff_rate] * len(timestamps)
-    # }).set_index('timestamp')
-
     return pd.Series([flat_tariff_rate] * len(timestamps), index=timestamps)
 
 
 def create_tou_tariff(timestamps):
-    # df = pd.DataFrame({
-    #     'timestamp': timestamps,
-    #     'tariff': np.zeros(len(timestamps))
-    # }).set_index('timestamp')
-
     df = pd.Series([np.zeros] * len(timestamps), index=timestamps)
 
     for t in df.index:
@@ -139,7 +140,7 @@ daily_supply_charge_dict = {
 # --------------------------
 # Penalty Costs
 # --------------------------
-charging_continuity_penalty = 0.01
+charging_discontinuity_penalty = 0.01
 peak_penalty = 0.01
 
 # --------------------------
@@ -149,17 +150,6 @@ investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
 investment_cost = {P_EV_max: investment_cost
                    for P_EV_max, investment_cost in zip(P_EV_max_list, investment_cost_list)}
 annual_maintenance_cost = 400
-
-# --------------------------
-# EV Travel Settings
-# --------------------------
-travel_dist_std_dev = 5  # (km)
-energy_consumption_per_km = 0.2  # (kWh/km)
-travel_freq_probability = {
-    'once': 0.7,
-    'twice': 0.2,
-    'thrice': 0.1
-}
 
 #  --------------------------
 # Household Load Profile

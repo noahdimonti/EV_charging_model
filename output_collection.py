@@ -79,13 +79,13 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type,
 
     # Other costs (daily supply charge + continuity penalty)
     daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-    continuity_penalty = sum(
-        params.charging_continuity_penalty * pyo.value(model.delta_P_EV[i, t])
+    discontinuity_penalty = sum(
+        params.charging_discontinuity_penalty * pyo.value(model.delta_P_EV[i, t])
         for i in model.EV_ID for t in model.TIME
     )
     peak_penalty = params.peak_penalty * pyo.value(model.P_peak)
 
-    model_outputs.other_costs = daily_supply_charge + continuity_penalty + peak_penalty
+    model_outputs.other_costs = daily_supply_charge + discontinuity_penalty + peak_penalty
 
     # Calculate average EV charging cost
     model_outputs.calculate_average_ev_charging_cost()

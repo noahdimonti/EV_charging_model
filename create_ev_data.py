@@ -106,7 +106,7 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
         ev_data[ev_id].soc_init = random_SOC_init[ev_id] * ev_data[ev_id].capacity_of_ev
         ev_data[ev_id].soc_max = params.max_SOC * ev_data[ev_id].capacity_of_ev
         ev_data[ev_id].soc_min = min_soc * ev_data[ev_id].capacity_of_ev
-        ev_data[ev_id].soc_final = params.final_SOC * ev_data[ev_id].capacity_of_ev
+        ev_data[ev_id].soc_final = params.final_SOC_default * ev_data[ev_id].capacity_of_ev
 
         # set travel_energy_consumption
         if len(ev_data[ev_id].t_dep) == len(ev_data[ev_id].t_arr):

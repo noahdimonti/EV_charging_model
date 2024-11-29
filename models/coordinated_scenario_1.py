@@ -74,7 +74,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     model.SOC_EV_min = pyo.Param(model.EV_ID, initialize=soc_min_dict)
     model.SOC_EV_max = pyo.Param(model.EV_ID, initialize=soc_max_dict)
     model.SOC_EV_init = pyo.Param(model.EV_ID, initialize=soc_init_dict)
-    model.SOC_EV_final = pyo.Param(model.EV_ID, initialize=soc_final_dict)
+    # model.SOC_EV_final = pyo.Param(model.EV_ID, initialize=soc_final_dict)
 
     model.EV_at_home_status = pyo.Param(model.EV_ID, model.TIME,
                                         initialize=lambda model, i, t: at_home_status_dict[i].loc[t, f'EV_ID{i}'],
@@ -227,9 +227,9 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
 
     # set final soc constraint
     def final_soc_constraint(model, i):
-        # return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_init[i]
+        return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_init[i]
         # return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_min[i]
-        return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_final[i]
+        # return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_final[i]
 
     model.final_soc = pyo.Constraint(model.EV_ID, rule=final_soc_constraint)
 
@@ -237,7 +237,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     # Objective Function
     # ------------------------------------
     def obj_function(model):
-        charging_continuity_penalty = params.charging_continuity_penalty
+        charging_discontinuity_penalty = params.charging_discontinuity_penalty
 
         # investment and maintenance costs
         investment_cost = num_of_cps * sum(params.investment_cost[j] * model.P_EV_max_selection[j]
@@ -252,14 +252,14 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
 
         # other costs
         daily_supply_charge = params.daily_supply_charge_dict[tariff_type]
-        total_charging_continuity_penalty = sum(charging_continuity_penalty * model.delta_P_EV[i, t]
-                                                for i in model.EV_ID
-                                                for t in model.TIME)
+        total_charging_discontinuity_penalty = sum(charging_discontinuity_penalty * model.delta_P_EV[i, t]
+                                                   for i in model.EV_ID
+                                                   for t in model.TIME)
         peak_penalty = params.peak_penalty * model.P_peak
 
-        return (investment_cost + maintenance_cost +
-                grid_import_cost + daily_supply_charge +
-                total_charging_continuity_penalty + peak_penalty)
+        return (investment_cost + maintenance_cost +  # investment costs
+                grid_import_cost + daily_supply_charge +  # operational costs
+                total_charging_discontinuity_penalty + peak_penalty)  # penalty costs
 
     model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
