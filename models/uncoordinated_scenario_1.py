@@ -7,10 +7,8 @@ import os
 from classes.UncoordinatedModel import UncoordinatedModel
 import output_collection
 
-p_ev_max = 2.4
 
-
-def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float,
+def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distance: float,
                           min_soc: float):
     # instantiate EV objects
     ev_data = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)
@@ -80,7 +78,9 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
                                  ev.travel_energy_t_arr[t])
 
     # instantiate model
-    model = UncoordinatedModel(f'US1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%')
+    model = UncoordinatedModel(
+        name=f'US1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%'
+    )
 
     # assign values to model attributes
     df = pd.concat([ev.charging_power for ev in ev_data], axis=1)
@@ -101,11 +101,3 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     return model
 
 
-tariff = 'flat'
-num_of_evs = 10
-avg_travel_distance = 30
-min_soc = 0.3
-
-# ev = create_model_instance(tariff, num_of_evs, avg_travel_distance, min_soc)
-# output = output_collection.collect_model_outputs(ev, 'uncoordinated', tariff, num_of_evs, avg_travel_distance, min_soc)
-# pprint(output.to_dict())

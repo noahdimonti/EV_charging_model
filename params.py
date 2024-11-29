@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # --------------------------
-# Time and Simulation Settings
+# Time Settings
 # --------------------------
 '''
 date options:
@@ -29,9 +29,11 @@ P_grid_max = 500  # (kW)
 max_SOC = 0.9  # (%)
 min_initial_soc = 0.4  # (%)
 max_initial_soc = 0.7  # (%)
-final_SOC_default = 0.5  # (%)
+
 ev_capacity_range_low = 35  # (kWh)
 ev_capacity_range_high = 60  # (kWh)
+
+final_SOC_default = 0.5  # (%)
 
 # --------------------------
 # EV Charging Power Settings
@@ -46,10 +48,11 @@ P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 travel_freq_probability = {
-    'once': 0.7,
-    'twice': 0.2,
+    'once': 0.6,
+    'twice': 0.3,
     'thrice': 0.1
 }
+ev_min_time_at_home = time_resolution * 6  # EV stays at home for a minimum of 1.5 hrs
 
 # Cost of EV charger installation
 '''

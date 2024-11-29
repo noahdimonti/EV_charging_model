@@ -30,14 +30,14 @@ def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel
 
     if model_type == 'uncoordinated':
         # Calculate cost metrics
-        _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type, num_of_evs)
+        _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type)
 
         # Calculate power metrics
         _calculate_power_metrics_uncoordinated_model(model, model_outputs)
 
     elif model_type == 'coordinated':
         # Calculate cost metrics
-        _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type, num_of_evs)
+        _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
 
         # Calculate power metrics
         _calculate_power_metrics_coordinated_model(model, model_outputs)
@@ -48,14 +48,14 @@ def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel
     return model_outputs
 
 
-def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type, num_of_evs):
+def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type):
     """
     Calculates cost-related metrics for the model and updates the ModelOutputs instance.
     """
     model_outputs.total_cost = pyo.value(model.obj_function)
 
     # Set number of CPs and households
-    model_outputs.num_of_cps = num_of_evs
+    model_outputs.num_of_cps = pyo.value(model.num_of_cps)
     model_outputs.num_of_households = params.num_of_households
 
     # Investment and maintenance costs
@@ -137,7 +137,7 @@ def _create_load_profiles(model):
     return df
 
 
-def _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type, num_of_evs):
+def _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type):
     """
     Calculates cost-related metrics for the model and updates the ModelOutputs instance.
     """

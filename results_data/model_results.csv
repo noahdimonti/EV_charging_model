@@ -1,21 +1,21 @@
-Metric,CS1_flat_100EVs_30km_SOCmin90%
-Tariff type,flat
-Number of EVs,100
-Average travel distance (km),30 km
-Minimum SOC (%),90%
-Number of households,100
-Number of CPs,100
-Max charging power (kW),7.20 kW
-Total cost ($),"$172,682.02"
-Investment & maintenance cost ($),"$150,767.12"
-Total household load cost ($),"$19,669.42"
-Total EV charging cost ($),"$2,242.75"
-Grid import cost ($),"$21,912.17"
-Other costs ($),$4.40
-Average EV charging cost ($),$22.43
-Total EV load (kW),"5,933.20 kW"
-Peak EV load (kW),53.48 kW
-Peak total demand (kW),166.94 kW
-Peak grid import (kW),166.94 kW
-Average daily peak (kW),140.76 kW
-Peak-to-average power ratio (PAPR),1.94
+Metric,CS1_flat_50EVs_35km_SOCmin50%,CS1_tou_50EVs_35km_SOCmin50%,US1_flat_50EVs_35km_SOCmin50%,US1_tou_50EVs_35km_SOCmin50%
+Tariff type,flat,tou,flat,tou
+Number of EVs,50,50,50,50
+Average travel distance (km),35 km,35 km,35 km,35 km
+Minimum SOC (%),50%,50%,50%,50%
+Number of households,100,100,100,100
+Number of CPs,50,50,50,50
+Max charging power (kW),2.40 kW,2.40 kW,2.40 kW,2.40 kW
+Total cost ($),"$31,155.25","$29,610.95","$31,428.98","$31,508.04"
+Investment & maintenance cost ($),"$10,383.56","$10,383.56","$10,383.56","$10,383.56"
+Total household load cost ($),"$19,669.42","$18,898.20","$19,669.42","$18,898.20"
+Total EV charging cost ($),"$1,099.30",$324.53,"$1,375.14","$2,225.18"
+Grid import cost ($),"$20,768.72","$19,222.73","$21,044.56","$21,123.38"
+Other costs ($),$2.97,$4.65,$0.86,$1.10
+Average EV charging cost ($),$21.99,$6.49,$27.50,$44.50
+Total EV load (kW),"2,908.20 kW","2,908.20 kW","3,637.93 kW","3,637.93 kW"
+Peak EV load (kW),10.39 kW,17.96 kW,30.00 kW,30.00 kW
+Peak total demand (kW),157.64 kW,167.24 kW,162.44 kW,162.44 kW
+Peak grid import (kW),157.64 kW,167.24 kW,162.44 kW,162.44 kW
+Average daily peak (kW),137.70 kW,142.25 kW,139.16 kW,139.16 kW
+Peak-to-average power ratio (PAPR),1.93,2.05,1.96,1.96

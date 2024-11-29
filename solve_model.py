@@ -3,9 +3,9 @@ import pyomo.environ as pyo
 
 def solve_optimisation_model(model, solver='gurobi', verbose=False):
     solver = pyo.SolverFactory(solver)
-    print(f'\n=======================================================\n'
+    print(f'\n=========================================================\n'
           f'Solving {model.name} model ...'
-          f'\n=======================================================\n')
+          f'\n=========================================================\n')
     solver_results = solver.solve(model, tee=verbose)
 
     # Define colours to differentiate whether optimal solution is found
@@ -37,6 +37,6 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False):
 
 
 def simulate_uncoordinated_model(model):
-    print(f'\n=======================================================\n'
+    print(f'\n=========================================================\n'
           f'Running {model.name} model ...'
-          f'\n=======================================================\n')
+          f'\n=========================================================\n')

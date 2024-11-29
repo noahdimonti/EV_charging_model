@@ -121,7 +121,7 @@ def initialise_ev_data(ev_data: list, num_of_evs: int, avg_travel_distance: floa
                 # set different random seed for each EV
                 rng = np.random.default_rng(ev_id)
 
-                # Generate truncated normal data
+                # Generate truncated normal data to avoid negative values
                 rand_distance = float(truncnorm.rvs(a, b, loc=mean, scale=std_dev, size=1, random_state=rng))
 
                 # convert travel distance to consumed energy

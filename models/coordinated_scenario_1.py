@@ -6,25 +6,8 @@ import params
 import create_ev_data
 from pprint import pprint
 
-# Model brief description
-'''
-Nodes and constraints:
-- Household load -> param (P_household_load_t)
-- Grid -> variable (P_grid_t), params (P_grid_min=0, P_grid_max)
-- CP -> variable P_CP_t = P_grid_t - P_household_load_t
-- EV -> var (P_EV_i_t), params (P_EV_i_min, P_EV_i_max)
-        sum(P_EV_i_t) <= P_CP_t
-        0 <= P_EV_i_t <= P_EV_i_max
-        var (SOC_EV_i_t), params (SOC_EV_i_min, SOC_EV_i_max)
-        SOC constraints ...
 
-
-Objective:
-Minimise cost
-'''
-
-
-def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
+def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
     # instantiate EV objects
     ev_data = create_ev_data.main(num_of_evs, avg_travel_distance, min_soc)
 
@@ -65,7 +48,7 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
 
     # initialise parameters
     # connection points (CP)
-    num_of_cps = num_of_evs  # the num of CP in this model is the same as num of EV, however, it can be different
+    model.num_of_cps = pyo.Param(initialize=num_of_evs)  # the num of CP in this model is the same as num of EV, however, it can be different
 
     # household load
     model.P_household_load = pyo.Param(model.TIME, initialize=params.household_load)
@@ -228,8 +211,6 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     # set final soc constraint
     def final_soc_constraint(model, i):
         return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_init[i]
-        # return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_min[i]
-        # return model.SOC_EV[i, model.TIME.last()] >= model.SOC_EV_final[i]
 
     model.final_soc = pyo.Constraint(model.EV_ID, rule=final_soc_constraint)
 
@@ -240,10 +221,10 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
         charging_discontinuity_penalty = params.charging_discontinuity_penalty
 
         # investment and maintenance costs
-        investment_cost = num_of_cps * sum(params.investment_cost[j] * model.P_EV_max_selection[j]
+        investment_cost = model.num_of_cps * sum(params.investment_cost[j] * model.P_EV_max_selection[j]
                                            for j in params.P_EV_max_list)
         # per charging point for the duration
-        maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * num_of_cps
+        maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * model.num_of_cps
 
         # electricity purchase costs
         household_load_cost = sum(model.tariff[t] * model.P_household_load[t] for t in model.TIME)
@@ -264,3 +245,4 @@ def create_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance
     model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
     return model
+
