@@ -209,12 +209,111 @@ min_soc = [
     0.8
 ]
 
-# Generate and print results
-df = generate_results(models, tariffs, num_evs, avg_dist, min_soc, output_csv_path=f'results_data/simulation_results.csv')
-print(df)
+# # Generate and print results
+# df = generate_results(models, tariffs, num_evs, avg_dist, min_soc, output_csv_path=f'results_data/simulation_results.csv')
+# print(df)
 
 
 
+df = pd.read_csv('results_data/simulation_results.csv')
+
+# Extract the row where 'Metric' is 'Max charging power (kW)'
+max_charging_row = df[df['Metric'] == 'Max charging power (kW)']
+
+# Reshape the row to make all column values into rows
+reshaped = max_charging_row.melt(
+    id_vars=['Metric'],  # Keep the 'Metric' column
+    var_name='Scenario',  # Name for the original column headers
+    value_name='Max Charging Power'  # Name for the values
+).drop(columns=['Metric'])  # Drop 'Metric' if not needed
+
+# Clean the 'Charging Power (kW)' column by removing the ' kW' part and converting to float
+reshaped['Max Charging Power (kW)'] = reshaped['Max Charging Power'].str.replace(' kW', '').astype(float)
+reshaped.drop('Max Charging Power', axis=1, inplace=True)
+reshaped.set_index('Scenario', inplace=True)
 
 
+def filter_df(df, model_name: str, tariff_type: str, num_of_evs: int):
+    filtered_df = df[
+        df.index.str.contains(model_name) & df.index.str.contains(tariff_type) & df.index.str.contains(f'{num_of_evs}EVs')]
 
+    return filtered_df
+
+
+def plot_p_ev_max(df, tariff_type, num_of_evs):
+    # Parse the column names to extract SOC and Distance
+    df.loc[:, 'Distance (km)'] = df.index.str.extract(r'(\d+)km')[0].values.astype(int)
+    df.loc[:, 'SOC (%)'] = df.index.str.extract(r'SOCmin(\d+)%')[0].values.astype(int)
+    print(df)
+
+    # Unique Distance and SOC values
+    distance_values = sorted(df['Distance (km)'].unique())  # x-axis
+    soc_values = sorted(df['SOC (%)'].unique())  # y-axis
+
+    # Bar width and positions
+    x = np.arange(len(distance_values))  # x positions for Distance
+    bar_width = 0.2  # Adjust width for multiple bars per group
+
+    # Create the figure and axis
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Define colors for each SOC
+    colours = ['blue', 'orange', 'green', 'red']  # Extend this if needed
+
+    # Plot each SOC as a separate set of bars
+    for i, soc in enumerate(soc_values):
+        # Filter data for the current SOC
+        sub_df = df[df['SOC (%)'] == soc]
+        print(f'subdf: {sub_df}')
+
+        # Ensure all distance values are represented
+        heights = [
+            sub_df[sub_df['Distance (km)'] == distance]['Max Charging Power (kW)'].values[0]
+            if distance in sub_df['Distance (km)'].values
+            else 0
+            for distance in distance_values
+        ]
+        print(f'heights: {heights}')
+
+        # Plot bars
+        ax.bar(x + i * bar_width, heights, bar_width, label=f'{soc}%', color=colours[i % len(colours)])
+
+    # Customize the plot
+    # set title
+    ax.set_title(f'Optimised CP Capacity - {tariff_type.capitalize()} Tariff - {num_of_evs} EVs', fontsize=16, weight='bold', pad=20)
+    ax.text(0.5, 1.02, 'according to average travel distance and minimum SOC', ha='center', va='bottom', fontsize=12,
+            transform=ax.transAxes)
+
+    # set labels and ticks
+    ax.set_xlabel('Average Travel Distance (km)', fontsize=14)
+    ax.set_ylabel('CP Capacity (kW)', fontsize=14)
+    ax.set_xticks(x + bar_width * (len(soc_values) - 1) / 2)
+    ax.set_xticklabels(distance_values, fontsize=12)
+
+    # Set custom Y-axis ticks to show only unique charging power values
+    y_ticks = sorted(df['Max Charging Power (kW)'].unique())  # Unique charging power values
+    ax.set_yticks(y_ticks)
+
+    # Set the y-axis label formatting
+    ax.set_yticklabels([tick for tick in y_ticks], fontsize=12)
+
+    # Customize the legend
+    ax.legend(title='Minimum target SOC', fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.15), frameon=False, ncol=3)
+
+    # Grid configuration
+    ax.grid(visible=True, linestyle='--', alpha=0.6, axis='y')
+
+    # Adjust layout
+    fig.tight_layout()
+
+    # Save or display the plot
+    plt.savefig(f'results_data/img/cp_capacity_based_on_soc_and_avg_distance_{tariff_type}_{num_of_evs}EVs.png', dpi=300)
+    # plt.show()
+
+mdl_name = 'CS1'
+tariff = 'tou'
+num_ev = 100
+
+df_clean = filter_df(reshaped, mdl_name, tariff.upper(), num_ev)
+print(df_clean)
+plot_p_ev_max(df_clean.copy(), tariff, num_ev)

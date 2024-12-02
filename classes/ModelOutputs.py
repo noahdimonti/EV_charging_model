@@ -64,7 +64,7 @@ class ModelOutputs:
             'Peak total demand (kW)': f'{self.peak_total_demand:,.2f} kW',
             'Peak grid import (kW)': f'{self.peak_grid_import:,.2f} kW',
             'Average daily peak (kW)': f'{self.avg_daily_peak:,.2f} kW',
-            'Peak-to-average power ratio (PAPR)': f'{self.peak_to_average:,.2f}'
+            'Peak-to-average power ratio (PAPR)': f'{self.peak_to_average:,.3f}'
         }
 
         return self.output_dict
