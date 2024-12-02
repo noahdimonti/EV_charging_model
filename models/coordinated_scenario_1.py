@@ -40,7 +40,7 @@ def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_tr
 
     # instantiate concrete model
     model = pyo.ConcreteModel(
-        name=f'CS1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%')
+        name=f'CS1_{tariff_type.upper()}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%')
 
     # initialise sets
     model.TIME = pyo.Set(initialize=params.timestamps)

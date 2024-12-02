@@ -79,7 +79,7 @@ def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: 
 
     # instantiate model
     model = UncoordinatedModel(
-        name=f'US1_{tariff_type}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%'
+        name=f'US1_{tariff_type.upper()}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%'
     )
 
     # assign values to model attributes

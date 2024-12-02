@@ -172,3 +172,9 @@ try:
     household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 except FileNotFoundError:
     print(f'Warning: Household load file not found at {household_load_path}.')
+
+
+# Define colours for printing
+RESET = "\033[0m"  # Reset to default
+RED = '\033[31m'  # Red color (e.g., for warning or error)
+GREEN = '\033[32m'  # Green color (e.g., for success)

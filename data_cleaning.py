@@ -52,7 +52,19 @@ def remove_outliers(df):
             mask &= df[dep_col] > df[prev_arr_col]  # dep2 > arr1, dep3 > arr2, etc.
 
             # Ensure the time difference between dep2 and arr1 is at least 1.5 hours
-            mask &= (df[dep_col] - df[prev_arr_col]) >= pd.Timedelta(minutes=params.ev_min_time_at_home)
+            mask &= (df[dep_col] - df[prev_arr_col]) >= pd.Timedelta(minutes=60)
+            #
+            # if ((df[dep_col] - df[prev_arr_col]) >= pd.Timedelta(minutes=60)).any():
+            #     print(f'dep: {df[dep_col]} arr: {df[arr_col]}')
+            #     print(f'delta: {df[dep_col] - df[arr_col]}')
+
+    for i in range(1, len(df.columns)-1, 2):
+        arr_col = df.columns[i]
+        dep_col = df.columns[i + 1]
+
+        time_at_home = df[dep_col] - df[arr_col]
+
+        # print(f'time at home: {time_at_home}')
 
     # Filter the rows based on the mask
     df_cleaned = df[mask]

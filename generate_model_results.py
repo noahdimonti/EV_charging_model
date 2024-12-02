@@ -3,7 +3,11 @@ import numpy as np
 import warnings
 
 import pyomo.environ as pyo
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from matplotlib.ticker import MaxNLocator
+import matplotlib.dates as mdates
+
 from pprint import pprint
 
 import output_collection
@@ -26,16 +30,55 @@ def print_essential_stats(model_output):
 
 
 def plot_results(model_output):
-    fig = go.Figure()
+    plt.style.use('default')
 
-    fig.add_trace(go.Scatter(x=params.timestamps, y=model_output.ev_load, name='EV Load'))
-    fig.add_trace(go.Scatter(x=params.timestamps, y=[model_output.peak_ev_load for _ in
-                                                     range(len(params.timestamps))],
-                             name='Peak EV Load'))
-    fig.update_layout(title=f'EV Load - {model_output.model_name}',
-                      xaxis_title=f'Timestamp',
-                      yaxis_title=f'EV Load (kW)', )
-    fig.show()
+    fig, ax = plt.subplots(figsize=(12, 8))  # Adjust size for presentation
+
+    # Plot EV load
+    ax.plot(params.timestamps, model_output.ev_load, label='EV Load', color='blue', linewidth=2)
+
+    # Plot peak EV load
+    ax.plot(params.timestamps, [model_output.peak_ev_load] * len(params.timestamps),
+            label='Peak EV Load', color='red', linestyle='--', linewidth=2)
+
+    # Customize the plot
+    ax.set_title(f'EV Load Profile - {model_output.model_name}', fontsize=18, weight='bold')
+    ax.set_xlabel('Timestamp', fontsize=14)
+    ax.set_ylabel('Load (kW)', fontsize=14)
+
+    # Enhance the grid and axes
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=12))  # Minor ticks at 12 PM
+    ax.grid(visible=True, which='minor', linestyle='--', linewidth=0.5, alpha=0.6)  # Grid for minor ticks
+    ax.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.8)  # Grid for major ticks
+
+    # Format x-axis to show day names
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))  # Set major ticks for each day
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%a'))  # Use abbreviated day names ('Mon', 'Tue', etc.)
+
+    # Ensure minor ticks for clarity (optional)
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=[6, 12, 18, 24]))  # Minor ticks for every 6 hours
+    ax.tick_params(axis='x', which='major', labelsize=12)  # Rotate day names for better readability
+
+    # Add a legend outside the plot
+    ax.legend(fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.15), frameon=False, ncol=2)
+
+    # Add top and right borders (spines)
+    ax.spines['top'].set_visible(True)
+    ax.spines['right'].set_visible(True)
+    ax.spines['top'].set_color('black')  # Set color of top border
+    ax.spines['right'].set_color('black')  # Set color of right border
+    ax.spines['top'].set_linewidth(1)  # Set line width for top border
+    ax.spines['right'].set_linewidth(1)  # Set line width for right border
+
+    # Adjust the layout
+    fig.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
+
+    # Save or show the plot
+    plt.savefig(f'results_data/img/ev_load_plot_{model_output.model_name}.png', dpi=300)  # Save as high-resolution image
+    # plt.show()
+
+    # Explicitly close the figure to avoid memory warning
+    plt.close(fig)
 
 
 def generate_results(
@@ -44,7 +87,8 @@ def generate_results(
         num_of_evs_list: list[int],
         avg_travel_distance_list: list[float],
         min_soc_list: list[float],
-        output_csv_path: str = 'results_data/model_results.csv'
+        output_csv_path: str,
+        plot: bool = False
 ):
     """
     Collects results from multiple model runs, compiles them into a single DataFrame,
@@ -57,9 +101,8 @@ def generate_results(
         avg_travel_distance_list (list[float]): List of average travel distances (in km).
         min_soc_list (list[float]): List of minimum SOC requirements (as fractions).
         output_csv_path (str): Path to save the resulting CSV file. Default is 'model_results'.
+        plot (bool): Whether to plot the results.
 
-    Returns:
-        pd.DataFrame: Combined DataFrame of all model results.
     """
     # Create a list to store DataFrame results from all model runs
     all_model_dfs = []
@@ -112,7 +155,10 @@ def generate_results(
 
                             # print essential statistics and plot results
                             print_essential_stats(model_output)
-                            plot_results(model_output)
+
+                            # plot the output
+                            if plot:
+                                plot_results(model_output)
 
                             # Convert model_output object into a dataframe
                             output_df = model_output.to_dataframe()
@@ -132,6 +178,7 @@ def generate_results(
     # Save the combined DataFrame to a CSV file
     combined_df.to_csv(output_csv_path, index=True)
     print(f'---------------------------------------------------------\n')
+    print(f'{params.GREEN}Simulation is completed.{params.RESET}')
     print(f'Results saved to {output_csv_path}\n')
     print(f'---------------------------------------------------------\n')
 
@@ -163,35 +210,11 @@ min_soc = [
 ]
 
 # Generate and print results
-# df = generate_results(models, tariffs, num_evs, avg_dist, min_soc)
-# print(df)
-
-
-num_ev = [50]
-avg_distance = [35]
-minim_soc = [0.5]
-
-df = generate_results(models, tariffs, num_ev, avg_distance, minim_soc)
+df = generate_results(models, tariffs, num_evs, avg_dist, min_soc, output_csv_path=f'results_data/simulation_results.csv')
 print(df)
 
-# model_2 = cs1.create_model_instance('flat', num_ev, avg_distance, minim_soc)
-# solve_model.solve_optimisation_model(model_2)
-#
-#
-# for ev_id in range(40, 45):
-#     fig = go.Figure()
-#
-#     fig.add_trace(go.Scatter(x=params.timestamps, y=[pyo.value(model_2.P_EV[ev_id, t]) for t in model_2.TIME]))
-#     fig.update_layout(title=f'EV Load - EV_ID{ev_id}',
-#                       xaxis_title=f'Timestamp',
-#                       yaxis_title=f'EV Load (kW)',)
-#     fig.show()
 
 
-# model_2.SOC_EV.display()
-# model_2.P_EV.display()
-# model_2.soc_min_priority_constraint.display()
-# model_2.EV_at_home_status.display()
-# # model_2.obj_function.display()
-# model_2.P_EV_max.display()
-# model_2.display()
+
+
+
