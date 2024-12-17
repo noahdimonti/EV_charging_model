@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm
-import vista_data_cleaning as dc
+import ev_data_cleaning as dc
 from src.config.electric_vehicle import ElectricVehicle
 
 
