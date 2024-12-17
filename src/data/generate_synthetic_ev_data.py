@@ -1,16 +1,14 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm
-import ev_availability_data_cleaning as dc
+import vista_data_cleaning as dc
 from src.config.electric_vehicle import ElectricVehicle
 
-# files and folders path
-vista_raw_path = '/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling Data/Potential Datasets/vista/T_VISTA1218_V1.csv'
-work_ev_path = ('/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling '
-                'Data/Potential Datasets/vista/VISTA_Time_HomeDeAr_WorkVehicle.csv')
-casual_ev_path = ('/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling '
-                  'Data/Potential Datasets/vista/VISTA_Time_HomeDeAr_CasualVehicle.csv')
-ev_model_path = '/Users/noahdimonti/Developer/PycharmProjects/EV_model_test/'
+
+# Files and folders path
+vista_raw_path = 'data/raw/vista/T_VISTA1218_V1.csv'
+work_ev_path = 'data/raw/vista/VISTA_Time_HomeDeAr_WorkVehicle.csv'
+casual_ev_path = 'data/raw/vista/VISTA_Time_HomeDeAr_CasualVehicle.csv'
 
 
 # data initialisation and cleaning functions
