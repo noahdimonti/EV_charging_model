@@ -1,13 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-from matplotlib.ticker import MaxNLocator
 import matplotlib.dates as mdates
-from pprint import pprint
-import create_ev_data
-import params
-
+from src.data import create_ev_data
 
 num_ev = 100
 avg_distance = 25
@@ -53,7 +48,7 @@ def plot_durations_distribution(duration):
     plt.ylabel('Frequency', fontsize=14)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
 
-    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/results_data/img/durations_at_home_distribution.png', dpi=300)
+    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/reports/figures/durations_at_home_distribution.png', dpi=300)
     plt.show()
 
 
@@ -96,7 +91,7 @@ def plot_tou_tariff(timestamps, tou_tariff):
     fig.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
 
     # Save and show
-    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/results_data/img/tou_tariff_plot.png', dpi=300)
+    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/reports/figures/tou_tariff_plot.png', dpi=300)
     plt.show()
 
     # Close the figure
@@ -148,7 +143,7 @@ def plot_arrival_departure_distribution(departure_times, arrival_times):
 
     # Save and show
     plt.tight_layout()
-    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/results_data/img/arrival_departure_distribution.png', dpi=300)
+    plt.savefig('/Users/noahdimonti/Developer/PycharmProjects/EV_apartment_model/reports/figures/arrival_departure_distribution.png', dpi=300)
     plt.show()
 
 

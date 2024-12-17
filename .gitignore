@@ -240,6 +240,6 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # Results
-results_data/
+reports/
 
 .DS_Store

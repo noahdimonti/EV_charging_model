@@ -1,10 +1,6 @@
-import pandas as pd
 import pyomo.environ as pyo
 
-import solve_model
-import params
-import create_ev_data
-from pprint import pprint
+from src.data import create_ev_data
 
 
 def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
@@ -188,14 +184,6 @@ def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_tr
     model.minimum_required_soc_at_departure = pyo.Constraint(
         model.EV_ID, model.TIME, rule=minimum_required_soc_at_departure
     )
-
-    # Helper function to find the next departure time
-    def get_next_departure_time(t, ev_departures):
-        # ev_departures = dep_time_dict[i], which is a list of departure times for EV `i`
-        future_departures = [dep for dep in ev_departures if dep >= t]
-        if future_departures:
-            return min(future_departures)  # Earliest future departure
-        return None  # No future departures
 
     def minimum_required_soc_at_arrival(model, i, t):
         # another layer of constraint to ensure soc is not completely depleted at arrival

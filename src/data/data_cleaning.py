@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-import params
+from src.features import params
 
 
 def clean_raw_data(df):

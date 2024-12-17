@@ -164,7 +164,7 @@ num_of_households = 100
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 # Define the input data directory and file path relative to the project root
-household_load_dir = os.path.join(project_root, 'input_data')
+household_load_dir = os.path.join(project_root, 'data')
 household_load_file = f'load_profile_{num_of_days}_days_{num_of_households}_households.csv'
 household_load_path = os.path.join(household_load_dir, household_load_file)
 

@@ -1,7 +1,8 @@
 import pandas as pd
 import pyomo.environ as pyo
-from classes.ModelOutputs import ModelOutputs
-import params
+
+from src.features import params
+from src.features.model_outputs import ModelOutputs
 
 
 def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel_distance, min_soc):

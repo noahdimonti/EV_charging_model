@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import truncnorm
 import data_cleaning as dc
-from classes.ElectricVehicle import ElectricVehicle
-import params
-
+from src.features.electric_vehicle import ElectricVehicle
 
 # files and folders path
 vista_raw_path = '/Users/noahdimonti/Documents/Uni/MPhil in Eng and CS/EV Apartment Building Project/Modelling Data/Potential Datasets/vista/T_VISTA1218_V1.csv'
