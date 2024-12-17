@@ -1,6 +1,6 @@
 import pandas as pd
-from src.data import create_ev_data
-from src.features.uncoordinated_model import UncoordinatedModel
+from src.data import generate_synthetic_ev_data
+from src.config.uncoordinated_model import UncoordinatedModel
 
 
 def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distance: float,

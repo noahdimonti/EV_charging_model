@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
 
-from src.features import params
+from src.config import params
+
+
+def main():
+    pass
 
 
 def clean_raw_data(df):
@@ -145,3 +149,8 @@ def create_at_home_pattern(dep_arr_time: list, ev_id: int, time_res=15):
     df.set_index(keys='timestamp', inplace=True)
 
     return df
+
+
+
+if __name__ == '__main__':
+    main()

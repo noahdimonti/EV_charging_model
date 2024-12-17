@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from src.features import params
+from src.config import params
 
 # graph colours
 household_load_colour = 'red'

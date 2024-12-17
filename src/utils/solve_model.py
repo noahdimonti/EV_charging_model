@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 
-from src.features import params
+from src.config import params
 
 
 def solve_optimisation_model(model, solver='gurobi', verbose=False):

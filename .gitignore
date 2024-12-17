@@ -243,3 +243,7 @@ fabric.properties
 reports/
 
 .DS_Store
+
+
+# Data
+data/

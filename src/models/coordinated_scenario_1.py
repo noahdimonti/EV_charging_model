@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 
-from src.data import create_ev_data
+from src.data import generate_synthetic_ev_data
 
 
 def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
