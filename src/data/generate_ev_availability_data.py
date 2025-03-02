@@ -1,80 +1,43 @@
-import pandas as pd
 import numpy as np
-
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import vista_data_cleaning as vdc
 from src.config import params
+from pprint import pprint
 
 
 """
-Convert vista data into EV availability profile (1: at home, 0: away).
-Returns csv with timestamps as index and EV_IDx as columns.
+Convert cleaned vista data into EV availability profile (1: at home, 0: away).
+Returns csv(?) with timestamps as index and EV_IDx as columns.
 """
 
 
-def clean_raw_data(df):
+def main(rand_seed, ev_id, num_of_weeks=params.num_of_weeks):
+    weekday, weekend_list = vdc.main()
 
-    df.dropna(axis=0, how='any', inplace=True)
+    dep_arr_times = create_multiple_weeks_dep_arr_time(
+        num_of_weeks=num_of_weeks,
+        weekday_df=weekday,
+        weekend_df_list=weekend_list,
+        rand_seed=rand_seed,
+        ev_id=ev_id  # Pass EV ID for unique seeding
+    )
 
-    # remove values that is greater than 24 (only 24 hours in a day)
-    for col in df.columns:
-        df = df[df[f'{col}'] // 60 < 24]
+    pprint(dep_arr_times)
+    final = create_at_home_pattern(dep_arr_times, ev_id)
 
-    return df
-
-
-def convert_to_timestamp(df, date_time, time_res=15):
-    new_df = pd.DataFrame()
-
-    for col_name in df.columns:
-        # calculate hours and minutes from the values
-        hour = (df[f'{col_name}'] // 60).astype(int)
-        minute = (df[f'{col_name}'] % 60).astype(int)
-
-        # convert hours and minutes into timestamp
-        new_df[col_name] = (pd.Timestamp(date_time) +
-                            pd.to_timedelta(hour, unit='h') +
-                            pd.to_timedelta(minute, unit='m'))
-        new_df[f'{col_name}'].astype('datetime64[ns]')
-
-        new_df[f'{col_name}'] = new_df[f'{col_name}'].dt.floor(f'{time_res}min')
-
-    return new_df
-
-
-def remove_outliers(df):
-    # Initialise mask as True (all rows valid initially)
-    mask = True
-
-    # Iterate over columns in pairs (dep1, arr1), (dep2, arr2), etc.
-    for i in range(0, len(df.columns)-1, 2):
-        dep_col = df.columns[i]
-        arr_col = df.columns[i + 1]
-
-        # Check if departure is earlier than arrival for the current pair
-        mask &= df[dep_col] < df[arr_col]
-
-        # Check if the current departure is strictly later than the previous arrival
-        if i > 0:  # Not for the first pair (there is no previous arrival)
-            prev_arr_col = df.columns[i - 1]  # The previous arrival column (e.g., arr1 for dep2)
-            mask &= df[dep_col] > df[prev_arr_col]  # dep2 > arr1, dep3 > arr2, etc.
-
-            # Ensure the time difference between dep2 and arr1 is at least 1.5 hours
-            mask &= (df[dep_col] - df[prev_arr_col]) >= pd.Timedelta(minutes=60)
-
-    for i in range(1, len(df.columns)-1, 2):
-        arr_col = df.columns[i]
-        dep_col = df.columns[i + 1]
-
-        time_at_home = df[dep_col] - df[arr_col]
-
-        # print(f'time at home: {time_at_home}')
-
-    # Filter the rows based on the mask
-    df_cleaned = df[mask]
-
-    return df_cleaned
+    return final
 
 
 def create_dep_arr_time(df, num_of_days: int, rand_seed: int):
+    """
+    Create one pair of departure and arrival times each day, for the number of days provided.
+    :param df: vista dataframe
+    :param num_of_days: desired number of days
+    :param rand_seed: random seed for sampling
+    :return:
+    """
     # take sample of dataframes according to how many number of days needed
     sample = df.sample(num_of_days, random_state=rand_seed)  # set random seed
 
@@ -110,6 +73,31 @@ def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list, rand_seed: i
     return one_week
 
 
+def create_multiple_weeks_dep_arr_time(num_of_weeks: int, weekday_df, weekend_df_list: list, rand_seed: int, ev_id):
+    """
+    Create multiple weeks of departure and arrival times.
+
+    :param num_of_weeks: Number of weeks to generate.
+    :param weekday_df: DataFrame containing weekday travel data.
+    :param weekend_df_list: List of DataFrames for weekend travel data (different frequencies).
+    :param rand_seed: Random seed for reproducibility.
+    :return: List of departure and arrival timestamps for the given number of weeks.
+    """
+    all_weeks = []
+
+    for week in range(num_of_weeks):
+        # Offset random seed using EV ID and week number
+        week_seed = rand_seed + (ev_id * 1000) + week
+        print(f'Week: {week}, Random Seed: {week_seed}')  # Debugging output
+
+        week_times = create_one_week_dep_arr_time(weekday_df, weekend_df_list,
+                                                      rand_seed + week)  # Offset seed
+        week_times = [timestamp + pd.Timedelta(days=7 * week) for timestamp in week_times]  # Shift by week
+        all_weeks.extend(week_times)
+
+    return all_weeks
+
+
 def create_t_arr(dep_arr_time: list):
     # arrival times are the odd index of dep_arr_time list
     t_arr = dep_arr_time[1::2]
@@ -132,7 +120,7 @@ def create_at_home_pattern(dep_arr_time: list, ev_id: int, time_res=15):
 
     df = pd.DataFrame(date_range, columns=['timestamp'])
 
-    # initialise the pattern by assigning 1 to all values
+    # initialise the pattern by assigning 1 to all values, assuming all EVs start at home
     df[f'EV_ID{ev_id}'] = 1
 
     # initialise the first switch to zero
@@ -149,3 +137,5 @@ def create_at_home_pattern(dep_arr_time: list, ev_id: int, time_res=15):
     return df
 
 
+if __name__ == '__main__':
+    main()

@@ -188,4 +188,3 @@ def _calculate_power_metrics_uncoordinated_model(model, model_outputs):
     model_outputs.peak_to_average = (
             model.total_load.max() / model.total_load.mean()
     )
-

@@ -3,6 +3,7 @@ import warnings
 
 import pyomo.environ as pyo
 
+from src.config import params
 from src.utils import output_collection, solve_model
 
 from src.models import uncoordinated_scenario_1 as us1

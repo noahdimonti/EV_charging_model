@@ -1,4 +1,6 @@
 import pandas as pd
+
+from src.config import params
 from src.data import generate_synthetic_ev_data
 from src.config.uncoordinated_model import UncoordinatedModel
 
