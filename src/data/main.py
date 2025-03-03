@@ -1,17 +1,26 @@
 import vista_data_cleaning as vdc
-import generate_ev_availability_data as gev
-import generate_synthetic_ev_data as gens
+import generate_ev_dep_arr_data as gda
+import generate_synthetic_ev_data as gse
 from pprint import pprint
 
-weekday, weekend_list = vdc.main()
+
+def main():
+    return gse.main(5, 'EV_instances_5')
 
 
+if __name__ == '__main__':
+    main()
 
-# test = gev.main(0, 0)
-# test2 = gev.main(1, 1)
-
-for i in range(2):
-    test = gev.main(i, i)
-    print(f'test: {i}')
-    pprint(test[40:70])
-
+# weekday, weekend_list = vdc.main()
+#
+# # for i in range(2):
+# #     test = gev.create_multiple_weeks_dep_arr_time(2, weekday, weekend_list, i, i)
+# #     pprint(test)
+#
+#
+# evlst = gens.main(3)
+# pprint(evlst[0].__dict__)
+# pprint(evlst[1].__dict__)
+#
+# # test = gens.generate_ev_attributes(2, 14, weekday, weekend_list)
+# # test = gens.generate_travel_energy_consumption(20, 1, 5)

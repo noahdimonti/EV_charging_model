@@ -7,29 +7,6 @@ from src.config import params
 from pprint import pprint
 
 
-"""
-Convert cleaned vista data into EV availability profile (1: at home, 0: away).
-Returns csv(?) with timestamps as index and EV_IDx as columns.
-"""
-
-
-def main(rand_seed, ev_id, num_of_weeks=params.num_of_weeks):
-    weekday, weekend_list = vdc.main()
-
-    dep_arr_times = create_multiple_weeks_dep_arr_time(
-        num_of_weeks=num_of_weeks,
-        weekday_df=weekday,
-        weekend_df_list=weekend_list,
-        rand_seed=rand_seed,
-        ev_id=ev_id  # Pass EV ID for unique seeding
-    )
-
-    pprint(dep_arr_times)
-    final = create_at_home_pattern(dep_arr_times, ev_id)
-
-    return final
-
-
 def create_dep_arr_time(df, num_of_days: int, rand_seed: int):
     """
     Create one pair of departure and arrival times each day, for the number of days provided.
@@ -44,7 +21,7 @@ def create_dep_arr_time(df, num_of_days: int, rand_seed: int):
     dep_arr_time = []
     # collect departure and arrival times by iterating through rows and columns of the dataframe
     for idx, row in enumerate(sample.itertuples()):
-        for col in range(1, len(sample.columns)+1):
+        for col in range(1, len(sample.columns) + 1):
             timestamp = row[col] + pd.Timedelta(days=idx)
             dep_arr_time.append(timestamp)
 
@@ -61,7 +38,7 @@ def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list, rand_seed: i
     weekends = []
     for i in range(2):
         new_time = create_dep_arr_time(df=weekend_df_list[rand_travel_freq], num_of_days=1, rand_seed=rand_seed)
-        new_time = [timestamp + pd.Timedelta(days=5+i) for timestamp in new_time]
+        new_time = [timestamp + pd.Timedelta(days=5 + i) for timestamp in new_time]
         weekends.append(new_time)
 
     # flatten the list
@@ -73,7 +50,7 @@ def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list, rand_seed: i
     return one_week
 
 
-def create_multiple_weeks_dep_arr_time(num_of_weeks: int, weekday_df, weekend_df_list: list, rand_seed: int, ev_id):
+def create_multiple_weeks_dep_arr_time(num_of_weeks: int, weekday_df, weekend_df_list: list, rand_seed: int, ev_id: int):
     """
     Create multiple weeks of departure and arrival times.
 
@@ -88,14 +65,32 @@ def create_multiple_weeks_dep_arr_time(num_of_weeks: int, weekday_df, weekend_df
     for week in range(num_of_weeks):
         # Offset random seed using EV ID and week number
         week_seed = rand_seed + (ev_id * 1000) + week
-        print(f'Week: {week}, Random Seed: {week_seed}')  # Debugging output
 
         week_times = create_one_week_dep_arr_time(weekday_df, weekend_df_list,
-                                                      rand_seed + week)  # Offset seed
+                                                  week_seed)  # Offset seed
         week_times = [timestamp + pd.Timedelta(days=7 * week) for timestamp in week_times]  # Shift by week
         all_weeks.extend(week_times)
 
     return all_weeks
+
+
+def get_dep_arr_time(num_of_days, weekday_df, weekend_df_list, ev_id):
+    """Generate departure and arrival times based on number of days."""
+
+    if num_of_days == 7:
+        return create_one_week_dep_arr_time(weekday_df, weekend_df_list, rand_seed=ev_id)
+    elif num_of_days <= 5:
+        return create_dep_arr_time(df=weekday_df, num_of_days=num_of_days, rand_seed=ev_id)
+    elif num_of_days % 7 == 0:
+        return create_multiple_weeks_dep_arr_time(
+            num_of_weeks=num_of_days // 7,
+            weekday_df=weekday_df,
+            weekend_df_list=weekend_df_list,
+            rand_seed=ev_id,
+            ev_id=ev_id
+        )
+    else:
+        raise ValueError("Number of days must be a multiple of 7 or ≤ 5.")
 
 
 def create_t_arr(dep_arr_time: list):
@@ -135,7 +130,3 @@ def create_at_home_pattern(dep_arr_time: list, ev_id: int, time_res=15):
     df.set_index(keys='timestamp', inplace=True)
 
     return df
-
-
-if __name__ == '__main__':
-    main()

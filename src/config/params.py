@@ -27,14 +27,14 @@ P_grid_max = 500  # (kW)
 # --------------------------
 # EV SOC Settings
 # --------------------------
-max_SOC = 0.9  # (%)
+SOC_max = 0.9  # (%)
+SOC_critical = 0.1  # (%)
 min_initial_soc = 0.4  # (%)
-max_initial_soc = 0.7  # (%)
+max_initial_soc = 0.6  # (%)
 
 ev_capacity_range_low = 35  # (kWh)
 ev_capacity_range_high = 60  # (kWh)
 
-final_SOC_default = 0.5  # (%)
 
 # --------------------------
 # EV Charging Power Settings
@@ -46,6 +46,7 @@ P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
 # --------------------------
 # EV Travel Settings
 # --------------------------
+avg_travel_distance = 25  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 travel_freq_probability = {

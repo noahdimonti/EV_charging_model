@@ -1,7 +1,15 @@
 import pyomo.environ as pyo
-
+import pickle
 from src.config import params
-from src.data import generate_synthetic_ev_data
+
+
+def load_ev_data_pickle(filename="ev_data.pkl"):
+    """Load EV instances from a pickle file."""
+    with open(filename, "rb") as f:
+        return pickle.load(f)
+
+# Usage
+ev_instances = load_ev_data_pickle()
 
 
 def create_optimisation_model_instance(tariff_type: str, num_of_evs: int, avg_travel_distance: float, min_soc: float):
