@@ -55,8 +55,8 @@ def create_multiple_weeks_dep_arr_time(num_of_weeks: int, weekday_df, weekend_df
     Create multiple weeks of departure and arrival times.
 
     :param num_of_weeks: Number of weeks to generate.
-    :param weekday_df: DataFrame containing weekday travel data.
-    :param weekend_df_list: List of DataFrames for weekend travel data (different frequencies).
+    :param weekday_df: DataFrame containing weekday travel data_processing.
+    :param weekend_df_list: List of DataFrames for weekend travel data_processing (different frequencies).
     :param rand_seed: Random seed for reproducibility.
     :return: List of departure and arrival timestamps for the given number of weeks.
     """

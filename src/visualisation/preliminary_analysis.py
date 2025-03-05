@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from src.data import generate_synthetic_ev_data
+from src.data_processing import generate_synthetic_ev_data
 
 num_ev = 100
 avg_distance = 25

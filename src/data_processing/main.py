@@ -1,11 +1,12 @@
 import vista_data_cleaning as vdc
 import generate_ev_dep_arr_data as gda
 import generate_synthetic_ev_data as gse
+from src.config import params
 from pprint import pprint
 
 
 def main():
-    return gse.main(5, 'EV_instances_5')
+    return gse.main(params.num_of_evs, f'EV_instances_{params.num_of_evs}')
 
 
 if __name__ == '__main__':

@@ -69,10 +69,10 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
 
     # Household load and EV charging costs
     model_outputs.household_load_cost = sum(
-        model.tariff[t] * pyo.value(model.P_household_load[t]) for t in model.TIME
+        model.tariff[t] * pyo.value(model.p_household_load[t]) for t in model.TIME
     )
     model_outputs.ev_charging_cost = sum(
-        model.tariff[t] * pyo.value(model.P_EV[i, t]) for i in model.EV_ID for t in model.TIME
+        model.tariff[t] * pyo.value(model.p_ev[i, t]) for i in model.EV_ID for t in model.TIME
     )
     model_outputs.grid_import_cost = (
             model_outputs.household_load_cost + model_outputs.ev_charging_cost
@@ -84,7 +84,7 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
         params.charging_discontinuity_penalty * pyo.value(model.delta_P_EV[i, t])
         for i in model.EV_ID for t in model.TIME
     )
-    peak_penalty = params.peak_penalty * pyo.value(model.P_peak)
+    peak_penalty = params.peak_penalty * pyo.value(model.p_peak)
 
     model_outputs.other_costs = daily_supply_charge + discontinuity_penalty + peak_penalty
 
@@ -123,16 +123,16 @@ def _create_load_profiles(model):
     Returns:
         A DataFrame containing load profiles indexed by time.
     """
-    # Collect EV power consumption data
+    # Collect EV power consumption data_processing
     p_ev_dict = {
-        f'EV_ID{i}': [pyo.value(model.P_EV[i, t]) for t in model.TIME] for i in model.EV_ID
+        f'EV_ID{i}': [pyo.value(model.p_ev[i, t]) for t in model.TIME] for i in model.EV_ID
     }
     df = pd.DataFrame(p_ev_dict, index=[t for t in model.TIME])
 
     # Aggregate EV load and combine with other loads
     df['ev_load'] = df.sum(axis=1)
     df['household_load'] = params.household_load['household_load']
-    df['grid'] = [pyo.value(model.P_grid[t]) for t in model.TIME]
+    df['grid'] = [pyo.value(model.p_grid[t]) for t in model.TIME]
     df['total_load'] = df['household_load'] + df['ev_load']
 
     return df

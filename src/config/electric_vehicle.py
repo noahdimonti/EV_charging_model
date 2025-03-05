@@ -3,14 +3,16 @@ import numpy as np
 
 
 class ElectricVehicle:
-    def __init__(self, timestamps):
-        # Attributes related to trave
+    def __init__(self, ev_id: int, timestamps):
+        self.ev_id = ev_id
+
+        # Attributes related to travel
         self.t_dep = []  # A set of departure times
         self.t_arr = []  # A set of arrival times
         self.travel_energy = []  # Energy consumption values aligning with t_dep and t_arr
 
         # Attributes related to battery
-        self.EV_capacity = None  # EV battery capacity (kWh)
+        self.battery_capacity = None  # EV battery capacity (kWh)
         self.soc_init = None  # Initial state of charge (kWh)
         self.soc_critical = None  # Minimum state of charge (kWh)
         self.soc_max = None  # Maximum state of charge (kWh)

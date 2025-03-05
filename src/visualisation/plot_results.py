@@ -110,7 +110,7 @@ def plot_p_ev_max(df, tariff_type, num_of_evs):
 
     # Plot each SOC as a separate set of bars
     for i, soc in enumerate(soc_values):
-        # Filter data for the current SOC
+        # Filter data_processing for the current SOC
         sub_df = df[df['SOC (%)'] == soc]
         print(f'subdf: {sub_df}')
 

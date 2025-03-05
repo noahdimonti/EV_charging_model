@@ -22,7 +22,7 @@ def main(start_date_time=params.start_date_time, min_at_home_time=params.min_tim
 
 def clean_raw_data(df):
     """
-    Initial cleaning of raw vista data
+    Initial cleaning of raw vista data_processing
     """
     df.dropna(axis=0, how='any', inplace=True)
 
@@ -86,7 +86,7 @@ def remove_outliers(df, min_at_home_time):
 
 def initialise_and_clean_work_ev(work_ev_path, start_date_time, min_at_home_time):
     """
-    Clean EV data for weekdays (departure and arrival time pairs, once in a day).
+    Clean EV data_processing for weekdays (departure and arrival time pairs, once in a day).
     Returns a dataframe of departure and arrival columns.
     """
     work_ev = pd.read_csv(work_ev_path)
@@ -99,7 +99,7 @@ def initialise_and_clean_work_ev(work_ev_path, start_date_time, min_at_home_time
 
 def initialise_and_clean_casual_ev(casual_ev_path, start_date_time, min_at_home_time):
     """
-    Clean EV data for weekends (departure and arrival time pairs, more than once in a day).
+    Clean EV data_processing for weekends (departure and arrival time pairs, more than once in a day).
     Returns a list of dataframes, columns are pairs of departure and arrival times for once in a day,
     twice in a day, and three times in a day.
     """

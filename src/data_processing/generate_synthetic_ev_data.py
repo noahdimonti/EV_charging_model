@@ -11,7 +11,7 @@ from pprint import pprint
 
 
 def main(num_of_evs, output_filename):
-    # Initialise ready to use data
+    # Initialise ready to use data_processing
     weekday_df, weekend_list = vdc.main()
 
     # create ev instances
@@ -24,7 +24,7 @@ def main(num_of_evs, output_filename):
         weekend_df_list=weekend_list
     )
 
-    # Save data into a pickle file
+    # Save data_processing into a pickle file
     file_path = '../../data/processed'
     filename = os.path.join(file_path, output_filename)
     with open(filename, "wb") as f:
@@ -39,9 +39,9 @@ def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_trave
     """Create EV instances and assign availability profiles."""
 
     # Initialise EV objects
-    ev_instances_list = [ElectricVehicle(timestamps) for _ in range(num_of_evs)]
+    ev_instances_list = [ElectricVehicle(ev_id, timestamps) for ev_id in range(num_of_evs)]
 
-    # Initialise EV attributes data and assign to EV instances
+    # Initialise EV attributes data_processing and assign to EV instances
     for ev_id, ev in enumerate(ev_instances_list):
         # Get EV dep arr times, capacity, and soc init
         dep_arr_times, capacity_of_EVs, SOC_init_of_EVs = generate_ev_attributes(
@@ -58,7 +58,7 @@ def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_trave
         ev.t_dep = gda.create_t_dep(dep_arr_times[ev_id])
         ev.travel_energy = travel_energy
 
-        ev.EV_capacity = capacity_of_EVs[ev_id]
+        ev.battery_capacity = capacity_of_EVs[ev_id]
         ev.soc_init = SOC_init_of_EVs[ev_id] * capacity_of_EVs[ev_id]
         ev.soc_max = params.SOC_max * capacity_of_EVs[ev_id]
         ev.soc_critical = params.SOC_critical * capacity_of_EVs[ev_id]
@@ -97,11 +97,15 @@ def generate_travel_energy_consumption(avg_travel_distance: float, rand_seed: in
     # Calculate the parameters for truncnorm
     a, b = (lower - mean) / std_dev, (upper - mean) / std_dev
 
-    # Generate truncated normal data to avoid negative values
+    # Generate truncated normal data_processing to avoid negative values
     rng = np.random.default_rng(rand_seed)
     travel_distances = truncnorm.rvs(a, b, loc=mean, scale=std_dev, size=number_of_trips, random_state=rng)
 
     # convert travel distance to consumed energy
-    travel_energy_consumptions = params.energy_consumption_per_km * travel_distances  # in kWh
+    travel_energy_consumptions = (params.energy_consumption_per_km * travel_distances).tolist()  # in kWh
 
     return travel_energy_consumptions
+
+
+if __name__ == '__main__':
+    main(params.num_of_evs, f'EV_instances_{params.num_of_evs}')

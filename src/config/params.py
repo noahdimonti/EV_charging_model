@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.data.generate_household_load import get_household_load
+from pprint import pprint
 
 # --------------------------
 # Time Settings
@@ -10,14 +10,26 @@ date options:
 '2019-01-01 00:00:00'
 '2022-02-21 00:00:00'
 '''
-start_date_time = pd.Timestamp('2018-01-01 00:00:00')
+start_date_time = pd.Timestamp('2022-02-21 00:00:00')
 num_of_days = 7
+num_of_weeks = 4
+
 time_resolution = 15  # minutes
 periods_in_a_day = int((60 / time_resolution) * 24)
+
 timestamps = pd.date_range(start=start_date_time,
                            periods=periods_in_a_day * num_of_days,
                            freq=f'{time_resolution}min')
-num_of_weeks = 4
+# Define subset of set T for day d
+T_d = timestamps.groupby(timestamps.day)
+
+# Define subset of set D for week w
+tmp = pd.DataFrame({'timestamp': timestamps})
+tmp['week'] = tmp['timestamp'].dt.isocalendar().week
+D_w = tmp.groupby('week')['timestamp'].apply(list).to_dict()
+
+num_of_evs = 100
+num_of_households = 100
 
 # --------------------------
 # Power Grid Settings
@@ -35,6 +47,8 @@ max_initial_soc = 0.6  # (%)
 ev_capacity_range_low = 35  # (kWh)
 ev_capacity_range_high = 60  # (kWh)
 
+charging_efficiency = 0.95  # (%)
+
 
 # --------------------------
 # EV Charging Power Settings
@@ -46,7 +60,7 @@ P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
 # --------------------------
 # EV Travel Settings
 # --------------------------
-avg_travel_distance = 25  # (km)
+avg_travel_distance = 35  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 travel_freq_probability = {
@@ -54,7 +68,7 @@ travel_freq_probability = {
     'twice': 0.3,
     'thrice': 0.1
 }
-min_time_at_home = time_resolution * 6  # EV stays at home for a minimum of 1.5 hrs
+min_time_at_home = time_resolution * 2  # EV stays at home for a minimum of x hrs
 
 # Cost of EV charger installation
 '''
@@ -68,7 +82,7 @@ Schneider EV Link (source: https://www.solarchoice.net.au/products/ev-chargers/s
 Charger maintenance cost for L1 and L2 chargers per year: $400
 '''
 
-# Tariff rates data
+# Tariff rates data_processing
 '''
 source: https://ieeexplore.ieee.org/abstract/document/9733283
 ToU Tariff
@@ -111,7 +125,7 @@ tou_off_peak_rate = 0.08
 tou_daily_supply_charge = 1.1
 
 
-# Generate flat and ToU tariff data
+# Generate flat and ToU tariff data_processing
 def create_flat_tariff(timestamps):
     return pd.Series([flat_tariff_rate] * len(timestamps), index=timestamps)
 
@@ -155,12 +169,6 @@ investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
 investment_cost = {P_EV_max: investment_cost
                    for P_EV_max, investment_cost in zip(P_EV_max_list, investment_cost_list)}
 annual_maintenance_cost = 400
-
-#  --------------------------
-# Household Load Profile
-# --------------------------
-num_of_households = 100
-household_load = get_household_load()
 
 
 # Define colours for printing

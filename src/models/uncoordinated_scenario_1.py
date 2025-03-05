@@ -1,7 +1,7 @@
 import pandas as pd
 
 from src.config import params
-from src.data import generate_synthetic_ev_data
+from src.data_processing import generate_synthetic_ev_data
 from src.config.uncoordinated_model import UncoordinatedModel
 
 
@@ -52,27 +52,27 @@ def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: 
             time_delta = pd.Timedelta(minutes=params.time_resolution)
 
             if t == params.start_date_time:
-                ev.soc.loc[t] = ev.soc_init
+                ev.soc_ev.loc[t] = ev.soc_init
                 ev.charging_power.loc[t] = 0
 
             elif (t != params.start_date_time) & (t not in ev.t_arr):
-                ev.soc.loc[t] = (ev.soc.loc[t - time_delta] +
-                                 ev.charging_power.loc[t].values)
+                ev.soc_ev.loc[t] = (ev.soc_ev.loc[t - time_delta] +
+                                    ev.charging_power.loc[t].values)
 
                 # make sure soc does not exceed the soc max limit
-                if ev.soc.loc[t].values <= ev.soc_max:
+                if ev.soc_ev.loc[t].values <= ev.soc_max:
                     pass
                 else:
                     # calculate how much power needed to charge until soc reaches soc_max
-                    remaining_to_charge = (ev.soc_max - ev.soc.loc[t - time_delta].values)
+                    remaining_to_charge = (ev.soc_max - ev.soc_ev.loc[t - time_delta].values)
 
-                    ev.soc.loc[t] = (ev.soc.loc[t - time_delta] + remaining_to_charge)
+                    ev.soc_ev.loc[t] = (ev.soc_ev.loc[t - time_delta] + remaining_to_charge)
 
                     ev.charging_power.loc[t] = remaining_to_charge
 
             elif (t != params.start_date_time) & (t in ev.t_arr):
-                ev.soc.loc[t] = ((ev.soc.loc[t - time_delta] + ev.charging_power.loc[t].values) -
-                                 ev.travel_energy_t_arr[t])
+                ev.soc_ev.loc[t] = ((ev.soc_ev.loc[t - time_delta] + ev.charging_power.loc[t].values) -
+                                    ev.travel_energy_t_arr[t])
 
     # instantiate model
     model = UncoordinatedModel(
@@ -167,7 +167,7 @@ def check(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distanc
 
         # Assign calculated lists to EV attributes
         ev.charging_power = pd.Series(charging_power, index=all_ev_profiles.index)
-        ev.soc = pd.Series(soc, index=all_ev_profiles.index)
+        ev.soc_ev = pd.Series(soc, index=all_ev_profiles.index)
 
     # instantiate model
     model = UncoordinatedModel(
