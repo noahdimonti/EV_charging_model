@@ -69,7 +69,7 @@ def generate_results(
                                 solve_model.solve_optimisation_model(model_instance)
 
                                 # Store P_EV_max for later use
-                                p_ev_max = pyo.value(model_instance.P_EV_max) * params.P_EV_resolution_factor
+                                p_ev_max = pyo.value(model_instance.p_cp_max) * params.P_EV_resolution_factor
                                 p_ev_max_dict[(tariff_type, num_of_evs, avg_travel_distance, min_soc)] = p_ev_max
 
                             elif model_type == 'uncoordinated':

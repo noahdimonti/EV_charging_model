@@ -55,7 +55,7 @@ charging_efficiency = 0.95  # (%)
 # --------------------------
 P_EV_resolution_factor = int(60 / time_resolution)
 max_charging_power_options = [1.3, 2.4, 3.7, 7.2]
-P_EV_max_list = [i / P_EV_resolution_factor for i in max_charging_power_options]
+cp_rated_power_options = [i / P_EV_resolution_factor for i in max_charging_power_options]
 
 # --------------------------
 # EV Travel Settings
@@ -167,7 +167,7 @@ peak_penalty = 0.01
 # --------------------------
 investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
 investment_cost = {P_EV_max: investment_cost
-                   for P_EV_max, investment_cost in zip(P_EV_max_list, investment_cost_list)}
+                   for P_EV_max, investment_cost in zip(cp_rated_power_options, investment_cost_list)}
 annual_maintenance_cost = 400
 
 

@@ -61,8 +61,8 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
 
     # Investment and maintenance costs
     investment_cost = model_outputs.num_of_cps * sum(
-        params.investment_cost[p] * pyo.value(model.P_EV_max_selection[p])
-        for p in params.P_EV_max_list
+        params.investment_cost[p] * pyo.value(model.select_cp_rated_power[p])
+        for p in params.cp_rated_power_options
     )
     maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * model_outputs.num_of_cps
     model_outputs.investment_maintenance_cost = investment_cost + maintenance_cost
@@ -98,7 +98,7 @@ def _calculate_power_metrics_coordinated_model(model, model_outputs):
     """
     # Load profiles for EVs, households, grid, and total load
     load_profiles = _create_load_profiles(model)
-    model_outputs.max_charging_power = pyo.value(model.P_EV_max) * params.P_EV_resolution_factor
+    model_outputs.max_charging_power = pyo.value(model.p_cp_max) * params.P_EV_resolution_factor
     model_outputs.total_ev_load = load_profiles['ev_load'].sum()
     model_outputs.peak_ev_load = load_profiles['ev_load'].max()
     model_outputs.peak_total_demand = load_profiles['total_load'].max()
