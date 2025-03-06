@@ -108,4 +108,8 @@ def generate_travel_energy_consumption(avg_travel_distance: float, rand_seed: in
 
 
 if __name__ == '__main__':
-    main(params.num_of_evs, f'EV_instances_{params.num_of_evs}')
+    num_evs = None
+    if num_evs is not None:
+        main(num_evs, f'EV_instances_{num_evs}')
+    else:
+        raise ValueError('Provide a number of EV instances.')

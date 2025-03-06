@@ -18,7 +18,7 @@ def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: 
     household_load = params.household_load
 
     # convert p_ev_max according to resolution
-    p_ev_max_per_resolution = p_ev_max / params.P_EV_resolution_factor
+    p_ev_max_per_resolution = p_ev_max / params.charging_power_resolution_factor
 
     # uncoordinated charging scenario algorithm
     for id, ev in enumerate(ev_data):
@@ -111,7 +111,7 @@ def check(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distanc
     household_load = params.household_load
 
     # Convert p_ev_max according to resolution
-    p_ev_max_per_resolution = p_ev_max / params.P_EV_resolution_factor
+    p_ev_max_per_resolution = p_ev_max / params.charging_power_resolution_factor
 
     # Precompute grid capacity constraints to avoid repeated checks
     if (household_load > params.P_grid_max).any().any():

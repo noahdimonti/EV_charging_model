@@ -17,16 +17,20 @@ from src.config.ev_params import (
 
 
 def main():
-    mdl = create_optimisation_model_instance()
-    solve_model.solve_optimisation_model(mdl)
-    mdl.soc_ev.display()
-    # mdl.p_ev.display()
-    # mdl.p_grid.display()
-    mdl.p_peak.display()
-    mdl.p_avg.display()
-    mdl.delta_peak_avg.display()
+    model = create_optimisation_model_instance()
+    solve_model.solve_optimisation_model(model)
 
-    print(pyo.value(mdl.p_cp_max))
+    model.p_grid.display()
+    model.p_household_load.display()
+    model.p_cp.display()
+    model.p_ev.display()
+    model.soc_ev.display()
+
+    model.p_peak.display()
+    model.p_avg.display()
+    model.delta_peak_avg.display()
+
+    print(pyo.value(model.p_cp_max))
 
 
 def create_optimisation_model_instance():
@@ -39,16 +43,16 @@ def create_optimisation_model_instance():
     # SETS (done)
     # ---------------------------------
     model.TIME = pyo.Set(initialize=params.timestamps)
-    model.EV_ID = pyo.Set(initialize=[i for i in range(params.num_of_evs)])
+    model.EV_ID = pyo.Set(initialize=[_ for _ in range(params.num_of_evs)])
 
-    model.DAY = pyo.Set(initialize=[i for i in params.T_d.keys()])
-    model.WEEK = pyo.Set(initialize=[i for i in params.D_w.keys()])
+    model.CP_ID = pyo.Set(initialize=[_ for _ in range(params.num_of_evs)])  # if this is config_1
+
+    model.DAY = pyo.Set(initialize=[_ for _ in params.T_d.keys()])
+    model.WEEK = pyo.Set(initialize=[_ for _ in params.D_w.keys()])
 
     # ---------------------------------
     # PARAMETERS
     # ---------------------------------
-    # charging points CP
-    model.num_of_cps = pyo.Param(initialize=params.num_of_evs)
 
     # household load (done)
     household_load_path = f'../../data/interim/load_profile_{params.num_of_days}_days_{params.num_of_households}_households.csv'
@@ -70,7 +74,7 @@ def create_optimisation_model_instance():
     )
 
     # ---------------------------------
-    # VARIABLES
+    # VARIABLES (done)
     # ---------------------------------
 
     # Grid (done)
@@ -80,10 +84,10 @@ def create_optimisation_model_instance():
     model.delta_peak_avg = pyo.Var(model.DAY, within=pyo.NonNegativeReals)
 
     # CP (done)
-    model.p_cp = pyo.Var(model.TIME, within=pyo.NonNegativeReals)
+    model.p_cp = pyo.Var(model.CP_ID, model.TIME, within=pyo.NonNegativeReals)
 
-    # CP rated power selection variables
-    model.select_cp_rated_power = pyo.Var(params.cp_rated_power_options, within=pyo.Binary)
+    # CP rated power selection variables (done)
+    model.select_cp_rated_power = pyo.Var(params.p_cp_max_options_scaled, within=pyo.Binary)
     model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
 
     # EV (done)
@@ -121,30 +125,47 @@ def create_optimisation_model_instance():
 
     # CCP constraint (done)
     def energy_balance_rule(model, t):
-        return model.p_grid[t] == model.p_household_load[t] + sum(model.p_ev[i, t] for i in model.EV_ID)
+        return model.p_grid[t] == model.p_household_load[t] + sum(model.p_cp[j, t] for j in model.CP_ID)
 
     model.ccp_constraint = pyo.Constraint(model.TIME, rule=energy_balance_rule)
 
 
-
-    # Constraints to select optimal rated power of the charging points
+    # CP constraints (done)
+    # Constraint to select optimal rated power of the charging points
     def rated_power_selection(model):
         return model.p_cp_max == sum(
-            model.select_cp_rated_power[j] * j for j in params.cp_rated_power_options
+            model.select_cp_rated_power[j] * j for j in params.p_cp_max_options_scaled
         )
 
     model.rated_power_selection_constraint = pyo.Constraint(rule=rated_power_selection)
 
-    # constraint to ensure only one rated power variable is selected
+    # Constraint to ensure only one rated power variable is selected
     def mutual_exclusivity_rated_power_selection(model):
-        return sum(model.select_cp_rated_power[j] for j in params.cp_rated_power_options) == 1
+        return sum(model.select_cp_rated_power[j] for j in params.p_cp_max_options_scaled) == 1
 
     model.mutual_exclusivity_rated_power_selection_constraint = pyo.Constraint(
         rule=mutual_exclusivity_rated_power_selection
     )
 
+    # CP power limits
+    model.cp_power_limits_constraint = pyo.ConstraintList()
+
+    for j in model.CP_ID:
+        for t in model.TIME:
+            model.cp_power_limits_constraint.add(model.p_cp[j, t] >= 0)
+            model.cp_power_limits_constraint.add(model.p_cp[j, t] <= model.p_cp_max)
 
 
+    # CP-EV relationship
+    def cp_ev_relationship(model, i, j, t):
+        return model.p_ev[i, t] == model.p_cp[j, t]
+
+    model.cp_ev_relationship_constraint = pyo.Constraint(
+        model.EV_ID, model.CP_ID, model.TIME, rule=cp_ev_relationship
+    )
+
+
+    # EV Constraints (done)
     # EV charging power constraints
     model.ev_charging_power_limits_constraint = pyo.ConstraintList()
 
@@ -158,10 +179,7 @@ def create_optimisation_model_instance():
             )
 
 
-
-    # ------------------------------------
     # SOC Constraints (done)
-    # ------------------------------------
 
     def get_trip_number_k(i, t):
         if t in t_arr_dict[i]:
@@ -220,20 +238,21 @@ def create_optimisation_model_instance():
     # ------------------------------------
 
     def get_economic_cost(model):
-        # investment and maintenance costs
-        investment_cost = model.num_of_cps * sum(params.investment_cost[j] * model.select_cp_rated_power[j]
-                                                 for j in params.cp_rated_power_options)
-        # per charging point for the duration
-        maintenance_cost = params.annual_maintenance_cost / 365 * params.num_of_days * model.num_of_cps
+        # investment cost
+        investment_cost = len(model.CP_ID) * sum(params.investment_cost[j] * model.select_cp_rated_power[j]
+                                                 for j in params.p_cp_max_options_scaled)
 
-        # operational costs
+        # maintenance cost per charging point for the duration
+        maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * len(model.CP_ID)
+
+        # operational cost
         operational_cost = params.daily_supply_charge_dict[tariff_type]
 
-        # electricity purchase costs
-        household_load_cost = sum(model.tariff[t] * model.p_household_load[t] for t in model.TIME)
-        ev_charging_cost = sum(model.tariff[t] * model.p_ev[i, t] for i in model.EV_ID for t in model.TIME)
+        # electricity purchase cost
+        energy_purchase_cost = sum(params.tariff_dict[tariff_type][t] * model.p_grid[t] for t in model.TIME)
 
-        total_economic_cost = investment_cost + maintenance_cost + household_load_cost + ev_charging_cost + operational_cost
+        # total costs
+        total_economic_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
 
         return total_economic_cost
 
@@ -244,8 +263,8 @@ def create_optimisation_model_instance():
         return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in t_dep_dict[i])
 
     w_cost = 0.5
-    w_load = 0.5
-    w_soc = 0
+    w_load = 0.25
+    w_soc = 0.25
 
     def obj_function(model):
         economic_cost = get_economic_cost(model)
