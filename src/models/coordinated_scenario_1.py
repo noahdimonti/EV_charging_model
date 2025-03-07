@@ -50,7 +50,7 @@ def main():
     # Common X label
     axes[-1].set_xlabel("Time Steps")
 
-    plt.show()
+    # plt.show()
 
 
 def create_optimisation_model_instance():

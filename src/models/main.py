@@ -11,18 +11,18 @@ from pprint import pprint
 
 def main():
     # Create the optimization model
-    config_1_daily = assets.BuildModel(
+    config_1_opportunistic = assets.BuildModel(
         config=assets.CPConfig.CONFIG_1,
-        charging_mode=assets.ChargingMode.DAILY_CHARGE,
+        charging_mode=assets.ChargingStrategy.OPPORTUNISTIC,
         p_cp_max_mode=assets.MaxChargingPower.VARIABLE,
         params=params,
         ev_params=ev_params,
         independent_vars=independent_variables
     ).get_model()
 
-    config_1_flex = assets.BuildModel(
+    config_1_flexible = assets.BuildModel(
         config=assets.CPConfig.CONFIG_1,
-        charging_mode=assets.ChargingMode.FLEXIBLE_WEEKLY,
+        charging_mode=assets.ChargingStrategy.FLEXIBLE,
         p_cp_max_mode=assets.MaxChargingPower.L_1,
         params=params,
         ev_params=ev_params,
@@ -30,9 +30,9 @@ def main():
     ).get_model()
 
     # Solve model
-    # model = config_1_flex
-    model = config_1_daily
-    model.minimum_required_soc_at_departure_constraint.display()
+    # model = config_1_flexible
+    model = config_1_opportunistic
+    # model.minimum_required_soc_at_departure_constraint.display()
     solve_model.solve_optimisation_model(model)
 
     # Display results
@@ -46,7 +46,9 @@ def main():
     # model.p_avg.display()
     # model.delta_peak_avg.display()
 
-    if model == config_1_flex:
+    model.config_1_ev_cp_mapping.display()
+
+    if model == config_1_flexible:
         model.num_charging_days.display()
         # model.is_charging_day.display()
         for d in model.DAY:
@@ -74,7 +76,7 @@ def main():
     # Common X label
     axes[-1].set_xlabel("Time Steps")
 
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':

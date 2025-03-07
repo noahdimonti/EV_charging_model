@@ -31,7 +31,7 @@ tmp = tmp.resample('D').first()
 D_w = tmp.groupby('week').apply(lambda x: x.index.date.tolist()).to_dict()
 length_D_w = 7
 
-num_of_evs = 100
+num_of_evs = 5
 num_of_households = 100
 
 
@@ -41,6 +41,7 @@ num_of_households = 100
 min_num_charging_days = 1
 max_num_charging_days = 4
 max_charged_evs_daily_margin = 0
+charging_discontinuity_penalty = 0.1
 
 
 # --------------------------
