@@ -155,12 +155,12 @@ class ChargingPoint:
                     self.model.cp_power_limits_constraint.add(self.model.p_cp[j, t] <= self.model.p_cp_max)
 
             # CP-EV relationship
-            def cp_ev_relationship(model, i, j, t):
-                return model.p_ev[i, t] == model.p_cp[j, t]
-
-            self.model.cp_ev_relationship_constraint = pyo.Constraint(
-                self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_ev_relationship
-            )
+            # def cp_ev_relationship(model, i, j, t):
+            #     return model.p_ev[i, t] == model.p_cp[j, t]
+            #
+            # self.model.cp_ev_relationship_constraint = pyo.Constraint(
+            #     self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_ev_relationship
+            # )
 
 
 class ElectricVehicle:
@@ -214,8 +214,7 @@ class ElectricVehicle:
             # constraint to set ev soc at arrival time
             elif t in self.ev_params.t_arr_dict[i]:
                 k = get_trip_number_k(i, t)
-                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - self.ev_params.travel_energy_dict[i][
-                    k]
+                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - self.ev_params.travel_energy_dict[i][k]
 
             # otherwise soc follows regular charging constraint
             else:

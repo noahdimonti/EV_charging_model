@@ -31,7 +31,7 @@ tmp = tmp.resample('D').first()
 D_w = tmp.groupby('week').apply(lambda x: x.index.date.tolist()).to_dict()
 length_D_w = 7
 
-num_of_evs = 3
+num_of_evs = 100
 num_of_households = 100
 
 

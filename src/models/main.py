@@ -30,8 +30,8 @@ def main():
     ).get_model()
 
     # Solve model
-    model = config_1_flex
-    # model = config_1_daily
+    # model = config_1_flex
+    model = config_1_daily
     model.minimum_required_soc_at_departure_constraint.display()
     solve_model.solve_optimisation_model(model)
 

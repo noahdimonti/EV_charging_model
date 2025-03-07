@@ -50,10 +50,14 @@ def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_trave
 
         # Get travel energy consumption
         num_trips = int(len(dep_arr_times[ev_id]) / 2)
-        travel_energy = generate_travel_energy_consumption(avg_travel_distance, ev_id, num_trips)
+        travel_energy = generate_travel_energy_consumption(
+            avg_travel_distance=avg_travel_distance,
+            rand_seed=ev_id,
+            number_of_trips=num_trips
+        )
 
         # Assign EV attributes to EV instances
-        ev.at_home_status = gda.create_at_home_pattern(dep_arr_times[ev_id], ev_id=ev_id)
+        ev.at_home_status = gda.create_at_home_pattern(dep_arr_time=dep_arr_times[ev_id], ev_id=ev_id)
         ev.t_arr = gda.create_t_arr(dep_arr_times[ev_id])
         ev.t_dep = gda.create_t_dep(dep_arr_times[ev_id])
         ev.travel_energy = travel_energy

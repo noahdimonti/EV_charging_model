@@ -1,6 +1,7 @@
 import pyomo.environ as pyo
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
 from src.config import params
 from pprint import pprint
 from src.utils import solve_model
@@ -20,17 +21,36 @@ def main():
     model = create_optimisation_model_instance()
     solve_model.solve_optimisation_model(model)
 
-    model.p_grid.display()
-    model.p_household_load.display()
-    model.p_cp.display()
-    model.p_ev.display()
-    model.soc_ev.display()
-
-    model.p_peak.display()
-    model.p_avg.display()
-    model.delta_peak_avg.display()
+    # model.p_grid.display()
+    # model.p_household_load.display()
+    # model.p_cp.display()
+    # model.p_ev.display()
+    # model.soc_ev.display()
+    #
+    # model.p_peak.display()
+    # model.p_avg.display()
+    # model.delta_peak_avg.display()
 
     print(pyo.value(model.p_cp_max))
+
+    soc_data = {i: [pyo.value(model.soc_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
+    p_ev_data = {i: [pyo.value(model.p_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
+
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5, 10), sharex=True)
+
+    for i in model.EV_ID:
+        axes[0].plot(params.timestamps, p_ev_data[i], linestyle='-', label=f'EV_{i}')
+        axes[1].plot(params.timestamps, soc_data[i], linestyle='-', label=f'EV_{i}')
+
+    axes[0].set_ylabel('Charging Power (kW)')
+    axes[1].set_ylabel('SOC (kWh)')
+    axes[0].legend()
+    axes[1].legend()
+
+    # Common X label
+    axes[-1].set_xlabel("Time Steps")
+
+    plt.show()
 
 
 def create_optimisation_model_instance():
@@ -157,12 +177,12 @@ def create_optimisation_model_instance():
 
 
     # CP-EV relationship
-    def cp_ev_relationship(model, i, j, t):
-        return model.p_ev[i, t] == model.p_cp[j, t]
-
-    model.cp_ev_relationship_constraint = pyo.Constraint(
-        model.EV_ID, model.CP_ID, model.TIME, rule=cp_ev_relationship
-    )
+    # def cp_ev_relationship(model, i, j, t):
+    #     return model.p_ev[i, t] == model.p_cp[j, t]
+    #
+    # model.cp_ev_relationship_constraint = pyo.Constraint(
+    #     model.EV_ID, model.CP_ID, model.TIME, rule=cp_ev_relationship
+    # )
 
 
     # EV Constraints (done)
