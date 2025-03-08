@@ -3,9 +3,12 @@ from src.config import params
 from pprint import pprint
 
 # Load EV data
-filename = f'../../data/processed/EV_instances_{params.num_of_evs}'
+filename = f'../../data/processed/EV_instances_100'
 with open(filename, "rb") as f:
     ev_instance_list = pickle.load(f)
+
+# Slice data
+ev_instance_list = ev_instance_list[:params.num_of_evs]
 
 # Initialise data
 soc_init_dict = {ev.ev_id: ev.soc_init for ev in ev_instance_list}
