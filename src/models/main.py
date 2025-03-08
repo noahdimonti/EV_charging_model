@@ -13,7 +13,7 @@ def main():
     # Create the optimization model
     config_1_opportunistic = assets.BuildModel(
         config=assets.CPConfig.CONFIG_1,
-        charging_mode=assets.ChargingStrategy.OPPORTUNISTIC,
+        charging_strategy=assets.ChargingStrategy.OPPORTUNISTIC,
         p_cp_max_mode=assets.MaxChargingPower.VARIABLE,
         params=params,
         ev_params=ev_params,
@@ -22,7 +22,7 @@ def main():
 
     config_1_flexible = assets.BuildModel(
         config=assets.CPConfig.CONFIG_1,
-        charging_mode=assets.ChargingStrategy.FLEXIBLE,
+        charging_strategy=assets.ChargingStrategy.FLEXIBLE,
         p_cp_max_mode=assets.MaxChargingPower.L_1,
         params=params,
         ev_params=ev_params,

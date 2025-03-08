@@ -3,6 +3,39 @@ from enum import Enum
 from pprint import pprint
 
 
+class ChargingStrategy(Enum):
+    OPPORTUNISTIC = 'opportunistic'
+    FLEXIBLE = 'flexible'
+
+    @classmethod
+    def validate(cls, charging_mode):
+        if charging_mode not in cls:
+            allowed_values = [f"{cls.__name__}.{member.name}" for member in cls]  # Format as ChargingMode.DAILY_CHARGE
+            raise ValueError(f"Invalid CP configuration: {charging_mode}. Allowed values: {allowed_values}")
+
+
+class MaxChargingPower(Enum):
+    VARIABLE = 'variable'
+    L_1_LESS = 1.3
+    L_1 = 2.4
+    L_2_SINGLE_PHASE = 3.7
+    L_2_THREE_PHASE = 7.2
+
+    @classmethod
+    def validate(cls, charging_mode, p_cp_max_mode):
+        """Validate p_cp_max_mode based on charging_mode."""
+        if charging_mode == ChargingStrategy.OPPORTUNISTIC:
+            if p_cp_max_mode != cls.VARIABLE:
+                raise ValueError(
+                    f"For {charging_mode.value}, p_cp_max must be VARIABLE, not {p_cp_max_mode.value}."
+                )
+        else:  # Other charging modes
+            if p_cp_max_mode == cls.VARIABLE:
+                raise ValueError(
+                    f"For {charging_mode.value}, p_cp_max cannot be VARIABLE. Choose a parameter value."
+                )
+
+
 class Grid:
     def __init__(self, model, params):
         self.model = model
@@ -75,45 +108,12 @@ class CPConfig(Enum):
             raise ValueError(f"Invalid CP configuration: {config}. Allowed values: {allowed_values}")
 
 
-class ChargingStrategy(Enum):
-    OPPORTUNISTIC = 'opportunistic'
-    FLEXIBLE = 'flexible'
-
-    @classmethod
-    def validate(cls, charging_mode):
-        if charging_mode not in cls:
-            allowed_values = [f"{cls.__name__}.{member.name}" for member in cls]  # Format as ChargingMode.DAILY_CHARGE
-            raise ValueError(f"Invalid CP configuration: {charging_mode}. Allowed values: {allowed_values}")
-
-
-class MaxChargingPower(Enum):
-    VARIABLE = 'variable'
-    L_1_LESS = 1.3
-    L_1 = 2.4
-    L_2_SINGLE_PHASE = 3.7
-    L_2_THREE_PHASE = 7.2
-
-    @classmethod
-    def validate(cls, charging_mode, p_cp_max_mode):
-        """Validate p_cp_max_mode based on charging_mode."""
-        if charging_mode == ChargingStrategy.OPPORTUNISTIC:
-            if p_cp_max_mode != cls.VARIABLE:
-                raise ValueError(
-                    f"For {charging_mode.value}, p_cp_max must be VARIABLE, not {p_cp_max_mode.value}."
-                )
-        else:  # Other charging modes
-            if p_cp_max_mode == cls.VARIABLE:
-                raise ValueError(
-                    f"For {charging_mode.value}, p_cp_max cannot be VARIABLE. Choose a parameter value."
-                )
-
-
 class ChargingPoint:
-    def __init__(self, model, params, config, charging_mode, p_cp_max_mode):
+    def __init__(self, model, params, config, charging_strategy, p_cp_max_mode):
         self.model = model
         self.params = params
         self.config = config
-        self.charging_mode = charging_mode
+        self.charging_mode = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.initialise_sets()
         self.initialise_variables()
@@ -182,12 +182,12 @@ class ChargingPoint:
 
 
 class ElectricVehicle:
-    def __init__(self, model, params, ev_params, config, charging_mode, p_cp_max_mode):
+    def __init__(self, model, params, ev_params, config, charging_strategy, p_cp_max_mode):
         self.model = model
         self.params = params
         self.ev_params = ev_params
         self.config = config
-        self.charging_strategy = charging_mode
+        self.charging_strategy = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.initialise_parameters()
         self.initialise_variables()
@@ -364,18 +364,18 @@ class ElectricVehicle:
 class BuildModel:
     def __init__(self,
                  config: CPConfig,
-                 charging_mode: ChargingStrategy,
+                 charging_strategy: ChargingStrategy,
                  p_cp_max_mode: MaxChargingPower,
                  params,
                  ev_params,
                  independent_vars):
         self.config = config
-        self.charging_mode = charging_mode
+        self.charging_mode = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.params = params
         self.ev_params = ev_params
         self.independent_vars = independent_vars
-        self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_mode.value}')
+        self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}')
         self.assets = {}
 
         # Validate configuration and charging mode
