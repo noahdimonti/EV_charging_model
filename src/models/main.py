@@ -23,7 +23,7 @@ def main():
     config_1_flexible = assets.BuildModel(
         config=assets.CPConfig.CONFIG_1,
         charging_strategy=assets.ChargingStrategy.FLEXIBLE,
-        p_cp_max_mode=assets.MaxChargingPower.L_1,
+        p_cp_max_mode=assets.MaxChargingPower.VARIABLE,
         params=params,
         ev_params=ev_params,
         independent_vars=independent_variables
@@ -42,9 +42,9 @@ def main():
     # model.p_ev.display()
     # model.soc_ev.display()
 
-    # model.p_peak.display()
-    # model.p_avg.display()
-    # model.delta_peak_avg.display()
+    # model.p_daily_peak.display()
+    # model.p_daily_avg.display()
+    # model.delta_daily_peak_avg.display()
 
     model.config_1_ev_cp_mapping.display()
 
@@ -76,7 +76,7 @@ def main():
     # Common X label
     axes[-1].set_xlabel("Time Steps")
 
-    # plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':

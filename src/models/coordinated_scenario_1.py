@@ -27,9 +27,9 @@ def main():
     # model.p_ev.display()
     # model.soc_ev.display()
     #
-    # model.p_peak.display()
-    # model.p_avg.display()
-    # model.delta_peak_avg.display()
+    # model.p_daily_peak.display()
+    # model.p_daily_avg.display()
+    # model.delta_daily_peak_avg.display()
 
     print(pyo.value(model.p_cp_max))
 
@@ -129,7 +129,7 @@ def create_optimisation_model_instance():
             model.peak_power_constraint.add(model.p_peak[d] >= model.p_grid[t])
 
     def peak_average(model, d):
-        return model.p_avg[d] == (1 / len(params.T_d[d])) * sum(model.p_grid[t] for t in params.T_d[d])
+        return model.p_daily_avg[d] == (1 / len(params.T_d[d])) * sum(model.p_grid[t] for t in params.T_d[d])
 
     model.peak_average_constraint = pyo.Constraint(
         model.DAY, rule=peak_average
@@ -277,7 +277,7 @@ def create_optimisation_model_instance():
         return total_economic_cost
 
     def get_load_cost(model):
-        return sum(model.delta_peak_avg[d] for d in model.DAY)
+        return sum(model.delta_daily_peak_avg[d] for d in model.DAY)
 
     def get_soc_cost(model):
         return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in t_dep_dict[i])

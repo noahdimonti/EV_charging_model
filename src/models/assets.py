@@ -3,15 +3,27 @@ from enum import Enum
 from pprint import pprint
 
 
+class CPConfig(Enum):
+    CONFIG_1 = 'config_1'
+    CONFIG_2 = 'config_2'
+    CONFIG_3 = 'config_3'
+
+    @classmethod
+    def validate(cls, config):
+        if config not in cls:
+            allowed_values = [f"{cls.__name__}.{member.name}" for member in cls]  # Format as CPConfig.CONFIG_1
+            raise ValueError(f"Invalid CP configuration: {config}. Allowed values: {allowed_values}")
+
+
 class ChargingStrategy(Enum):
     OPPORTUNISTIC = 'opportunistic'
     FLEXIBLE = 'flexible'
 
     @classmethod
-    def validate(cls, charging_mode):
-        if charging_mode not in cls:
+    def validate(cls, charging_strategy):
+        if charging_strategy not in cls:
             allowed_values = [f"{cls.__name__}.{member.name}" for member in cls]  # Format as ChargingMode.DAILY_CHARGE
-            raise ValueError(f"Invalid CP configuration: {charging_mode}. Allowed values: {allowed_values}")
+            raise ValueError(f"Invalid CP configuration: {charging_strategy}. Allowed values: {allowed_values}")
 
 
 class MaxChargingPower(Enum):
@@ -22,17 +34,17 @@ class MaxChargingPower(Enum):
     L_2_THREE_PHASE = 7.2
 
     @classmethod
-    def validate(cls, charging_mode, p_cp_max_mode):
-        """Validate p_cp_max_mode based on charging_mode."""
-        if charging_mode == ChargingStrategy.OPPORTUNISTIC:
+    def validate(cls, charging_strategy, p_cp_max_mode):
+        """Validate p_cp_max_mode based on charging strategy."""
+        if charging_strategy == ChargingStrategy.OPPORTUNISTIC:
             if p_cp_max_mode != cls.VARIABLE:
                 raise ValueError(
-                    f"For {charging_mode.value}, p_cp_max must be VARIABLE, not {p_cp_max_mode.value}."
+                    f"For {charging_strategy.value}, p_cp_max must be VARIABLE, not {p_cp_max_mode.value}."
                 )
         else:  # Other charging modes
             if p_cp_max_mode == cls.VARIABLE:
                 raise ValueError(
-                    f"For {charging_mode.value}, p_cp_max cannot be VARIABLE. Choose a parameter value."
+                    f"For {charging_strategy.value}, p_cp_max cannot be VARIABLE. Choose a parameter value."
                 )
 
 
@@ -46,32 +58,64 @@ class Grid:
         # Grid import power
         self.model.p_grid = pyo.Var(self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, self.params.P_grid_max))
 
-        # Peak and average power
-        self.model.p_peak = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        self.model.p_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        self.model.delta_peak_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        # Daily peak and average power
+        self.model.p_daily_peak = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        self.model.p_daily_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        self.model.delta_daily_peak_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+
+        # Weekly peak and average power
+        self.model.p_weekly_peak = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
+        self.model.p_weekly_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
+        self.model.delta_weekly_peak_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
+
+    def add_peak_constraints(self, peak_var, avg_var, delta_var, time_sets, index_set, name_prefix):
+        """ Generalised function to add peak constraints (daily/weekly). """
+
+        # Peak power constraint
+        constraint_list = pyo.ConstraintList()
+        setattr(self.model, f"{name_prefix}_peak_power_constraint", constraint_list)
+
+        for idx in index_set:
+            for t in time_sets[idx]:
+                constraint_list.add(peak_var[idx] >= self.model.p_grid[t])
+
+        # Average peak constraint
+        def peak_average_rule(model, idx):
+            return avg_var[idx] == (1 / len(time_sets[idx])) * sum(model.p_grid[t] for t in time_sets[idx])
+
+        setattr(self.model, f"{name_prefix}_peak_average_constraint",
+                pyo.Constraint(index_set, rule=peak_average_rule))
+
+        # Delta peak constraint
+        delta_constraint_list = pyo.ConstraintList()
+        setattr(self.model, f"{name_prefix}_delta_peak_avg_constraint", delta_constraint_list)
+
+        for idx in index_set:
+            delta_constraint_list.add(delta_var[idx] >= (peak_var[idx] - avg_var[idx]))
+            delta_constraint_list.add(delta_var[idx] >= (avg_var[idx] - peak_var[idx]))
 
     def initialise_constraints(self):
-        self.model.peak_power_constraint = pyo.ConstraintList()
+        """ Initialise constraints by calling the generalised function for daily and weekly peaks. """
 
-        for d in self.model.DAY:
-            for t in self.params.T_d[d]:
-                self.model.peak_power_constraint.add(self.model.p_peak[d] >= self.model.p_grid[t])
-
-        def peak_average(model, d):
-            return model.p_avg[d] == (1 / len(self.params.T_d[d])) * sum(model.p_grid[t] for t in self.params.T_d[d])
-
-        self.model.peak_average_constraint = pyo.Constraint(
-            self.model.DAY, rule=peak_average
+        # Daily constraints
+        self.add_peak_constraints(
+            peak_var=self.model.p_daily_peak,
+            avg_var=self.model.p_daily_avg,
+            delta_var=self.model.delta_daily_peak_avg,
+            time_sets=self.params.T_d,
+            index_set=self.model.DAY,
+            name_prefix="daily"
         )
 
-        self.model.delta_peak_average_constraint = pyo.ConstraintList()
-
-        for d in self.model.DAY:
-            self.model.delta_peak_average_constraint.add(
-                self.model.delta_peak_avg[d] >= (self.model.p_peak[d] - self.model.p_avg[d]))
-            self.model.delta_peak_average_constraint.add(
-                self.model.delta_peak_avg[d] >= (self.model.p_avg[d] - self.model.p_peak[d]))
+        # Weekly constraints
+        self.add_peak_constraints(
+            peak_var=self.model.p_weekly_peak,
+            avg_var=self.model.p_weekly_avg,
+            delta_var=self.model.delta_weekly_peak_avg,
+            time_sets=self.params.W_t,
+            index_set=self.model.WEEK,
+            name_prefix="weekly"
+        )
 
 
 class HouseholdLoad:
@@ -96,24 +140,12 @@ class CommonConnectionPoint:
         self.model.ccp_constraint = pyo.Constraint(self.model.TIME, rule=energy_balance_rule)
 
 
-class CPConfig(Enum):
-    CONFIG_1 = 'config_1'
-    CONFIG_2 = 'config_2'
-    CONFIG_3 = 'config_3'
-
-    @classmethod
-    def validate(cls, config):
-        if config not in cls:
-            allowed_values = [f"{cls.__name__}.{member.name}" for member in cls]  # Format as CPConfig.CONFIG_1
-            raise ValueError(f"Invalid CP configuration: {config}. Allowed values: {allowed_values}")
-
-
 class ChargingPoint:
     def __init__(self, model, params, config, charging_strategy, p_cp_max_mode):
         self.model = model
         self.params = params
         self.config = config
-        self.charging_mode = charging_strategy
+        self.charging_strategy = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.initialise_sets()
         self.initialise_variables()
@@ -124,8 +156,9 @@ class ChargingPoint:
 
     def initialise_variables(self):
         self.model.p_cp = pyo.Var(self.model.CP_ID, self.model.TIME, within=pyo.NonNegativeReals)
+        self.model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
 
-        if self.charging_mode == ChargingStrategy.OPPORTUNISTIC:
+        if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC or self.charging_strategy == ChargingStrategy.FLEXIBLE:
             self.model.select_cp_rated_power = pyo.Var(self.params.p_cp_max_options_scaled, within=pyo.Binary)
 
     def initialise_constraints(self):
@@ -163,7 +196,7 @@ class ChargingPoint:
             # -------------------------------------------------
             # Constraints for config 1, opportunistic charging
             # -------------------------------------------------
-            if self.charging_mode == ChargingStrategy.OPPORTUNISTIC:
+            if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC or self.charging_strategy == ChargingStrategy.FLEXIBLE:
                 # Constraint to select optimal rated power of the charging points
                 def rated_power_selection(model):
                     return model.p_cp_max == sum(
@@ -308,19 +341,25 @@ class ElectricVehicle:
                     self.model.EV_ID, self.model.DAY, within=pyo.Binary
                 )
 
-                # Define scheduling constraints
+                # Charging power constraints
+                # Big-M linearisation
                 for i in self.model.EV_ID:
                     for t in self.model.TIME:
                         self.model.ev_charging_power_limit_constraints.add(
                             self.model.p_ev[i, t] >= 0
                         )
                         self.model.ev_charging_power_limit_constraints.add(
-                            self.model.p_ev[i, t] <= self.model.ev_is_charging[i, t] * self.model.p_cp_max
+                            self.model.p_ev[i, t] <= self.model.p_cp_max
+                        )
+                        self.model.ev_charging_power_limit_constraints.add(
+                            self.model.p_ev[i, t] <=
+                            max(self.params.p_cp_max_options_scaled) * self.model.ev_is_charging[i, t]
                         )
                         self.model.ev_charging_power_limit_constraints.add(
                             self.model.ev_is_charging[i, t] <= self.model.ev_at_home_status[i, t]
                         )
 
+                # Define scheduling constraints
                 def charge_only_on_charging_days(model, i, d):
                     return (sum(model.ev_is_charging[i, t] for t in self.params.T_d[d]) <=
                             len(self.params.T_d[d]) * model.is_charging_day[i, d])
@@ -335,14 +374,6 @@ class ElectricVehicle:
                 self.model.num_charging_days_constraint = pyo.Constraint(
                     self.model.EV_ID, self.model.WEEK, rule=num_charging_days
                 )
-
-                # self.model.highest_num_charging_days_constraint = pyo.ConstraintList()
-                #
-                # for w in self.model.WEEK:
-                #     for i in self.model.EV_ID:
-                #         self.model.highest_num_charging_days_constraint.add(
-                #             self.model.highest_num_charging_days[w] >= self.model.num_charging_days[i, w]
-                #         )
 
                 def max_num_charged_evs_daily(model, d):
                     return (
@@ -370,7 +401,7 @@ class BuildModel:
                  ev_params,
                  independent_vars):
         self.config = config
-        self.charging_mode = charging_strategy
+        self.charging_strategy = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.params = params
         self.ev_params = ev_params
@@ -380,17 +411,17 @@ class BuildModel:
 
         # Validate configuration and charging mode
         CPConfig.validate(self.config)
-        ChargingStrategy.validate(self.charging_mode)
-        MaxChargingPower.validate(self.charging_mode, self.p_cp_max_mode)
+        ChargingStrategy.validate(self.charging_strategy)
+        # MaxChargingPower.validate(self.charging_strategy, self.p_cp_max_mode)
 
         # Set p_cp_max as variable or parameter
-        if self.p_cp_max_mode == MaxChargingPower.VARIABLE:
-            self.model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
-        else:
-            self.model.p_cp_max = pyo.Param(
-                initialize=(float(self.p_cp_max_mode.value) / self.params.charging_power_resolution_factor),
-                within=pyo.NonNegativeReals
-            )
+        # if self.p_cp_max_mode == MaxChargingPower.VARIABLE:
+        #     self.model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
+        # else:
+        #     self.model.p_cp_max = pyo.Param(
+        #         initialize=(float(self.p_cp_max_mode.value) / self.params.charging_power_resolution_factor),
+        #         within=pyo.NonNegativeReals
+        #     )
 
         # Run methods
         self.initialise_sets()
@@ -409,8 +440,8 @@ class BuildModel:
         self.assets['grid'] = Grid(self.model, self.params)
         self.assets['household'] = HouseholdLoad(self.model, self.params)
         self.assets['ccp'] = CommonConnectionPoint(self.model, self.params)
-        self.assets['cp'] = ChargingPoint(self.model, self.params, self.config, self.charging_mode, self.p_cp_max_mode)
-        self.assets['ev'] = ElectricVehicle(self.model, self.params, self.ev_params, self.config, self.charging_mode,
+        self.assets['cp'] = ChargingPoint(self.model, self.params, self.config, self.charging_strategy, self.p_cp_max_mode)
+        self.assets['ev'] = ElectricVehicle(self.model, self.params, self.ev_params, self.config, self.charging_strategy,
                                             self.p_cp_max_mode)
 
         # Initialise constraints
@@ -445,7 +476,7 @@ class BuildModel:
             return total_economic_cost
 
         def get_load_cost(model):
-            return sum(model.delta_peak_avg[d] for d in model.DAY)
+            return sum(model.delta_daily_peak_avg[d] for d in model.DAY)
 
         def get_soc_cost(model):
             return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in self.ev_params.t_dep_dict[i])

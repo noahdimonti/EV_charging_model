@@ -84,7 +84,7 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
         params.charging_discontinuity_penalty * pyo.value(model.delta_P_EV[i, t])
         for i in model.EV_ID for t in model.TIME
     )
-    peak_penalty = params.peak_penalty * pyo.value(model.p_peak)
+    peak_penalty = params.peak_penalty * pyo.value(model.p_daily_peak)
 
     model_outputs.other_costs = daily_supply_charge + discontinuity_penalty + peak_penalty
 

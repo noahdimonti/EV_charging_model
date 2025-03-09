@@ -23,15 +23,22 @@ timestamps = pd.date_range(start=start_date_time,
                            freq=f'{time_resolution}min')
 # Define subset of set T for day d
 T_d = timestamps.groupby(timestamps.date)
+pprint(T_d)
 
-# Define subset of set D for week w
+# Create a df with week column
 tmp = pd.DataFrame({'timestamp': timestamps}).set_index('timestamp')
 tmp['week'] = tmp.index.isocalendar().week
-tmp = tmp.resample('D').first()
-D_w = tmp.groupby('week').apply(lambda x: x.index.date.tolist()).to_dict()
+
+# Define subset of set D for week w
+D_w = tmp.resample('D').first()
+D_w = D_w.groupby('week').apply(lambda x: x.index.date.tolist()).to_dict()
 length_D_w = 7
 
-num_of_evs = 5
+# Define a subset of T for week w
+W_t = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
+
+
+num_of_evs = 10
 num_of_households = 100
 
 
