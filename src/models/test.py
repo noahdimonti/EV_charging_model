@@ -61,7 +61,7 @@ def main():
     # model.p_grid.display()
     # model.p_household_load.display()
     # model.p_cp.display()
-    model.p_ev.display()
+    # model.p_ev.display()
     # model.soc_ev.display()
 
     # model.p_daily_peak.display()

@@ -107,7 +107,7 @@ def create_optimisation_model_instance():
     model.p_cp = pyo.Var(model.CP_ID, model.TIME, within=pyo.NonNegativeReals)
 
     # CP rated power selection variables (done)
-    model.select_cp_rated_power = pyo.Var(params.p_cp_max_options_scaled, within=pyo.Binary)
+    model.select_cp_rated_power = pyo.Var(params.p_cp_rated_options_scaled, within=pyo.Binary)
     model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
 
     # EV (done)
@@ -153,15 +153,15 @@ def create_optimisation_model_instance():
     # CP constraints (done)
     # Constraint to select optimal rated power of the charging points
     def rated_power_selection(model):
-        return model.p_cp_max == sum(
-            model.select_cp_rated_power[j] * j for j in params.p_cp_max_options_scaled
+        return model.p_cp_rated == sum(
+            model.select_cp_rated_power[j] * j for j in params.p_cp_rated_options_scaled
         )
 
     model.rated_power_selection_constraint = pyo.Constraint(rule=rated_power_selection)
 
     # Constraint to ensure only one rated power variable is selected
     def mutual_exclusivity_rated_power_selection(model):
-        return sum(model.select_cp_rated_power[j] for j in params.p_cp_max_options_scaled) == 1
+        return sum(model.select_cp_rated_power[j] for j in params.p_cp_rated_options_scaled) == 1
 
     model.mutual_exclusivity_rated_power_selection_constraint = pyo.Constraint(
         rule=mutual_exclusivity_rated_power_selection
@@ -260,7 +260,7 @@ def create_optimisation_model_instance():
     def get_economic_cost(model):
         # investment cost
         investment_cost = len(model.CP_ID) * sum(params.investment_cost[j] * model.select_cp_rated_power[j]
-                                                 for j in params.p_cp_max_options_scaled)
+                                                 for j in params.p_cp_rated_options_scaled)
 
         # maintenance cost per charging point for the duration
         maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * len(model.CP_ID)

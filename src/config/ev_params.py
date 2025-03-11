@@ -23,8 +23,8 @@ travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
 charging_efficiency = 0.95  # (%)
 
 # Sanity check
-print_check = True
-# print_check = False
+# print_check = True
+print_check = False
 
 if print_check:
     pprint(t_dep_dict)

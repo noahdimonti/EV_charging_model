@@ -23,7 +23,6 @@ timestamps = pd.date_range(start=start_date_time,
                            freq=f'{time_resolution}min')
 # Define subset of set T for day d
 T_d = timestamps.groupby(timestamps.date)
-pprint(T_d)
 
 # Create a df with week column
 tmp = pd.DataFrame({'timestamp': timestamps}).set_index('timestamp')
@@ -35,10 +34,10 @@ D_w = D_w.groupby('week').apply(lambda x: x.index.date.tolist()).to_dict()
 length_D_w = 7
 
 # Define a subset of T for week w
-W_t = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
+T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 10
+num_of_evs = 1
 num_of_households = 100
 
 
@@ -48,20 +47,14 @@ num_of_households = 100
 min_num_charging_days = 1
 max_num_charging_days = 4
 max_charged_evs_daily_margin = 0
-charging_discontinuity_penalty = 0.1
+charging_discontinuity_penalty = 1
 
 
 # --------------------------
-# Power Grid Settings
+# Charging Point Settings
 # --------------------------
-P_grid_max = 500  # (kW)
-
-
-# --------------------------
-# Household Load Settings
-# --------------------------
-household_load_path = f'../../data/interim/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
-household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+num_cp_min = 1
+num_cp_max = num_of_evs
 
 
 # --------------------------
@@ -81,13 +74,13 @@ charging_efficiency = 0.95  # (%)
 # --------------------------
 # EV Charging Power Settings
 # --------------------------
-delta_t = int(time_resolution / 60)
-
 charging_power_resolution_factor = int(60 / time_resolution)
-p_cp_max_options = [1.3, 2.4, 3.7, 7.2]
-p_cp_max_options_scaled = [
-    i / charging_power_resolution_factor for i in p_cp_max_options  # values: [0.325, 0.6, 0.925, 1.8]
+p_cp_rated_options = [1.3, 2.4, 3.7, 7.2]
+p_cp_rated_options_scaled = [
+    i / charging_power_resolution_factor for i in p_cp_rated_options  # values: [0.325, 0.6, 0.925, 1.8]
 ]
+p_cp_rated_min = min(p_cp_rated_options_scaled)
+p_cp_rated_max = max(p_cp_rated_options_scaled)
 
 
 # --------------------------
@@ -192,11 +185,24 @@ daily_supply_charge_dict = {
 
 
 # --------------------------
+# Power Grid Settings
+# --------------------------
+P_grid_max = 500  # (kW)
+
+
+# --------------------------
+# Household Load Settings
+# --------------------------
+household_load_path = f'../../data/interim/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
+household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
+
+
+# --------------------------
 # Investment and Maintenance Costs
 # --------------------------
 investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
 investment_cost = {p_cp: investment_cost
-                   for p_cp, investment_cost in zip(p_cp_max_options_scaled, investment_cost_list)
+                   for p_cp, investment_cost in zip(p_cp_rated_options_scaled, investment_cost_list)
                    }  # values: {0.325: 200, 0.6: 200, 0.925: 1350, 1.8: 1500}
 annual_maintenance_cost = 400
 

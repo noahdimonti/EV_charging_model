@@ -35,7 +35,7 @@ class MaxChargingPower(Enum):
 
     @classmethod
     def validate(cls, charging_strategy, p_cp_max_mode):
-        """Validate p_cp_max_mode based on charging strategy."""
+        """Validate p_cp_rated_mode based on charging strategy."""
         if charging_strategy == ChargingStrategy.OPPORTUNISTIC:
             if p_cp_max_mode != cls.VARIABLE:
                 raise ValueError(
@@ -53,6 +53,7 @@ class Grid:
         self.model = model
         self.params = params
         self.initialise_variables()
+        self.initialise_constraints()
 
     def initialise_variables(self):
         # Grid import power
@@ -112,7 +113,7 @@ class Grid:
             peak_var=self.model.p_weekly_peak,
             avg_var=self.model.p_weekly_avg,
             delta_var=self.model.delta_weekly_peak_avg,
-            time_sets=self.params.W_t,
+            time_sets=self.params.T_w,
             index_set=self.model.WEEK,
             name_prefix="weekly"
         )
@@ -122,9 +123,8 @@ class HouseholdLoad:
     def __init__(self, model, params):
         self.model = model
         self.params = params
-        self.initialise_parameters()
 
-    def initialise_parameters(self):
+        # Initialise parameter
         self.model.p_household_load = pyo.Param(self.model.TIME, initialize=self.params.household_load)
 
 
@@ -133,9 +133,10 @@ class CommonConnectionPoint:
         self.model = model
         self.params = params
 
-    def initialise_constraints(self):
+    def initialise_energy_balance_constraint(self):
         def energy_balance_rule(model, t):
-            return model.p_grid[t] == model.p_household_load[t] + sum(model.p_cp[j, t] for j in model.CP_ID)
+            # return model.p_grid[t] == model.p_household_load[t] + sum(model.p_cp[j, t] for j in model.CP_ID)
+            return model.p_grid[t] == model.p_household_load[t] + sum(model.p_ev[i, t] for i in model.EV_ID)
 
         self.model.ccp_constraint = pyo.Constraint(self.model.TIME, rule=energy_balance_rule)
 
@@ -148,70 +149,120 @@ class ChargingPoint:
         self.charging_strategy = charging_strategy
         self.p_cp_max_mode = p_cp_max_mode
         self.initialise_sets()
+        self.initialise_parameters()
         self.initialise_variables()
 
     def initialise_sets(self):
+        if self.config == CPConfig.CONFIG_2:
+            self.model.CP_ID = pyo.Set(initialize=range(self.params.num_cp_max))
+
+    def initialise_parameters(self):
         if self.config == CPConfig.CONFIG_1:
-            self.model.CP_ID = pyo.Set(initialize=[_ for _ in range(self.params.num_of_evs)])
+            self.model.num_cp = pyo.Param(initialize=len(self.model.EV_ID))
+
+    # --------------------------
+    # VARIABLES
+    # --------------------------
+    def _initialise_cp_rated_power_selection_variables(self):
+        self.model.p_cp_rated = pyo.Var(within=pyo.NonNegativeReals)
+        self.model.select_cp_rated_power = pyo.Var(self.params.p_cp_rated_options_scaled, within=pyo.Binary)
+
+    def _initialise_num_cp_decision_variables(self):
+        self.model.num_cp = pyo.Var(
+            within=pyo.NonNegativeIntegers, bounds=(self.params.num_cp_min, self.params.num_cp_max)
+        )
+        self.model.cp_is_installed = pyo.Var(
+            self.model.CP_ID, within=pyo.Binary
+        )
+        self.model.ev_is_charging_at_cp_j = pyo.Var(
+            self.model.EV_ID, self.model.CP_ID, self.model.TIME, within=pyo.Binary
+        )
+        self.model.p_cp_total = pyo.Var(
+            within=pyo.NonNegativeReals
+        )
 
     def initialise_variables(self):
-        self.model.p_cp = pyo.Var(self.model.CP_ID, self.model.TIME, within=pyo.NonNegativeReals)
-        self.model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
+        self._initialise_cp_rated_power_selection_variables()
 
-        if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC or self.charging_strategy == ChargingStrategy.FLEXIBLE:
-            self.model.select_cp_rated_power = pyo.Var(self.params.p_cp_max_options_scaled, within=pyo.Binary)
+        if self.config == CPConfig.CONFIG_2:
+            self._initialise_num_cp_decision_variables()
+
+    # --------------------------
+    # CONSTRAINTS
+    # --------------------------
+    def _initialise_cp_rated_power_selection_constraints(self):
+        # Constraint to select optimal rated power of the charging points
+        def rated_power_selection(model):
+            return model.p_cp_rated == sum(
+                model.select_cp_rated_power[m] * m for m in self.params.p_cp_rated_options_scaled
+            )
+
+        self.model.rated_power_selection_constraint = pyo.Constraint(rule=rated_power_selection)
+
+        # Constraint to ensure only one rated power variable is selected
+        def mutual_exclusivity_rated_power_selection(model):
+            return sum(model.select_cp_rated_power[m] for m in self.params.p_cp_rated_options_scaled) == 1
+
+        self.model.mutual_exclusivity_rated_power_selection_constraint = pyo.Constraint(
+            rule=mutual_exclusivity_rated_power_selection
+        )
+
+    def _initialise_num_cp_decision_constraints(self):
+        # Constraint: number of CPs built
+        def cp_count(model):
+            return sum(model.cp_is_installed[j] for j in model.CP_ID) == model.num_cp
+
+        self.model.cp_count_constraint = pyo.Constraint(rule=cp_count)
+
+        # Constraint: EVs can only be assigned to existing CPs
+        # ------- is this constraint needed?
+        def cp_installed(model, i, j, t):
+            return model.ev_is_charging_at_cp_j[i, j, t] <= model.cp_is_installed[j]
+
+        self.model.cp_installed_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_installed
+        )
+
+        # Constraint: ensuring total EV charging demand can be met by the number of installed CPs
+        def p_cp_total(model, t):
+            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.p_cp_total
+
+        self.model.p_cp_total_constraint = pyo.Constraint(
+            self.model.TIME, rule=p_cp_total
+        )
+
+        # The constraint is non-linear, and is linearised below using McCormick relaxation
+        def p_cp_total_lb(model):
+            return model.p_cp_total >= (self.params.num_cp_min * model.p_cp_rated) + (
+                    self.params.p_cp_rated_min * model.num_cp) - (
+                    self.params.p_cp_rated_min * self.params.num_cp_min)
+
+        self.model.p_cp_total_lb_constraint = pyo.Constraint(rule=p_cp_total_lb)
+
+        def p_cp_total_ub1(model):
+            return model.p_cp_total <= self.params.num_cp_max * model.p_cp_rated
+
+        self.model.p_cp_total_ub1_constraint = pyo.Constraint(rule=p_cp_total_ub1)
+
+        def p_cp_total_ub2(model):
+            return model.p_cp_total <= self.params.p_cp_rated_max * model.num_cp
+
+        self.model.p_cp_total_ub2_constraint = pyo.Constraint(rule=p_cp_total_ub2)
+
+    def _cp_ev_mutual_exclusivity_constraints(self):
+        def cp_ev_connection_for_cp(model, j, t):
+            return sum(model.ev_is_charging_at_cp_j[i, j, t] for i in model.EV_ID) <= model.cp_is_installed[j]
+
+        self.model.cp_ev_connection_for_cp_constraint = pyo.Constraint(
+            self.model.CP_ID, self.model.TIME, rule=cp_ev_connection_for_cp
+        )
 
     def initialise_constraints(self):
-        # ----------------------------------------------------------
-        # Constraints for any type of config and charging strategy
-        # ----------------------------------------------------------
-        # CP power limits
-        self.model.cp_power_limits_constraint = pyo.ConstraintList()
+        self._initialise_cp_rated_power_selection_constraints()
 
-        for j in self.model.CP_ID:
-            for t in self.model.TIME:
-                self.model.cp_power_limits_constraint.add(self.model.p_cp[j, t] >= 0)
-                self.model.cp_power_limits_constraint.add(self.model.p_cp[j, t] <= self.model.p_cp_max)
-
-        # -------------------------------------------------
-        # Constraints for config 1, any charging strategy
-        # -------------------------------------------------
-        if self.config == CPConfig.CONFIG_1:
-            # CP-EV relationship
-            # Define a mapping between EVs and CPs
-            config_1_ev_cp_mapping = {i: i for i in self.model.EV_ID}
-
-            self.model.config_1_ev_cp_mapping = pyo.Param(
-                self.model.EV_ID, within=self.model.CP_ID, initialize=config_1_ev_cp_mapping
-            )
-
-            def cp_ev_relationship(model, i, t):
-                j = self.model.config_1_ev_cp_mapping[i]
-                return model.p_ev[i, t] == model.p_cp[j, t]
-
-            self.model.cp_ev_relationship_constraint = pyo.Constraint(
-                self.model.EV_ID, self.model.TIME, rule=cp_ev_relationship
-            )
-
-            # -------------------------------------------------
-            # Constraints for config 1, opportunistic charging
-            # -------------------------------------------------
-            if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC or self.charging_strategy == ChargingStrategy.FLEXIBLE:
-                # Constraint to select optimal rated power of the charging points
-                def rated_power_selection(model):
-                    return model.p_cp_max == sum(
-                        model.select_cp_rated_power[m] * m for m in self.params.p_cp_max_options_scaled
-                    )
-
-                self.model.rated_power_selection_constraint = pyo.Constraint(rule=rated_power_selection)
-
-                # Constraint to ensure only one rated power variable is selected
-                def mutual_exclusivity_rated_power_selection(model):
-                    return sum(model.select_cp_rated_power[m] for m in self.params.p_cp_max_options_scaled) == 1
-
-                self.model.mutual_exclusivity_rated_power_selection_constraint = pyo.Constraint(
-                    rule=mutual_exclusivity_rated_power_selection
-                )
+        if self.config == CPConfig.CONFIG_2:
+            self._initialise_num_cp_decision_constraints()
+            self._cp_ev_mutual_exclusivity_constraints()
 
 
 class ElectricVehicle:
@@ -243,7 +294,7 @@ class ElectricVehicle:
     # ----------------------------------------------------------
     # Constraints for any type of config and charging strategy
     # ----------------------------------------------------------
-    def initialise_soc_constraints(self):
+    def _initialise_soc_constraints(self):
         def get_trip_number_k(i, t):
             if t in self.ev_params.t_arr_dict[i]:
                 k = self.ev_params.t_arr_dict[i].index(t)
@@ -268,7 +319,8 @@ class ElectricVehicle:
             # constraint to set ev soc at arrival time
             elif t in self.ev_params.t_arr_dict[i]:
                 k = get_trip_number_k(i, t)
-                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - self.ev_params.travel_energy_dict[i][k]
+                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - self.ev_params.travel_energy_dict[i][
+                    k]
 
             # otherwise soc follows regular charging constraint
             else:
@@ -293,7 +345,7 @@ class ElectricVehicle:
 
         self.model.final_soc_constraint = pyo.Constraint(self.model.EV_ID, rule=final_soc_rule)
 
-    def initialise_charging_discontinuity_constraints(self):
+    def _initialise_charging_discontinuity_constraints(self):
         self.model.charging_discontinuity_constraint = pyo.ConstraintList()
 
         for i in self.model.EV_ID:
@@ -313,7 +365,67 @@ class ElectricVehicle:
                             self.model.p_ev[i, self.model.TIME.prev(t)] - self.model.p_ev[i, t]
                         )
 
-    def initialise_ev_charging_power_constraints(self):
+    # Currently only for config 1
+    def _day_scheduling_constraints(self):
+        # Define new variables and parameters
+        self.model.ev_is_charging = pyo.Var(
+            self.model.EV_ID, self.model.TIME, within=pyo.Binary
+        )
+        self.model.num_charging_days = pyo.Var(
+            self.model.EV_ID, self.model.WEEK,
+            within=pyo.NonNegativeIntegers,
+            bounds=(self.params.min_num_charging_days, self.params.max_num_charging_days)
+        )
+        self.model.is_charging_day = pyo.Var(
+            self.model.EV_ID, self.model.DAY, within=pyo.Binary
+        )
+
+        # Charging power constraints
+        # Big-M linearisation
+        for i in self.model.EV_ID:
+            for t in self.model.TIME:
+                self.model.ev_charging_power_limit_constraints.add(
+                    self.model.p_ev[i, t] >= 0
+                )
+                self.model.ev_charging_power_limit_constraints.add(
+                    self.model.p_ev[i, t] <= self.model.p_cp_rated
+                )
+                self.model.ev_charging_power_limit_constraints.add(
+                    self.model.p_ev[i, t] <=
+                    self.params.p_cp_rated_max * self.model.ev_is_charging[i, t]
+                )
+                self.model.ev_charging_power_limit_constraints.add(
+                    self.model.ev_is_charging[i, t] <= self.model.ev_at_home_status[i, t]
+                )
+
+        # Define scheduling constraints
+        def charge_only_on_charging_days(model, i, d):
+            return (sum(model.ev_is_charging[i, t] for t in self.params.T_d[d]) <=
+                    len(self.params.T_d[d]) * model.is_charging_day[i, d])
+
+        self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.DAY, rule=charge_only_on_charging_days
+        )
+
+        def num_charging_days(model, i, w):
+            return model.num_charging_days[i, w] == sum(model.is_charging_day[i, d] for d in self.params.D_w[w])
+
+        self.model.num_charging_days_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.WEEK, rule=num_charging_days
+        )
+
+        def max_num_charged_evs_daily(model, d):
+            return (
+                    sum(model.is_charging_day[i, d] for i in model.EV_ID) <=
+                    ((self.params.num_of_evs * self.params.max_num_charging_days) / self.params.length_D_w) +
+                    self.params.max_charged_evs_daily_margin
+            )
+
+        self.model.max_num_charged_evs_daily_constraint = pyo.Constraint(
+            self.model.DAY, rule=max_num_charged_evs_daily
+        )
+
+    def _initialise_ev_charging_power_constraints(self):
         self.model.ev_charging_power_limit_constraints = pyo.ConstraintList()
 
         if self.config == CPConfig.CONFIG_1:
@@ -324,23 +436,14 @@ class ElectricVehicle:
                             self.model.p_ev[i, t] >= 0
                         )
                         self.model.ev_charging_power_limit_constraints.add(
-                            self.model.p_ev[i, t] <= self.model.ev_at_home_status[i, t] * self.model.p_cp_max
+                            self.model.p_ev[i, t] <= self.model.ev_at_home_status[i, t] * self.model.p_cp_rated
                         )
 
             elif self.charging_strategy == ChargingStrategy.FLEXIBLE:
-                # Define new variables and parameters
-                self.model.ev_is_charging = pyo.Var(
-                    self.model.EV_ID, self.model.TIME, within=pyo.Binary
-                )
-                self.model.num_charging_days = pyo.Var(
-                    self.model.EV_ID, self.model.WEEK,
-                    within=pyo.Integers,
-                    bounds=(self.params.min_num_charging_days, self.params.max_num_charging_days)
-                )
-                self.model.is_charging_day = pyo.Var(
-                    self.model.EV_ID, self.model.DAY, within=pyo.Binary
-                )
+                self._day_scheduling_constraints()
 
+        if self.config == CPConfig.CONFIG_2:
+            if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC:
                 # Charging power constraints
                 # Big-M linearisation
                 for i in self.model.EV_ID:
@@ -349,77 +452,55 @@ class ElectricVehicle:
                             self.model.p_ev[i, t] >= 0
                         )
                         self.model.ev_charging_power_limit_constraints.add(
-                            self.model.p_ev[i, t] <= self.model.p_cp_max
+                            self.model.p_ev[i, t] <= self.model.p_cp_rated
                         )
                         self.model.ev_charging_power_limit_constraints.add(
                             self.model.p_ev[i, t] <=
-                            max(self.params.p_cp_max_options_scaled) * self.model.ev_is_charging[i, t]
+                            self.params.p_cp_rated_max * sum(
+                                self.model.ev_is_charging_at_cp_j[i, j, t] for j in self.model.CP_ID)
                         )
-                        self.model.ev_charging_power_limit_constraints.add(
-                            self.model.ev_is_charging[i, t] <= self.model.ev_at_home_status[i, t]
-                        )
+                        for j in self.model.CP_ID:
+                            self.model.ev_charging_power_limit_constraints.add(
+                                self.model.ev_is_charging_at_cp_j[i, j, t] <= self.model.ev_at_home_status[i, t]
+                            )
 
-                # Define scheduling constraints
-                def charge_only_on_charging_days(model, i, d):
-                    return (sum(model.ev_is_charging[i, t] for t in self.params.T_d[d]) <=
-                            len(self.params.T_d[d]) * model.is_charging_day[i, d])
-
-                self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
-                    self.model.EV_ID, self.model.DAY, rule=charge_only_on_charging_days
-                )
-
-                def num_charging_days(model, i, w):
-                    return model.num_charging_days[i, w] == sum(model.is_charging_day[i, d] for d in self.params.D_w[w])
-
-                self.model.num_charging_days_constraint = pyo.Constraint(
-                    self.model.EV_ID, self.model.WEEK, rule=num_charging_days
-                )
-
-                def max_num_charged_evs_daily(model, d):
-                    return (
-                            sum(model.is_charging_day[i, d] for i in model.EV_ID) <=
-                            ((self.params.num_of_evs * self.params.max_num_charging_days) / self.params.length_D_w) +
-                            self.params.max_charged_evs_daily_margin
-                    )
-
-                self.model.max_num_charged_evs_daily_constraint = pyo.Constraint(
-                    self.model.DAY, rule=max_num_charged_evs_daily
-                )
+            elif self.charging_strategy == ChargingStrategy.FLEXIBLE:
+                pass
 
     def initialise_constraints(self):
-        self.initialise_soc_constraints()
-        self.initialise_charging_discontinuity_constraints()
-        self.initialise_ev_charging_power_constraints()
+        self._initialise_soc_constraints()
+        self._initialise_charging_discontinuity_constraints()
+        self._initialise_ev_charging_power_constraints()
 
 
 class BuildModel:
     def __init__(self,
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
-                 p_cp_max_mode: MaxChargingPower,
+                 p_cp_rated_mode: MaxChargingPower,
                  params,
                  ev_params,
                  independent_vars):
         self.config = config
         self.charging_strategy = charging_strategy
-        self.p_cp_max_mode = p_cp_max_mode
+        self.p_cp_rated_mode = p_cp_rated_mode
         self.params = params
         self.ev_params = ev_params
         self.independent_vars = independent_vars
-        self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}')
+        self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}_{self.params.num_of_evs}EVs')
         self.assets = {}
 
         # Validate configuration and charging mode
         CPConfig.validate(self.config)
         ChargingStrategy.validate(self.charging_strategy)
-        # MaxChargingPower.validate(self.charging_strategy, self.p_cp_max_mode)
+        # MaxChargingPower.validate(self.charging_strategy, self.p_cp_rated_mode)
 
-        # Set p_cp_max as variable or parameter
-        # if self.p_cp_max_mode == MaxChargingPower.VARIABLE:
-        #     self.model.p_cp_max = pyo.Var(within=pyo.NonNegativeReals)
+        # Set p_cp_rated as variable or parameter
+        # if self.p_cp_rated_mode == MaxChargingPower.VARIABLE:
+        #     self.model.p_cp_rated = pyo.Var(within=pyo.NonNegativeReals)
         # else:
-        #     self.model.p_cp_max = pyo.Param(
-        #         initialize=(float(self.p_cp_max_mode.value) / self.params.charging_power_resolution_factor),
+        #     self.model.p_cp_rated = pyo.Param(
+        #         initialize=(float(self.p_cp_rated_mode.value) / self.params.charging_power_resolution_factor),
         #         within=pyo.NonNegativeReals
         #     )
 
@@ -440,32 +521,26 @@ class BuildModel:
         self.assets['grid'] = Grid(self.model, self.params)
         self.assets['household'] = HouseholdLoad(self.model, self.params)
         self.assets['ccp'] = CommonConnectionPoint(self.model, self.params)
-        self.assets['cp'] = ChargingPoint(self.model, self.params, self.config, self.charging_strategy, self.p_cp_max_mode)
-        self.assets['ev'] = ElectricVehicle(self.model, self.params, self.ev_params, self.config, self.charging_strategy,
-                                            self.p_cp_max_mode)
+        self.assets['cp'] = ChargingPoint(self.model, self.params, self.config, self.charging_strategy,
+                                          self.p_cp_rated_mode)
+        self.assets['ev'] = ElectricVehicle(self.model, self.params, self.ev_params, self.config,
+                                            self.charging_strategy,
+                                            self.p_cp_rated_mode)
 
         # Initialise constraints
-        self.assets['grid'].initialise_constraints()
-        self.assets['ccp'].initialise_constraints()
+        self.assets['ccp'].initialise_energy_balance_constraint()
         self.assets['cp'].initialise_constraints()
         self.assets['ev'].initialise_constraints()
 
     def define_objective(self):
         def get_economic_cost(model):
-            # investment cost
-            if self.p_cp_max_mode == MaxChargingPower.VARIABLE:
-                investment_cost = len(model.CP_ID) * sum(self.params.investment_cost[m] * model.select_cp_rated_power[m]
-                                                         for m in self.params.p_cp_max_options_scaled)
-            else:
-                investment_cost = len(model.CP_ID) * self.params.investment_cost[self.model.p_cp_max.value]
+            investment_cost = model.num_cp * sum(self.params.investment_cost[m] * model.select_cp_rated_power[m]
+                                                 for m in self.params.p_cp_rated_options_scaled)
 
-            # maintenance cost per charging point for the duration
-            maintenance_cost = (self.params.annual_maintenance_cost / 365) * self.params.num_of_days * len(model.CP_ID)
+            maintenance_cost = (self.params.annual_maintenance_cost / 365) * self.params.num_of_days * model.num_cp
 
-            # operational cost
             operational_cost = self.params.daily_supply_charge_dict[self.independent_vars.tariff_type]
 
-            # electricity purchase cost
             energy_purchase_cost = sum(
                 self.params.tariff_dict[self.independent_vars.tariff_type][t] * model.p_grid[t] for t in model.TIME
             )
@@ -475,27 +550,28 @@ class BuildModel:
 
             return total_economic_cost
 
-        def get_load_cost(model):
-            return sum(model.delta_daily_peak_avg[d] for d in model.DAY)
-
-        def get_soc_cost(model):
-            return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in self.ev_params.t_dep_dict[i])
-
         def get_technical_cost(model):
-            return sum(
+            daily_load_variance = sum(model.delta_daily_peak_avg[d] for d in model.DAY)
+            weekly_load_variance = sum(model.delta_weekly_peak_avg[w] for w in model.WEEK)
+            charging_discontinuity = sum(
                 self.params.charging_discontinuity_penalty * model.delta_p_ev[i, t]
                 for i in model.EV_ID
                 for t in model.TIME
             )
 
+            return daily_load_variance + weekly_load_variance + charging_discontinuity
+
+        def get_social_cost(model):
+            return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in self.ev_params.t_dep_dict[i])
+
         def obj_function(model):
             economic_cost = get_economic_cost(model)
-            load_cost = get_load_cost(model)
-            soc_cost = get_soc_cost(model)
             technical_cost = get_technical_cost(model)
+            social_cost = get_social_cost(model)
 
-            return (self.independent_vars.w_cost * economic_cost) + (self.independent_vars.w_load * load_cost) + (
-                        self.independent_vars.w_soc * soc_cost) + (self.independent_vars.w_tech * technical_cost)
+            return (self.independent_vars.w_economic * economic_cost) + (
+                        self.independent_vars.w_technical * technical_cost) + (
+                    self.independent_vars.w_social * social_cost)
 
         self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 

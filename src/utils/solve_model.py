@@ -1,3 +1,4 @@
+import time
 import pyomo.environ as pyo
 from src.config import params
 
@@ -7,7 +8,10 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False):
     print(f'\n=========================================================\n'
           f'Solving {model.name} model ...'
           f'\n=========================================================\n')
+    start_time = time.time()
     solver_results = solver.solve(model, tee=verbose)
+    end_time = time.time()
+    solving_time = end_time - start_time
 
     # Check solver status and termination condition
     solver_status = solver_results.solver.status
@@ -28,6 +32,14 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False):
 
     except Exception as e:
         print(f'{params.RED}An error occurred: {e}.{params.RESET}')
+
+    print(f'\n---------------------------------------------------------')
+    if (solving_time % 60) < 1:
+        print(f'Model solved in {solving_time:.3f} seconds')
+    else:
+        minutes = int(solving_time // 60)
+        remaining_seconds = solving_time % 60
+        print(f'Model solved in {minutes} minutes {remaining_seconds:.3f} seconds')
 
     print(f'---------------------------------------------------------\n')
 
