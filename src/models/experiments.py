@@ -8,7 +8,7 @@ from src.config import independent_variables
 from src.utils import solve_model
 from src.utils.evaluation_metrics import ModelResults
 from pprint import pprint
-from build_model import plot_results, iterate_models, run_model
+from run_models import plot_results, iterate_models, run_model
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     # charging_strategy = 'flexible'
     # model = run_model(config, charging_strategy, time_limit=600)
 
-    configs = [assets.CPConfig.CONFIG_2]
+    configs = [assets.CPConfig.CONFIG_1, assets.CPConfig.CONFIG_2]
     charging_strategies = [
         assets.ChargingStrategy.OPPORTUNISTIC,
         assets.ChargingStrategy.FLEXIBLE,

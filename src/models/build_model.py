@@ -1,99 +1,116 @@
-import pandas as pd
 import pyomo.environ as pyo
-import matplotlib.pyplot as plt
-import assets
-from src.config import params
-from src.config import ev_params
-from src.config import independent_variables
-from src.utils import solve_model
-from src.utils.evaluation_metrics import ModelResults
-from pprint import pprint
+
+from src.models.assets import (
+    CPConfig,
+    ChargingStrategy,
+    MaxChargingPower,
+    Grid,
+    HouseholdLoad,
+    CommonConnectionPoint,
+    ChargingPoint,
+    ElectricVehicle
+)
 
 
-def plot_results(model):
-    soc_data = {i: [pyo.value(model.soc_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
-    p_ev_data = {i: [pyo.value(model.p_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
+class BuildModel:
+    def __init__(self,
+                 config: CPConfig,
+                 charging_strategy: ChargingStrategy,
+                 p_cp_rated_mode: MaxChargingPower,
+                 params,
+                 ev_params,
+                 independent_vars):
+        self.config = config
+        self.charging_strategy = charging_strategy
+        self.p_cp_rated_mode = p_cp_rated_mode
+        self.params = params
+        self.ev_params = ev_params
+        self.independent_vars = independent_vars
+        self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}_{self.params.num_of_evs}EVs')
+        self.assets = {}
 
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5, 10), sharex=True)
+        # Validate configuration and charging mode
+        CPConfig.validate(self.config)
+        ChargingStrategy.validate(self.charging_strategy)
+        # MaxChargingPower.validate(self.charging_strategy, self.p_cp_rated_mode)
 
-    for i in model.EV_ID:
-        axes[0].plot(params.timestamps, p_ev_data[i], linestyle='-', label=f'EV_{i}')
-        axes[1].plot(params.timestamps, soc_data[i], linestyle='-', label=f'EV_{i}')
+        # Set p_cp_rated as variable or parameter
+        # if self.p_cp_rated_mode == MaxChargingPower.VARIABLE:
+        #     self.model.p_cp_rated = pyo.Var(within=pyo.NonNegativeReals)
+        # else:
+        #     self.model.p_cp_rated = pyo.Param(
+        #         initialize=(float(self.p_cp_rated_mode.value) / self.params.charging_power_resolution_factor),
+        #         within=pyo.NonNegativeReals
+        #     )
 
-    axes[0].set_ylabel('Charging Power (kW)')
-    axes[1].set_ylabel('SOC (kWh)')
-    # axes[0].legend()
-    # axes[1].legend()
+        # Run methods
+        self.initialise_sets()
+        self.assemble_components()
+        self.define_objective()
 
-    # Common X label
-    axes[-1].set_xlabel("Time Steps")
+    def initialise_sets(self):
+        self.model.EV_ID = pyo.Set(initialize=[_ for _ in range(self.params.num_of_evs)])
 
-    # Add title
-    fig.suptitle(f'{model.name}', fontsize=16)
+        self.model.TIME = pyo.Set(initialize=self.params.timestamps)
+        self.model.DAY = pyo.Set(initialize=[_ for _ in self.params.T_d.keys()])
+        self.model.WEEK = pyo.Set(initialize=[_ for _ in self.params.D_w.keys()])
 
-    # Adjust layout
-    plt.tight_layout(pad=3)
+    def assemble_components(self):
+        # Initialise assets parameters and variables
+        self.assets['grid'] = Grid(self.model, self.params)
+        self.assets['household'] = HouseholdLoad(self.model, self.params)
+        self.assets['ccp'] = CommonConnectionPoint(self.model, self.params)
+        self.assets['cp'] = ChargingPoint(self.model, self.params, self.config, self.charging_strategy,
+                                          self.p_cp_rated_mode)
+        self.assets['ev'] = ElectricVehicle(self.model, self.params, self.ev_params, self.config,
+                                            self.charging_strategy,
+                                            self.p_cp_rated_mode)
 
-    plt.show()
+        # Initialise constraints
+        self.assets['ccp'].initialise_constraints()
+        self.assets['cp'].initialise_constraints()
+        self.assets['ev'].initialise_constraints()
 
+    def define_objective(self):
+        def get_economic_cost(model):
+            investment_cost = model.num_cp * sum(self.params.investment_cost[m] * model.select_cp_rated_power[m]
+                                                 for m in self.params.p_cp_rated_options_scaled)
 
-def run_model(config, charging_strategy, time_limit=None):
-    config_map = {
-        'config_1': assets.CPConfig.CONFIG_1,
-        'config_2': assets.CPConfig.CONFIG_2
-    }
+            maintenance_cost = (self.params.annual_maintenance_cost / 365) * self.params.num_of_days * model.num_cp
 
-    strategy_map = {
-        'opportunistic': assets.ChargingStrategy.OPPORTUNISTIC,
-        'flexible': assets.ChargingStrategy.FLEXIBLE
-    }
+            operational_cost = self.params.daily_supply_charge_dict[self.independent_vars.tariff_type]
 
-    if config not in config_map or charging_strategy not in strategy_map:
-        raise ValueError("Invalid config or charging strategy.")
+            energy_purchase_cost = sum(
+                self.params.tariff_dict[self.independent_vars.tariff_type][t] * model.p_grid[t] for t in model.TIME
+            )
 
-    model = assets.BuildModel(
-        config=config_map[config],
-        charging_strategy=strategy_map[charging_strategy],
-        p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-        params=params,
-        ev_params=ev_params,
-        independent_vars=independent_variables
-    ).get_model()
+            # total costs
+            total_economic_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
 
-    # Solve model
-    solved_model = solve_model.solve_optimisation_model(model, time_limit=time_limit)
+            return total_economic_cost
 
-    return solved_model
+        def get_technical_cost(model):
+            daily_load_variance = sum(model.delta_daily_peak_avg[d] for d in model.DAY)
+            weekly_load_variance = sum(model.delta_weekly_peak_avg[w] for w in model.WEEK)
+            charging_discontinuity = sum(
+                model.delta_p_ev[i, t] for i in model.EV_ID for t in model.TIME
+            )
 
+            return daily_load_variance + weekly_load_variance + charging_discontinuity
 
-def iterate_models(configs, charging_strategies, plot=False):
-    for config in configs:
-        for strategy in charging_strategies:
-            config = config
-            charging_strategy = strategy
+        def get_social_cost(model):
+            return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in self.ev_params.t_dep_dict[i])
 
-            model = assets.BuildModel(
-                config=config,
-                charging_strategy=charging_strategy,
-                p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-                params=params,
-                ev_params=ev_params,
-                independent_vars=independent_variables
-            ).get_model()
+        def obj_function(model):
+            economic_cost = get_economic_cost(model)
+            technical_cost = get_technical_cost(model)
+            social_cost = get_social_cost(model)
 
-            solve_model.solve_optimisation_model(model)
+            return (self.independent_vars.w_economic * economic_cost) + (
+                    self.independent_vars.w_technical * technical_cost) + (
+                    self.independent_vars.w_social * social_cost)
 
-            print(f'{config.value.capitalize()} - {strategy.value.capitalize()} Charging Strategy Results Summary')
-            print(f'---------------------------------------------------------')
+        self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
-            model_results = ModelResults(charging_strategy, model, params, ev_params, independent_variables)
-            econ_metric = model_results.get_economic_metrics()
-            tech_metric = model_results.get_technical_metrics()
-            soc_metric = model_results.get_social_metrics()
-
-            if strategy.value == 'flexible':
-                model.num_charging_days.display()
-
-            if plot:
-                plot_results(model)
-
+    def get_model(self):
+        return self.model
