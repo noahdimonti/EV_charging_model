@@ -12,18 +12,26 @@ from build_model import plot_results, iterate_models, run_model
 
 
 def main():
-    config = 'config_2'
-    charging_strategy = 'flexible'
-    model = run_model(config, charging_strategy, time_limit=600)
+    # config = 'config_2'
+    # charging_strategy = 'flexible'
+    # model = run_model(config, charging_strategy, time_limit=600)
+
+    configs = [assets.CPConfig.CONFIG_1]
+    charging_strategies = [
+        assets.ChargingStrategy.OPPORTUNISTIC,
+        assets.ChargingStrategy.FLEXIBLE,
+    ]
+
+    iterate_models(configs, charging_strategies)
 
     # Display key results
-    model.num_cp.display()
-    model.p_cp_rated.display()
-
-    if charging_strategy == 'flexible':
-        model.num_charging_days.display()
-
-    plot_results(model)
+    # model.num_cp.display()
+    # model.p_cp_rated.display()
+    #
+    # if charging_strategy == 'flexible':
+    #     model.num_charging_days.display()
+    #
+    # plot_results(model)
 
     # Display detailed results
     # model.p_grid.display()

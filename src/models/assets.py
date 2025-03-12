@@ -469,18 +469,40 @@ class ElectricVehicle:
             self.model.DAY, rule=max_num_charged_evs_daily
         )
 
-        def charge_only_on_charging_days(model, i, j, d):
-            # Determine the correct summation based on available indices
-            if hasattr(model, "ev_is_charging_at_cp_j"):
+        # def charge_only_on_charging_days(model, i, j, d):
+        #     # Determine the correct summation based on available indices
+        #     if hasattr(model, "ev_is_charging_at_cp_j"):
+        #         return (sum(model.ev_is_charging_at_cp_j[i, j, t] for t in self.params.T_d[d])
+        #                 <= len(self.params.T_d[d]) * model.is_charging_day[i, d])
+        #     else:
+        #         return (sum(model.ev_is_charging[i, t] for t in self.params.T_d[d])
+        #                 <= len(self.params.T_d[d]) * model.is_charging_day[i, d])
+        #
+        # self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
+        #     self.model.EV_ID, self.model.CP_ID, self.model.DAY, rule=charge_only_on_charging_days
+        # )
+
+        def charge_only_on_charging_days(model, i, d, j=None):
+            if j is not None:
+                # Case: ev_is_charging_at_cp_j (with charging point index)
                 return (sum(model.ev_is_charging_at_cp_j[i, j, t] for t in self.params.T_d[d])
                         <= len(self.params.T_d[d]) * model.is_charging_day[i, d])
             else:
+                # Case: ev_is_charging (without charging point index)
                 return (sum(model.ev_is_charging[i, t] for t in self.params.T_d[d])
                         <= len(self.params.T_d[d]) * model.is_charging_day[i, d])
 
-        self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
-            self.model.EV_ID, self.model.CP_ID, self.model.DAY, rule=charge_only_on_charging_days
-        )
+        # Apply the correct constraint based on whether CP_ID exists
+        if hasattr(self.model, "CP_ID"):
+            self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
+                self.model.EV_ID, self.model.CP_ID, self.model.DAY,
+                rule=lambda model, i, j, d: charge_only_on_charging_days(model, i, d, j)
+            )
+        else:
+            self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
+                self.model.EV_ID, self.model.DAY,
+                rule=lambda model, i, d: charge_only_on_charging_days(model, i, d)
+            )
 
     def initialise_constraints(self):
         self._soc_constraints()

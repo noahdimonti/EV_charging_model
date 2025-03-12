@@ -39,31 +39,32 @@ def run_model(config, charging_strategy, time_limit=None):
     return solved_model
 
 
-def iterate_models():
-    for strategy in assets.ChargingStrategy:
-        charging_strategy = strategy
-        print(f'\n========== {strategy.value.capitalize()} Charging Strategy ==========\n')
+def iterate_models(configs, charging_strategies):
+    for config in configs:
+        for strategy in charging_strategies:
+            config = config
+            charging_strategy = strategy
+            print(f'\n============= {config.value.capitalize()} - {strategy.value.capitalize()} Charging Strategy '
+                  f'=============\n')
 
-        model = assets.BuildModel(
-            config=assets.CPConfig.CONFIG_1,
-            charging_strategy=charging_strategy,
-            p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-            params=params,
-            ev_params=ev_params,
-            independent_vars=independent_variables
-        ).get_model()
+            model = assets.BuildModel(
+                config=config,
+                charging_strategy=charging_strategy,
+                p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
+                params=params,
+                ev_params=ev_params,
+                independent_vars=independent_variables
+            ).get_model()
 
-        solve_model.solve_optimisation_model(model)
+            solve_model.solve_optimisation_model(model)
 
-        # print(pyo.value(model.p_cp_rated))
-
-        model_results = ModelResults(charging_strategy, model, params, ev_params, independent_variables)
-        econ_metric = model_results.get_economic_metrics()
-        tech_metric = model_results.get_technical_metrics()
-        soc_metric = model_results.get_social_metrics()
-        pprint(econ_metric)
-        pprint(tech_metric)
-        pprint(soc_metric)
+            model_results = ModelResults(charging_strategy, model, params, ev_params, independent_variables)
+            econ_metric = model_results.get_economic_metrics()
+            tech_metric = model_results.get_technical_metrics()
+            soc_metric = model_results.get_social_metrics()
+            pprint(econ_metric)
+            pprint(tech_metric)
+            pprint(soc_metric)
 
 
 def plot_results(model):
