@@ -10,67 +10,36 @@ from src.utils.evaluation_metrics import ModelResults
 from pprint import pprint
 
 
-def main():
-    # Config setup
-    # config = 'config_1'
-    config = 'config_2'
+def run_model(config, charging_strategy, time_limit=None):
+    config_map = {
+        'config_1': assets.CPConfig.CONFIG_1,
+        'config_2': assets.CPConfig.CONFIG_2
+    }
 
-    # Create the optimisation model
-    if config == 'config_1':
-        config_1_opportunistic = assets.BuildModel(
-            config=assets.CPConfig.CONFIG_1,
-            charging_strategy=assets.ChargingStrategy.OPPORTUNISTIC,
-            p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-            params=params,
-            ev_params=ev_params,
-            independent_vars=independent_variables
-        ).get_model()
+    strategy_map = {
+        'opportunistic': assets.ChargingStrategy.OPPORTUNISTIC,
+        'flexible': assets.ChargingStrategy.FLEXIBLE
+    }
 
-        config_1_flexible = assets.BuildModel(
-            config=assets.CPConfig.CONFIG_1,
-            charging_strategy=assets.ChargingStrategy.FLEXIBLE,
-            p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-            params=params,
-            ev_params=ev_params,
-            independent_vars=independent_variables
-        ).get_model()
+    if config not in config_map or charging_strategy not in strategy_map:
+        raise ValueError("Invalid config or charging strategy.")
 
-    elif config == 'config_2':
-        config_2_opportunistic = assets.BuildModel(
-            config=assets.CPConfig.CONFIG_2,
-            charging_strategy=assets.ChargingStrategy.OPPORTUNISTIC,
-            p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
-            params=params,
-            ev_params=ev_params,
-            independent_vars=independent_variables
-        ).get_model()
+    model = assets.BuildModel(
+        config=config_map[config],
+        charging_strategy=strategy_map[charging_strategy],
+        p_cp_rated_mode=assets.MaxChargingPower.VARIABLE,
+        params=params,
+        ev_params=ev_params,
+        independent_vars=independent_variables
+    ).get_model()
 
     # Solve model
-    # model = config_1_flexible
-    # model = config_1_opportunistic
-    model = config_2_opportunistic
-    solve_model.solve_optimisation_model(model)
+    solved_model = solve_model.solve_optimisation_model(model, time_limit=time_limit)
 
-    print(pyo.value(model.num_cp))
-    model.num_cp.display()
-    # print(model.ev_is_charging_at_cp_j.display())
-
-    plot_results(model)
-
-    # Display results
-    # model.p_grid.display()
-    # model.p_household_load.display()
-    # model.p_cp.display()
-    model.p_ev.display()
-    # model.soc_ev.display()
-
-    # model.p_daily_peak.display()
-    # model.p_daily_avg.display()
-    # model.delta_daily_peak_avg.display()
+    return solved_model
 
 
 def iterate_models():
-    # charging_strategy = assets.ChargingStrategy.OPPORTUNISTIC
     for strategy in assets.ChargingStrategy:
         charging_strategy = strategy
         print(f'\n========== {strategy.value.capitalize()} Charging Strategy ==========\n')
@@ -117,6 +86,3 @@ def plot_results(model):
 
     plt.show()
 
-
-if __name__ == '__main__':
-    main()

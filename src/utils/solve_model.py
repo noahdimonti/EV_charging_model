@@ -3,14 +3,22 @@ import pyomo.environ as pyo
 from src.config import params
 
 
-def solve_optimisation_model(model, solver='gurobi', verbose=False):
+def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=None):
     solver = pyo.SolverFactory(solver)
     print(f'\n=========================================================\n'
           f'Solving {model.name} model ...'
           f'\n=========================================================\n')
+
+    # Set time limit
+    if time_limit is not None:
+        solver.options['TimeLimit'] = time_limit
+        verbose = True
+
+    # Solve the model
     start_time = time.time()
     solver_results = solver.solve(model, tee=verbose)
     end_time = time.time()
+
     solving_time = end_time - start_time
 
     # Check solver status and termination condition
@@ -42,6 +50,8 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False):
         print(f'Model solved in {minutes} minutes {remaining_seconds:.3f} seconds')
 
     print(f'---------------------------------------------------------\n')
+
+    return model
 
 
 def simulate_uncoordinated_model(model):
