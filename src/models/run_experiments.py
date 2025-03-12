@@ -12,12 +12,16 @@ from build_model import plot_results, iterate_models, run_model
 
 
 def main():
-    model = run_model('config_2', 'flexible', time_limit=120)
+    config = 'config_2'
+    charging_strategy = 'flexible'
+    model = run_model(config, charging_strategy, time_limit=600)
 
     # Display key results
     model.num_cp.display()
     model.p_cp_rated.display()
-    model.num_charging_days.display()
+
+    if charging_strategy == 'flexible':
+        model.num_charging_days.display()
 
     plot_results(model)
 

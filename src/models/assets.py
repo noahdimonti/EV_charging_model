@@ -383,7 +383,7 @@ class ElectricVehicle:
         )
 
     @staticmethod
-    def _charging_power_limit_config1_opp(model):
+    def __charging_power_limit_config1_opp(model):
         def upper_bound(model, i, t):
             return model.p_ev[i, t] <= model.ev_at_home_status[i, t] * model.p_cp_rated
 
@@ -391,7 +391,7 @@ class ElectricVehicle:
             model.EV_ID, model.TIME, rule=upper_bound
         )
 
-    def _charging_power_limit_config1_flex(self, model):
+    def __charging_power_limit_config1_flex(self, model):
         def upper_bound1(model, i, t):
             return model.p_ev[i, t] <= model.p_cp_rated
 
@@ -413,7 +413,7 @@ class ElectricVehicle:
             model.EV_ID, model.TIME, rule=ev_charges_only_at_home
         )
 
-    def _charging_power_limit_config2(self, model):
+    def __charging_power_limit_config2(self, model):
         def upper_bound1(model, i, t):
             return model.p_ev[i, t] <= model.p_cp_rated
 
@@ -440,15 +440,15 @@ class ElectricVehicle:
     def _charging_power_limit_constraints(self):
         if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC:
             if self.config == CPConfig.CONFIG_1:
-                self._charging_power_limit_config1_opp(self.model)
+                self.__charging_power_limit_config1_opp(self.model)
             elif self.config == CPConfig.CONFIG_2:
-                self._charging_power_limit_config2(self.model)
+                self.__charging_power_limit_config2(self.model)
 
         elif self.charging_strategy == ChargingStrategy.FLEXIBLE:
             if self.config == CPConfig.CONFIG_1:
-                self._charging_power_limit_config1_flex(self.model)
+                self.__charging_power_limit_config1_flex(self.model)
             elif self.config == CPConfig.CONFIG_2:
-                self._charging_power_limit_config2(self.model)
+                self.__charging_power_limit_config2(self.model)
 
     def _scheduling_constraints(self):
         def num_charging_days(model, i, w):
@@ -531,9 +531,9 @@ class BuildModel:
         self.define_objective()
 
     def initialise_sets(self):
-        self.model.TIME = pyo.Set(initialize=self.params.timestamps)
         self.model.EV_ID = pyo.Set(initialize=[_ for _ in range(self.params.num_of_evs)])
 
+        self.model.TIME = pyo.Set(initialize=self.params.timestamps)
         self.model.DAY = pyo.Set(initialize=[_ for _ in self.params.T_d.keys()])
         self.model.WEEK = pyo.Set(initialize=[_ for _ in self.params.D_w.keys()])
 

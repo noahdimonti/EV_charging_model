@@ -13,7 +13,6 @@ date options:
 '''
 start_date_time = pd.Timestamp('2022-02-21 00:00:00')
 num_of_days = 7
-num_of_weeks = 4
 
 time_resolution = 15  # minutes
 periods_in_a_day = int((60 / time_resolution) * 24)
@@ -37,7 +36,7 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 6
+num_of_evs = 10
 num_of_households = 100
 
 
@@ -54,7 +53,7 @@ charging_discontinuity_penalty = 1
 # Charging Point Settings
 # --------------------------
 num_cp_min = 1
-num_cp_max = num_of_evs
+num_cp_max = num_of_evs - 1
 
 
 # --------------------------
