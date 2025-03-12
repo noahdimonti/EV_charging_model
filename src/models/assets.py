@@ -493,7 +493,7 @@ class ElectricVehicle:
                         <= len(self.params.T_d[d]) * model.is_charging_day[i, d])
 
         # Apply the correct constraint based on whether CP_ID exists
-        if hasattr(self.model, "CP_ID"):
+        if hasattr(self.model, 'CP_ID'):
             self.model.charge_only_on_charging_days_constraint = pyo.Constraint(
                 self.model.EV_ID, self.model.CP_ID, self.model.DAY,
                 rule=lambda model, i, j, d: charge_only_on_charging_days(model, i, d, j)
@@ -597,9 +597,7 @@ class BuildModel:
             daily_load_variance = sum(model.delta_daily_peak_avg[d] for d in model.DAY)
             weekly_load_variance = sum(model.delta_weekly_peak_avg[w] for w in model.WEEK)
             charging_discontinuity = sum(
-                self.params.charging_discontinuity_penalty * model.delta_p_ev[i, t]
-                for i in model.EV_ID
-                for t in model.TIME
+                model.delta_p_ev[i, t] for i in model.EV_ID for t in model.TIME
             )
 
             return daily_load_variance + weekly_load_variance + charging_discontinuity

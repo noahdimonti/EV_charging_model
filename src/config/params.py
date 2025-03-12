@@ -36,7 +36,7 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 10
+num_of_evs = 3
 num_of_households = 100
 
 
@@ -46,7 +46,6 @@ num_of_households = 100
 min_num_charging_days = 1
 max_num_charging_days = 4
 max_charged_evs_daily_margin = 0
-charging_discontinuity_penalty = 1
 
 
 # --------------------------

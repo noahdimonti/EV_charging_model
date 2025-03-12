@@ -16,13 +16,13 @@ def main():
     # charging_strategy = 'flexible'
     # model = run_model(config, charging_strategy, time_limit=600)
 
-    configs = [assets.CPConfig.CONFIG_1]
+    configs = [assets.CPConfig.CONFIG_2]
     charging_strategies = [
         assets.ChargingStrategy.OPPORTUNISTIC,
         assets.ChargingStrategy.FLEXIBLE,
     ]
 
-    iterate_models(configs, charging_strategies)
+    iterate_models(configs, charging_strategies, plot=True)
 
     # Display key results
     # model.num_cp.display()

@@ -10,6 +10,33 @@ from src.utils.evaluation_metrics import ModelResults
 from pprint import pprint
 
 
+def plot_results(model):
+    soc_data = {i: [pyo.value(model.soc_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
+    p_ev_data = {i: [pyo.value(model.p_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
+
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5, 10), sharex=True)
+
+    for i in model.EV_ID:
+        axes[0].plot(params.timestamps, p_ev_data[i], linestyle='-', label=f'EV_{i}')
+        axes[1].plot(params.timestamps, soc_data[i], linestyle='-', label=f'EV_{i}')
+
+    axes[0].set_ylabel('Charging Power (kW)')
+    axes[1].set_ylabel('SOC (kWh)')
+    # axes[0].legend()
+    # axes[1].legend()
+
+    # Common X label
+    axes[-1].set_xlabel("Time Steps")
+
+    # Add title
+    fig.suptitle(f'{model.name}', fontsize=16)
+
+    # Adjust layout
+    plt.tight_layout(pad=3)
+
+    plt.show()
+
+
 def run_model(config, charging_strategy, time_limit=None):
     config_map = {
         'config_1': assets.CPConfig.CONFIG_1,
@@ -39,13 +66,11 @@ def run_model(config, charging_strategy, time_limit=None):
     return solved_model
 
 
-def iterate_models(configs, charging_strategies):
+def iterate_models(configs, charging_strategies, plot=False):
     for config in configs:
         for strategy in charging_strategies:
             config = config
             charging_strategy = strategy
-            print(f'\n============= {config.value.capitalize()} - {strategy.value.capitalize()} Charging Strategy '
-                  f'=============\n')
 
             model = assets.BuildModel(
                 config=config,
@@ -58,32 +83,17 @@ def iterate_models(configs, charging_strategies):
 
             solve_model.solve_optimisation_model(model)
 
+            print(f'{config.value.capitalize()} - {strategy.value.capitalize()} Charging Strategy Results Summary')
+            print(f'---------------------------------------------------------')
+
             model_results = ModelResults(charging_strategy, model, params, ev_params, independent_variables)
             econ_metric = model_results.get_economic_metrics()
             tech_metric = model_results.get_technical_metrics()
             soc_metric = model_results.get_social_metrics()
-            pprint(econ_metric)
-            pprint(tech_metric)
-            pprint(soc_metric)
 
+            if strategy.value == 'flexible':
+                model.num_charging_days.display()
 
-def plot_results(model):
-    soc_data = {i: [pyo.value(model.soc_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
-    p_ev_data = {i: [pyo.value(model.p_ev[i, t]) for t in model.TIME] for i in model.EV_ID}
-
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5, 10), sharex=True)
-
-    for i in model.EV_ID:
-        axes[0].plot(params.timestamps, p_ev_data[i], linestyle='-', label=f'EV_{i}')
-        axes[1].plot(params.timestamps, soc_data[i], linestyle='-', label=f'EV_{i}')
-
-    axes[0].set_ylabel('Charging Power (kW)')
-    axes[1].set_ylabel('SOC (kWh)')
-    axes[0].legend()
-    axes[1].legend()
-
-    # Common X label
-    axes[-1].set_xlabel("Time Steps")
-
-    plt.show()
+            if plot:
+                plot_results(model)
 
