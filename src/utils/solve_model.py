@@ -3,7 +3,11 @@ import pyomo.environ as pyo
 from src.config import params
 
 
-def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=None):
+def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=None, mip_gap=None):
+    """ MIP gap in percentage """
+    # Convert mip gap from percent to decimal
+    mip_gap = mip_gap / 100
+
     solver = pyo.SolverFactory(solver)
     print(f'\n=========================================================\n'
           f'Solving {model.name} model ...'
@@ -12,18 +16,22 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
     # Set time limit
     if time_limit is not None:
         solver.options['TimeLimit'] = time_limit
-        verbose = True
+
+    # Set MIP gap
+    elif mip_gap is not None:
+        solver.options['MIPGap'] = mip_gap
 
     # Solve the model
     start_time = time.time()
-    solver_results = solver.solve(model, tee=verbose)
+    results = solver.solve(model, tee=verbose)
     end_time = time.time()
 
+    # Solving time
     solving_time = end_time - start_time
 
     # Check solver status and termination condition
-    solver_status = solver_results.solver.status
-    termination_condition = solver_results.solver.termination_condition
+    solver_status = results.solver.status
+    termination_condition = results.solver.termination_condition
 
     # Print the status and termination condition
     print(f'Solver Status: {solver_status}')
@@ -42,12 +50,30 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
         print(f'{params.RED}An error occurred: {e}.{params.RESET}')
 
     print(f'\n---------------------------------------------------------')
+
     if (solving_time % 60) < 1:
         print(f'Model solved in {solving_time:.3f} seconds')
     else:
         minutes = int(solving_time // 60)
         remaining_seconds = solving_time % 60
         print(f'Model solved in {minutes} minutes {remaining_seconds:.3f} seconds')
+
+    # Calculate MIP gap
+    upper_bound = results.problem.upper_bound
+    lower_bound = results.problem.lower_bound
+    calc_mip_gap = None
+
+    if upper_bound and lower_bound and upper_bound != 0:
+        calc_mip_gap = (abs(upper_bound - lower_bound) / abs(upper_bound)) * 100
+        print(f"Calculated MIP Gap: {calc_mip_gap:.4f}%\n")
+    else:
+        print("Bounds not available for MIP gap calculation.\n")
+
+    # Information that time is prioritised if both time_limit and mip_gap have values
+    if time_limit is not None and mip_gap is not None:
+        print(f'Solver terminated due to time limit.')
+        if calc_mip_gap > mip_gap:
+            print(f'MIP gap condition not met.')
 
     print(f'---------------------------------------------------------\n')
 

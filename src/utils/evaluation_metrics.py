@@ -4,7 +4,7 @@ import pyomo.environ as pyo
 from src.config import params as prm
 from src.config import ev_params as ev_prm
 from src.config import independent_variables as ind_vars
-from src.models.assets import ChargingStrategy
+from src.models.build_model import ChargingStrategy
 from src.utils import solve_model
 from pprint import pprint
 

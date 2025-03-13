@@ -1,9 +1,10 @@
 import pyomo.environ as pyo
-
-from src.models.assets import (
+from configs import (
     CPConfig,
     ChargingStrategy,
-    MaxChargingPower,
+    MaxChargingPower
+)
+from src.models.assets import (
     Grid,
     HouseholdLoad,
     CommonConnectionPoint,
