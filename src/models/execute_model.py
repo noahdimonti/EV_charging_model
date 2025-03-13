@@ -8,6 +8,7 @@ from src.config import ev_params
 from src.config import independent_variables
 from src.utils import solve_model
 from src.utils.evaluation_metrics import ModelResults
+from src.utils.save_results import save_eval_metrics_results
 from pprint import pprint
 
 
@@ -43,7 +44,8 @@ def run(config: str,
         verbose=False,
         time_limit=None,
         mip_gap=None,
-        plot=False):
+        plot=False,
+        save_results=False):
     config_map = {
         'config_1': configs.CPConfig.CONFIG_1,
         'config_2': configs.CPConfig.CONFIG_2,
@@ -81,6 +83,11 @@ def run(config: str,
     tech_metric = model_results.get_technical_metrics()
     soc_metric = model_results.get_social_metrics()
 
+    # Save results
+    if save_results:
+        save_eval_metrics_results(econ_metric, tech_metric, soc_metric,
+                                  f'{config}_{charging_strategy}_{params.num_of_evs}')
+
     if strategy_map[charging_strategy].value == 'flexible':
         model.num_charging_days.display()
 
@@ -96,8 +103,11 @@ def iterate_models(configurations: list,
                    time_limit=None,
                    mip_gap=None,
                    plot=False):
+    models_dict = {}
     for config in configurations:
         for strategy in charging_strategies:
             model = run(config, strategy, verbose=verbose, time_limit=time_limit, mip_gap=mip_gap, plot=plot)
 
-            return model
+            models_dict[f'{config}_{strategy}'] = model
+
+    return models_dict
