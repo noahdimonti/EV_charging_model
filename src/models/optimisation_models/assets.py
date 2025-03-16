@@ -1,10 +1,10 @@
 import pyomo.environ as pyo
-from src.config import (params, ev_params)
-from configs import (
+from src.config import params, ev_params
+from src.models.optimisation_models.configs import (
     CPConfig,
-    ChargingStrategy,
-    MaxChargingPower
+    ChargingStrategy
 )
+
 
 class Grid:
     def __init__(self, model):
@@ -96,11 +96,10 @@ class CommonConnectionPoint:
 
 
 class ChargingPoint:
-    def __init__(self, model, config, charging_strategy, p_cp_max_mode):
+    def __init__(self, model, config, charging_strategy):
         self.model = model
         self.config = config
         self.charging_strategy = charging_strategy
-        self.p_cp_max_mode = p_cp_max_mode
         self.initialise_sets()
         self.initialise_parameters()
         self.initialise_variables()
@@ -276,11 +275,10 @@ class ChargingPoint:
 
 
 class ElectricVehicle:
-    def __init__(self, model, config, charging_strategy, p_cp_max_mode):
+    def __init__(self, model, config, charging_strategy):
         self.model = model
         self.config = config
         self.charging_strategy = charging_strategy
-        self.p_cp_max_mode = p_cp_max_mode
         self.initialise_parameters()
         self.initialise_variables()
 
@@ -479,7 +477,7 @@ class ElectricVehicle:
 
     def _scheduling_constraints(self):
         def num_charging_days(model, i, w):
-            return model.num_charging_days[i, w] == sum(model.is_charging_day[i, d] for d in self.params.D_w[w])
+            return model.num_charging_days[i, w] == sum(model.is_charging_day[i, d] for d in params.D_w[w])
 
         self.model.num_charging_days_constraint = pyo.Constraint(
             self.model.EV_ID, self.model.WEEK, rule=num_charging_days
@@ -541,4 +539,3 @@ class ElectricVehicle:
 
         if self.config == CPConfig.CONFIG_2 or self.config == CPConfig.CONFIG_3:
             self._ev_assignment_and_mutual_exclusivity_constraints_config_2_3()
-

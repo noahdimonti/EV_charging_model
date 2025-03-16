@@ -1,11 +1,10 @@
 import pyomo.environ as pyo
-from src.config import (params, ev_params, independent_variables)
-from configs import (
+from src.config import params, ev_params, independent_variables
+from src.models.optimisation_models.configs import (
     CPConfig,
-    ChargingStrategy,
-    MaxChargingPower
+    ChargingStrategy
 )
-from src.models.assets import (
+from src.models.optimisation_models.assets import (
     Grid,
     HouseholdLoad,
     CommonConnectionPoint,
@@ -17,27 +16,15 @@ from src.models.assets import (
 class BuildModel:
     def __init__(self,
                  config: CPConfig,
-                 charging_strategy: ChargingStrategy,
-                 p_cp_rated_mode: MaxChargingPower):
+                 charging_strategy: ChargingStrategy):
         self.config = config
         self.charging_strategy = charging_strategy
-        self.p_cp_rated_mode = p_cp_rated_mode
         self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs')
         self.assets = {}
 
         # Validate configuration and charging mode
         CPConfig.validate(self.config)
         ChargingStrategy.validate(self.charging_strategy)
-        # MaxChargingPower.validate(self.charging_strategy, self.p_cp_rated_mode)
-
-        # Set p_cp_rated as variable or parameter
-        # if self.p_cp_rated_mode == MaxChargingPower.VARIABLE:
-        #     self.model_data.p_cp_rated = pyo.Var(within=pyo.NonNegativeReals)
-        # else:
-        #     self.model_data.p_cp_rated = pyo.Param(
-        #         initialize=(float(self.p_cp_rated_mode.value) / params.charging_power_resolution_factor),
-        #         within=pyo.NonNegativeReals
-        #     )
 
         # Run methods
         self.initialise_sets()
@@ -56,11 +43,9 @@ class BuildModel:
         self.assets['grid'] = Grid(self.model)
         self.assets['household'] = HouseholdLoad(self.model)
         self.assets['ccp'] = CommonConnectionPoint(self.model)
-        self.assets['cp'] = ChargingPoint(self.model, self.config, self.charging_strategy,
-                                          self.p_cp_rated_mode)
+        self.assets['cp'] = ChargingPoint(self.model, self.config, self.charging_strategy)
         self.assets['ev'] = ElectricVehicle(self.model, self.config,
-                                            self.charging_strategy,
-                                            self.p_cp_rated_mode)
+                                            self.charging_strategy)
 
         # Initialise constraints
         self.assets['ccp'].initialise_constraints()

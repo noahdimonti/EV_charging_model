@@ -1,20 +1,9 @@
-import pandas as pd
-import pyomo.environ as pyo
-import matplotlib.pyplot as plt
-import configs
-from src.config import params
-from src.config import ev_params
-from src.config import independent_variables
-from src.utils import solve_model
+from src.utils.execute_model import run_model
+from src.utils.model_results import compile_metrics_from_multiple_models
 from src.utils.evaluation_metrics import EvaluationMetrics
-from pprint import pprint
-from execute_model import run_model, analyse_results
 
 
 def main():
-    config = 'config_1'
-    charging_strategy = 'opportunistic'
-
     configurations = [
         'config_1',
         # 'config_2',
@@ -25,8 +14,21 @@ def main():
         'flexible',
     ]
 
-    results = run_model(config, charging_strategy)
-    analyse_results(results)
+    models_metrics = {}
+    for config in configurations:
+        for charging_strategy in charging_strategies:
+            # Run and solve model
+            results = run_model(config, charging_strategy)
+
+            # Compute evaluation metrics
+            metrics = EvaluationMetrics(results).format_metrics()
+
+            # Collect metrics
+            models_metrics[f'{config}_{charging_strategy}'] = metrics
+
+    # Compile models metrics
+    results_df = compile_metrics_from_multiple_models(models_metrics)
+    print(results_df)
 
     # model_data.p_ev.display()
     # model_data.num_cp.display()

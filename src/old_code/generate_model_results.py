@@ -5,9 +5,9 @@ import pyomo.environ as pyo
 
 from src.config import params
 from src.utils import solve_model
-from src.utils.old_code import output_collection
+from src.old_code import output_collection
 
-from src.models import uncoordinated_scenario_1 as us1
+from src.models.simulations import uncoordinated_scenario_1 as us1
 
 from src.visualisation import plot_results
 

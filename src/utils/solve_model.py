@@ -47,10 +47,8 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
     except Exception as e:
         print(f'{params.RED}An error occurred: {e}.{params.RESET}')
 
-    print(f'\n---------------------------------------------------------')
-
     if (solving_time % 60) < 1:
-        print(f'Model solved in {solving_time:.3f} seconds')
+        print(f'\nModel solved in {solving_time:.3f} seconds')
     else:
         minutes = int(solving_time // 60)
         remaining_seconds = solving_time % 60

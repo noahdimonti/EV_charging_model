@@ -1,13 +1,11 @@
 import numpy as np
-import pandas as pd
 import pickle
 import os
 from scipy.stats import truncnorm
-from src.config.electric_vehicle import ElectricVehicle
+from src.data_processing.electric_vehicle import ElectricVehicle
 from src.config import params
 import vista_data_cleaning as vdc
 import generate_ev_dep_arr_data as gda
-from pprint import pprint
 
 
 def main(num_of_evs, output_filename):

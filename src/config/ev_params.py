@@ -4,7 +4,7 @@ from pprint import pprint
 
 # Load EV data
 filename = f'../../data/processed/EV_instances_100'
-with open(filename, "rb") as f:
+with open(filename, 'rb') as f:
     ev_instance_list = pickle.load(f)
 
 # Slice data

@@ -1,19 +1,10 @@
-import pandas as pd
 import pyomo.environ as pyo
 import matplotlib.pyplot as plt
-import configs
-import build_model
+from src.models.optimisation_models import build_model, configs
 from src.config import params
-from src.config import ev_params
-from src.config import independent_variables
 from src.utils import solve_model
 from src.utils.evaluation_metrics import EvaluationMetrics
-from src.utils.save_results import save_eval_metrics_individual_result
-from src.utils import save_results
-from src.utils.save_results import Results
-from pprint import pprint
-import json
-import pickle
+from src.utils.model_results import ModelResults
 
 
 def plot_results(model):
@@ -65,38 +56,24 @@ def run_model(config: str,
 
     model = build_model.BuildModel(
         config=config_map[config],
-        charging_strategy=strategy_map[charging_strategy],
-        p_cp_rated_mode=configs.MaxChargingPower.VARIABLE,
+        charging_strategy=strategy_map[charging_strategy]
     )
     opt_model = model.get_optimisation_model()
 
     # Solve model_data
-    solved_model = solve_model.solve_optimisation_model(opt_model, verbose=verbose, time_limit=time_limit, mip_gap=mip_gap)
+    solved_model = solve_model.solve_optimisation_model(
+        opt_model,
+        verbose=verbose,
+        time_limit=time_limit,
+        mip_gap=mip_gap
+    )
 
-    results = save_results.Results(solved_model, config_map[config], strategy_map[charging_strategy])
+    # Save model results
+    results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy])
     results.save_model_to_pickle()
 
     return results
 
-
-def analyse_results(results: Results):
-    print(f'\n---------------------------------------------------------')
-    print(
-        f'{results.config.value.capitalize()} - {results.charging_strategy.value.capitalize()} Charging '
-        f'Strategy Results Summary')
-    print(f'---------------------------------------------------------')
-
-    # Model results
-    model_metrics = EvaluationMetrics(
-        results, params, ev_params, independent_variables
-    )
-    model_metrics.pprint()
-
-    # if strategy_map[charging_strategy].value == 'flexible':
-    #     opt_model.num_charging_days.display()
-    #
-    # if plot:
-    #     plot_results(solved_model)
 
 
 
