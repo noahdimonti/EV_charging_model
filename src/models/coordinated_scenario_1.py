@@ -21,22 +21,22 @@ def main():
     model = create_optimisation_model_instance()
     solve_model.solve_optimisation_model(model)
 
-    # model.p_grid.display()
-    # model.p_household_load.display()
-    # model.p_cp.display()
-    # model.p_ev.display()
-    # model.soc_ev.display()
+    # model_data.p_grid.display()
+    # model_data.p_household_load.display()
+    # model_data.p_cp.display()
+    # model_data.p_ev.display()
+    # model_data.soc_ev.display()
     #
-    # model.p_daily_peak.display()
-    # model.p_daily_avg.display()
-    # model.delta_daily_peak_avg.display()
+    # model_data.p_daily_peak.display()
+    # model_data.p_daily_avg.display()
+    # model_data.delta_daily_peak_avg.display()
 
     print(pyo.value(model.p_cp_max))
 
 
 
 def create_optimisation_model_instance():
-    # instantiate concrete model
+    # instantiate concrete model_data
     model = pyo.ConcreteModel(name='config_1')
 
     tariff_type = 'flat'
@@ -159,11 +159,11 @@ def create_optimisation_model_instance():
 
 
     # CP-EV relationship
-    # def cp_ev_relationship(model, i, j, t):
-    #     return model.p_ev[i, t] == model.p_cp[j, t]
+    # def cp_ev_relationship(model_data, i, j, t):
+    #     return model_data.p_ev[i, t] == model_data.p_cp[j, t]
     #
-    # model.cp_ev_relationship_constraint = pyo.Constraint(
-    #     model.EV_ID, model.CP_ID, model.TIME, rule=cp_ev_relationship
+    # model_data.cp_ev_relationship_constraint = pyo.Constraint(
+    #     model_data.EV_ID, model_data.CP_ID, model_data.TIME, rule=cp_ev_relationship
     # )
 
 

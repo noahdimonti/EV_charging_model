@@ -73,7 +73,7 @@ class ModelOutputs:
         # Create dictionary of output
         output_dict = self.to_dict()
 
-        # Extract the model name and remove it from the dictionary
+        # Extract the model_data name and remove it from the dictionary
         model_name = output_dict.pop('Model Name').replace("'", "")
 
         # Create a DataFrame where attributes are rows and the model_name is the column header

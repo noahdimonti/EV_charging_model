@@ -32,11 +32,11 @@ def generate_results(
         plot: bool = False
 ):
     """
-    Collects results from multiple model runs, compiles them into a single DataFrame,
+    Collects results from multiple model_data runs, compiles them into a single DataFrame,
     and saves the results to a CSV file.
 
     Parameters:
-        model_frameworks (dict): keys: model frameworks to evaluate, values: type of model (coordinated or uncoordinated).
+        model_frameworks (dict): keys: model_data frameworks to evaluate, values: type of model_data (coordinated or uncoordinated).
         tariff_types (list[str]): List of tariff types to use in models.
         num_of_evs_list (list[int]): List of EV quantities to test.
         avg_travel_distance_list (list[float]): List of average travel distances (in km).
@@ -45,7 +45,7 @@ def generate_results(
         plot (bool): Whether to plot the results.
 
     """
-    # Create a list to store DataFrame results from all model runs
+    # Create a list to store DataFrame results from all model_data runs
     all_model_dfs = []
 
     # Dictionary to store P_EV_max from coordinated models
@@ -57,13 +57,13 @@ def generate_results(
             for num_of_evs in num_of_evs_list:
                 for avg_travel_distance in avg_travel_distance_list:
                     for min_soc in min_soc_list:
-                        # Generate and solve the model instance
+                        # Generate and solve the model_data instance
                         try:
                             # Create model_instance variable
                             model_instance = None
 
                             if model_type == 'coordinated':
-                                # Create and solve coordinated model
+                                # Create and solve coordinated model_data
                                 model_instance = model_framework.create_optimisation_model_instance(
                                     tariff_type, num_of_evs, avg_travel_distance, min_soc
                                 )
@@ -74,16 +74,16 @@ def generate_results(
                                 p_ev_max_dict[(tariff_type, num_of_evs, avg_travel_distance, min_soc)] = p_ev_max
 
                             elif model_type == 'uncoordinated':
-                                # Retrieve P_EV_max from the coordinated model
+                                # Retrieve P_EV_max from the coordinated model_data
                                 if (tariff_type, num_of_evs, avg_travel_distance, min_soc) not in p_ev_max_dict:
                                     raise ValueError(
-                                        f'P_EV_max is not available for coordinated model with parameters:\n'
+                                        f'P_EV_max is not available for coordinated model_data with parameters:\n'
                                         f'tariff_type={tariff_type}, num_of_evs={num_of_evs}, '
                                         f'avg_travel_distance={avg_travel_distance}, min_soc={min_soc}')
 
                                 p_ev_max = p_ev_max_dict[(tariff_type, num_of_evs, avg_travel_distance, min_soc)]
 
-                                # Create and simulate the uncoordinated model
+                                # Create and simulate the uncoordinated model_data
                                 model_instance = model_framework.simulate_uncoordinated_model(
                                     p_ev_max, tariff_type, num_of_evs, avg_travel_distance, min_soc
                                 )
@@ -108,7 +108,7 @@ def generate_results(
                             all_model_dfs.append(output_df)
 
                         except ValueError as e:
-                            print(f'Error processing {model_type} model with parameters:\n'
+                            print(f'Error processing {model_type} model_data with parameters:\n'
                                   f'tariff_type={tariff_type}, num_of_evs={num_of_evs}, '
                                   f'avg_travel_distance={avg_travel_distance}, min_soc={min_soc}.\n'
                                   f'Error detail: {e}')

@@ -7,9 +7,13 @@ from src.config import params
 from src.config import ev_params
 from src.config import independent_variables
 from src.utils import solve_model
-from src.utils.evaluation_metrics import ModelResults
-from src.utils.save_results import save_eval_metrics_results
+from src.utils.evaluation_metrics import EvaluationMetrics
+from src.utils.save_results import save_eval_metrics_individual_result
+from src.utils import save_results
+from src.utils.save_results import Results
 from pprint import pprint
+import json
+import pickle
 
 
 def plot_results(model):
@@ -39,13 +43,12 @@ def plot_results(model):
     plt.show()
 
 
-def run(config: str,
-        charging_strategy: str,
-        verbose=False,
-        time_limit=None,
-        mip_gap=None,
-        plot=False,
-        save_results=False):
+def run_model(config: str,
+              charging_strategy: str,
+              verbose=False,
+              time_limit=None,
+              mip_gap=None):
+
     config_map = {
         'config_1': configs.CPConfig.CONFIG_1,
         'config_2': configs.CPConfig.CONFIG_2,
@@ -64,50 +67,36 @@ def run(config: str,
         config=config_map[config],
         charging_strategy=strategy_map[charging_strategy],
         p_cp_rated_mode=configs.MaxChargingPower.VARIABLE,
-        params=params,
-        ev_params=ev_params,
-        independent_vars=independent_variables
-    ).get_model()
+    )
+    opt_model = model.get_optimisation_model()
 
-    # Solve model
-    solved_model = solve_model.solve_optimisation_model(model, verbose=verbose, time_limit=time_limit, mip_gap=mip_gap)
+    # Solve model_data
+    solved_model = solve_model.solve_optimisation_model(opt_model, verbose=verbose, time_limit=time_limit, mip_gap=mip_gap)
 
+    results = save_results.Results(solved_model, config_map[config], strategy_map[charging_strategy])
+    results.save_model_to_pickle()
+
+    return results
+
+
+def analyse_results(results: Results):
+    print(f'\n---------------------------------------------------------')
     print(
-        f'{config_map[config].value.capitalize()} - {strategy_map[charging_strategy].value.capitalize()} Charging '
+        f'{results.config.value.capitalize()} - {results.charging_strategy.value.capitalize()} Charging '
         f'Strategy Results Summary')
     print(f'---------------------------------------------------------')
 
     # Model results
-    model_results = ModelResults(strategy_map[charging_strategy], model, params, ev_params, independent_variables)
-    econ_metric = model_results.get_economic_metrics()
-    tech_metric = model_results.get_technical_metrics()
-    soc_metric = model_results.get_social_metrics()
+    model_metrics = EvaluationMetrics(
+        results, params, ev_params, independent_variables
+    )
+    model_metrics.pprint()
 
-    # Save results
-    if save_results:
-        save_eval_metrics_results(econ_metric, tech_metric, soc_metric,
-                                  f'{config}_{charging_strategy}_{params.num_of_evs}')
-
-    if strategy_map[charging_strategy].value == 'flexible':
-        model.num_charging_days.display()
-
-    if plot:
-        plot_results(solved_model)
-
-    return solved_model
+    # if strategy_map[charging_strategy].value == 'flexible':
+    #     opt_model.num_charging_days.display()
+    #
+    # if plot:
+    #     plot_results(solved_model)
 
 
-def iterate_models(configurations: list,
-                   charging_strategies: list,
-                   verbose=False,
-                   time_limit=None,
-                   mip_gap=None,
-                   plot=False):
-    models_dict = {}
-    for config in configurations:
-        for strategy in charging_strategies:
-            model = run(config, strategy, verbose=verbose, time_limit=time_limit, mip_gap=mip_gap, plot=plot)
 
-            models_dict[f'{config}_{strategy}'] = model
-
-    return models_dict

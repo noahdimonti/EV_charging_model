@@ -7,18 +7,18 @@ from src.config.model_outputs import ModelOutputs
 
 def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel_distance, min_soc):
     """
-    Collects and calculates outputs for a single model simulation.
+    Collects and calculates outputs for a single model_data simulation.
 
     Args:
-        model: The optimization model object.
-        model_type: The type of model ('uncoordinated' or 'coordinated')
+        model: The optimization model_data object.
+        model_type: The type of model_data ('uncoordinated' or 'coordinated')
         tariff_type: The tariff type used in the simulation ('flat' or 'tou').
         num_of_evs: Number of EVs in the simulation.
         avg_travel_distance: Average travel distance per EV (km).
         min_soc: Minimum state of charge for EVs.
 
     Returns:
-        List of ModelOutputs objects containing metrics for the model.
+        List of ModelOutputs objects containing metrics for the model_data.
     """
     # Create a ModelOutputs instance
     model_outputs = ModelOutputs(
@@ -51,7 +51,7 @@ def collect_model_outputs(model, model_type, tariff_type, num_of_evs, avg_travel
 
 def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type):
     """
-    Calculates cost-related metrics for the model and updates the ModelOutputs instance.
+    Calculates cost-related metrics for the model_data and updates the ModelOutputs instance.
     """
     model_outputs.total_cost = pyo.value(model.obj_function)
 
@@ -94,7 +94,7 @@ def _calculate_cost_metrics_coordinated_model(model, model_outputs, tariff_type)
 
 def _calculate_power_metrics_coordinated_model(model, model_outputs):
     """
-    Calculates power-related metrics for the model and updates the ModelOutputs instance.
+    Calculates power-related metrics for the model_data and updates the ModelOutputs instance.
     """
     # Load profiles for EVs, households, grid, and total load
     load_profiles = _create_load_profiles(model)
@@ -118,7 +118,7 @@ def _calculate_power_metrics_coordinated_model(model, model_outputs):
 
 def _create_load_profiles(model):
     """
-    Creates load profiles (EV load, household load, grid load, total load) for the model.
+    Creates load profiles (EV load, household load, grid load, total load) for the model_data.
 
     Returns:
         A DataFrame containing load profiles indexed by time.
@@ -140,7 +140,7 @@ def _create_load_profiles(model):
 
 def _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_type):
     """
-    Calculates cost-related metrics for the model and updates the ModelOutputs instance.
+    Calculates cost-related metrics for the model_data and updates the ModelOutputs instance.
     """
     # Set number of CPs and households
     model_outputs.num_of_cps = model.num_of_cps
@@ -169,7 +169,7 @@ def _calculate_cost_metrics_uncoordinated_model(model, model_outputs, tariff_typ
 
 def _calculate_power_metrics_uncoordinated_model(model, model_outputs):
     """
-    Calculates power-related metrics for the model and updates the ModelOutputs instance.
+    Calculates power-related metrics for the model_data and updates the ModelOutputs instance.
     """
     # Load profiles for EVs, households, grid, and total load
     model_outputs.max_charging_power = model.p_ev_max

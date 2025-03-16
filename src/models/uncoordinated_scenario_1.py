@@ -74,12 +74,12 @@ def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: 
                 ev.soc_ev.loc[t] = ((ev.soc_ev.loc[t - time_delta] + ev.charging_power.loc[t].values) -
                                     ev.travel_energy_t_arr[t])
 
-    # instantiate model
+    # instantiate model_data
     model = UncoordinatedModel(
         name=f'US1_{tariff_type.upper()}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%'
     )
 
-    # assign values to model attributes
+    # assign values to model_data attributes
     df = pd.concat([ev.charging_power for ev in ev_data], axis=1)
     df['ev_load'] = df.sum(axis=1)
     df['household_load'] = params.household_load
@@ -169,12 +169,12 @@ def check(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distanc
         ev.charging_power = pd.Series(charging_power, index=all_ev_profiles.index)
         ev.soc_ev = pd.Series(soc, index=all_ev_profiles.index)
 
-    # instantiate model
+    # instantiate model_data
     model = UncoordinatedModel(
         name=f'US1_{tariff_type.upper()}_{num_of_evs}EVs_{avg_travel_distance}km_SOCmin{int(min_soc * 100)}%'
     )
 
-    # assign values to model attributes
+    # assign values to model_data attributes
     df = pd.concat([ev.charging_power for ev in ev_data], axis=1)
     df['ev_load'] = df.sum(axis=1)
     df['household_load'] = params.household_load

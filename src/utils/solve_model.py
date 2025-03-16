@@ -5,9 +5,6 @@ from src.config import params
 
 def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=None, mip_gap=None):
     """ MIP gap in percentage """
-    # Convert mip gap from percent to decimal
-    mip_gap = mip_gap / 100
-
     solver = pyo.SolverFactory(solver)
     print(f'\n=========================================================\n'
           f'Solving {model.name} model ...'
@@ -19,9 +16,10 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
 
     # Set MIP gap
     elif mip_gap is not None:
-        solver.options['MIPGap'] = mip_gap
+        decimal_mip_gap = mip_gap / 100
+        solver.options['MIPGap'] = decimal_mip_gap
 
-    # Solve the model
+    # Solve the model_data
     start_time = time.time()
     results = solver.solve(model, tee=verbose)
     end_time = time.time()
@@ -65,16 +63,16 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
 
     if upper_bound and lower_bound and upper_bound != 0:
         calc_mip_gap = (abs(upper_bound - lower_bound) / abs(upper_bound)) * 100
-        print(f"Calculated MIP Gap: {calc_mip_gap:.4f}%\n")
+        print(f"Calculated MIP Gap: {calc_mip_gap:.4f}%")
 
         # Information that time is prioritised if both time_limit and mip_gap have values
         if time_limit is not None and mip_gap is not None:
-            print(f'Solver terminated due to time limit')
-            if calc_mip_gap > mip_gap:
+            print(f'\nSolver terminated due to time limit')
+            if calc_mip_gap > decimal_mip_gap:
                 print(f'MIP gap condition not met')
 
     else:
-        print("Bounds not available for MIP gap calculation.\n")
+        print("Bounds not available for MIP gap calculation.")
 
     print(f'---------------------------------------------------------\n')
 
