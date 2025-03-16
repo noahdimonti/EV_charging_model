@@ -19,7 +19,7 @@ class EvaluationMetrics:
         if self.results.config.value == 'config_1':
             self.num_cp = params.num_of_evs
         else:
-            self.num_cp = self.variables['num_cp']
+            self.num_cp = int(self.variables['num_cp'])
 
         # Define metrics
         self.metrics = {}
@@ -127,6 +127,7 @@ class EvaluationMetrics:
         self.metrics.update(self.get_economic_metrics())
         self.metrics.update(self.get_technical_metrics())
         self.metrics.update(self.get_social_metrics())
+        self.metrics.update({'mip_gap': self.results.mip_gap})
 
         return self.metrics
 
@@ -146,6 +147,8 @@ class EvaluationMetrics:
                 'avg_soc_t_dep': f'{self.metrics['avg_soc_t_dep']:,.2f} kWh',
                 'avg_soc_t_dep_percentage': f'{self.metrics['avg_soc_t_dep_percentage']:,.1f}%',
                 'avg_num_charging_days': f'{self.metrics['avg_num_charging_days']} days per week',
+
+                'mip_gap': f'{self.results.mip_gap:,.4f}%',
         }
 
         return formatted_metrics

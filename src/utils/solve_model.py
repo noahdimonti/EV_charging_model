@@ -15,7 +15,8 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
         solver.options['TimeLimit'] = time_limit
 
     # Set MIP gap
-    elif mip_gap is not None:
+    decimal_mip_gap = None
+    if mip_gap is not None:
         decimal_mip_gap = mip_gap / 100
         solver.options['MIPGap'] = decimal_mip_gap
 
@@ -52,7 +53,7 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
     else:
         minutes = int(solving_time // 60)
         remaining_seconds = solving_time % 60
-        print(f'Model solved in {minutes} minutes {remaining_seconds:.3f} seconds')
+        print(f'\nModel solved in {minutes} minutes {remaining_seconds:.3f} seconds')
 
     # Calculate MIP gap
     upper_bound = results.problem.upper_bound
@@ -74,7 +75,7 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
 
     print(f'---------------------------------------------------------\n')
 
-    return model
+    return model, calc_mip_gap
 
 
 def simulate_uncoordinated_model(model):

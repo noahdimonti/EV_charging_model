@@ -1,5 +1,5 @@
 from src.utils.execute_model import run_model
-from src.utils.model_results import compile_metrics_from_multiple_models
+from src.utils.model_results import compile_multiple_models_metrics
 from src.utils.evaluation_metrics import EvaluationMetrics
 
 
@@ -11,14 +11,24 @@ def main():
     ]
     charging_strategies = [
         'opportunistic',
-        'flexible',
+        # 'flexible',
     ]
 
     models_metrics = {}
     for config in configurations:
         for charging_strategy in charging_strategies:
+            # Set mip gap and time limit
+            mip_gap = None
+            time_limit = None
+            verbose = False
+
+            if charging_strategy == 'opportunistic':
+                ...
+            else:
+                ...
+
             # Run and solve model
-            results = run_model(config, charging_strategy)
+            results = run_model(config, charging_strategy, mip_gap=mip_gap, time_limit=time_limit, verbose=verbose)
 
             # Compute evaluation metrics
             metrics = EvaluationMetrics(results).format_metrics()
@@ -27,7 +37,7 @@ def main():
             models_metrics[f'{config}_{charging_strategy}'] = metrics
 
     # Compile models metrics
-    results_df = compile_metrics_from_multiple_models(models_metrics)
+    results_df = compile_multiple_models_metrics(models_metrics, filename='compiled_metrics.csv')
     print(results_df)
 
     # model_data.p_ev.display()

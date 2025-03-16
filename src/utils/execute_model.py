@@ -61,7 +61,7 @@ def run_model(config: str,
     opt_model = model.get_optimisation_model()
 
     # Solve model_data
-    solved_model = solve_model.solve_optimisation_model(
+    solved_model, calc_mip_gap = solve_model.solve_optimisation_model(
         opt_model,
         verbose=verbose,
         time_limit=time_limit,
@@ -69,7 +69,7 @@ def run_model(config: str,
     )
 
     # Save model results
-    results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy])
+    results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], calc_mip_gap)
     results.save_model_to_pickle()
 
     return results
