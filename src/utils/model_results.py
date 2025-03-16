@@ -38,7 +38,7 @@ class ModelResults:
 
 
 def compile_multiple_models_metrics(models_metrics: dict, filename='compiled_metrics.csv'):
-    # Create a list of DataFrames, one for each model
+    # Create a list of DataFrames, one for each results
     dfs = [pd.DataFrame(data.values(), index=data.keys(), columns=[model_name])
            for model_name, data in models_metrics.items()]
 

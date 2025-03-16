@@ -1,17 +1,18 @@
 from src.utils.execute_model import run_model
 from src.utils.model_results import compile_multiple_models_metrics
 from src.utils.evaluation_metrics import EvaluationMetrics
+from src.utils.plot_results import plot_p_ev, plot_agg_total_demand, plot_agg_p_ev, plot_ev_charging_schedule
 
 
 def main():
     configurations = [
         'config_1',
-        # 'config_2',
-        # 'config_3',
+        'config_2',
+        'config_3',
     ]
     charging_strategies = [
         'opportunistic',
-        # 'flexible',
+        'flexible',
     ]
 
     models_metrics = {}
@@ -22,10 +23,14 @@ def main():
             time_limit = None
             verbose = False
 
-            if charging_strategy == 'opportunistic':
-                ...
-            else:
-                ...
+            if charging_strategy == 'opportunistic' and config != 'config_1':
+                verbose = True
+                mip_gap = 0.5
+                time_limit = 600
+            elif charging_strategy == 'flexible' and config != 'config_1':
+                verbose = True
+                mip_gap = 0.9
+                time_limit = 1200
 
             # Run and solve model
             results = run_model(config, charging_strategy, mip_gap=mip_gap, time_limit=time_limit, verbose=verbose)
@@ -35,6 +40,14 @@ def main():
 
             # Collect metrics
             models_metrics[f'{config}_{charging_strategy}'] = metrics
+
+            # Plot results
+            plot_p_ev(results)
+            plot_agg_p_ev(results)
+            plot_agg_total_demand(results)
+
+            if charging_strategy == 'flexible':
+                plot_ev_charging_schedule(results)
 
     # Compile models metrics
     results_df = compile_multiple_models_metrics(models_metrics, filename='compiled_metrics.csv')

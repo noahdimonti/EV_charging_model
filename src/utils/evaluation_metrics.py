@@ -132,23 +132,28 @@ class EvaluationMetrics:
         return self.metrics
 
     def format_metrics(self):
+        if self.results.charging_strategy == 'opportunistic':
+            avg_num_charging_days_str = f'{int(self.metrics['avg_num_charging_days'])}'
+        else:
+            avg_num_charging_days_str = f'{self.metrics['avg_num_charging_days']:.2f}'
+
         formatted_metrics = {
-                'investment_cost': f'${self.metrics['investment_cost']:,.2f}',
-                'total_cost': f'${self.metrics['total_cost']:,.2f}',
+                'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
+                'Total cost': f'${self.metrics['total_cost']:,.2f}',
 
-                'num_cp': f'{self.metrics['num_cp']} charging point(s)',
-                'p_cp_rated': f'{self.metrics['p_cp_rated']:,.1f} kW',
-                'avg_p_daily': f'{self.metrics['avg_p_daily']:,.2f} kW',
-                'avg_p_peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
-                'avg_papr': f'{self.metrics['avg_papr']:,.3f}',
+                'Number of CP': f'{self.metrics['num_cp']} charging point(s)',
+                'CP rated power': f'{self.metrics['p_cp_rated']:,.1f} kW',
+                'Average daily power': f'{self.metrics['avg_p_daily']:,.2f} kW',
+                'Average daily peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
+                'Average PAPR': f'{self.metrics['avg_papr']:,.3f}',
 
-                'total_ev_charging_cost_per_user': f'${self.metrics['total_ev_charging_cost_per_user']:,.2f} over {params.num_of_days} days',
-                'avg_daily_ev_charging_cost_per_user': f'${self.metrics['avg_daily_ev_charging_cost_per_user']:,.2f}',
-                'avg_soc_t_dep': f'{self.metrics['avg_soc_t_dep']:,.2f} kWh',
-                'avg_soc_t_dep_percentage': f'{self.metrics['avg_soc_t_dep_percentage']:,.1f}%',
-                'avg_num_charging_days': f'{self.metrics['avg_num_charging_days']} days per week',
+                'Total EV charging cost per user': f'${self.metrics['total_ev_charging_cost_per_user']:,.2f} over {params.num_of_days} days',
+                'Average daily EV charging cost per user': f'${self.metrics['avg_daily_ev_charging_cost_per_user']:,.2f}',
+                'Average SOC at departure time (kWh)': f'{self.metrics['avg_soc_t_dep']:,.2f} kWh',
+                'Average SOC at departure time (%)': f'{self.metrics['avg_soc_t_dep_percentage']:,.1f}%',
+                'Average number of charging days': f'{avg_num_charging_days_str} days per week',
 
-                'mip_gap': f'{self.results.mip_gap:,.4f}%',
+                'Optimality gap': f'{self.results.mip_gap:,.4f}%',
         }
 
         return formatted_metrics
