@@ -8,7 +8,7 @@ from pprint import pprint
 fig_size = (12, 8)
 
 
-def plot_p_ev(results: ModelResults):
+def plot_p_ev(results: ModelResults, show_plot=False):
     p_ev_data = {i: [results.variables['p_ev'][i, t] for t in results.sets['TIME']] for i in results.sets['EV_ID']}
 
     plt.figure(figsize=fig_size)
@@ -45,10 +45,12 @@ def plot_p_ev(results: ModelResults):
     plt.savefig(
         f'../../reports/figures/p_ev_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
         dpi=300)
-    plt.show()
+
+    if show_plot:
+        plt.show()
 
 
-def plot_agg_p_ev(results: ModelResults):
+def plot_agg_p_ev(results: ModelResults, show_plot=False):
     plt.figure(figsize=fig_size)
 
     # Plot
@@ -84,10 +86,12 @@ def plot_agg_p_ev(results: ModelResults):
     plt.savefig(
         f'../../reports/figures/agg_p_ev-{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
         dpi=300)
-    plt.show()
+
+    if show_plot:
+        plt.show()
 
 
-def plot_agg_total_demand(results: ModelResults):
+def plot_agg_total_demand(results: ModelResults, show_plot=False):
     # Create the plot
     fig, ax = plt.subplots(figsize=fig_size)
 
@@ -129,10 +133,11 @@ def plot_agg_total_demand(results: ModelResults):
     plt.savefig(
         f'../../reports/figures/agg_power_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
         dpi=300)
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
-def plot_ev_charging_schedule(results: ModelResults):
+def plot_ev_charging_schedule(results: ModelResults, show_plot=False):
     # Convert the dictionary to a DataFrame
     df = pd.Series(results.variables['is_charging_day']).unstack(level=0).fillna(0)
     df.columns = [f'EV {i}' for i in df.columns]
@@ -177,6 +182,8 @@ def plot_ev_charging_schedule(results: ModelResults):
     plt.savefig(
         f'../../reports/figures/ev_charging_schedule_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
         dpi=300)
-    plt.show()
+
+    if show_plot:
+        plt.show()
 
 

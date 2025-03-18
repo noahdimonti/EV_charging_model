@@ -159,5 +159,10 @@ class EvaluationMetrics:
         return formatted_metrics
 
     def pprint(self):
+        print(f'\n---------------------------------------------------------')
+        print(f'{self.results.config.value.capitalize()} - {self.results.charging_strategy.value.capitalize()} Charging Evaluation Metrics Summary')
+        print(f'---------------------------------------------------------')
+
         pprint(self.format_metrics(), sort_dicts=False)
+        print(f'\n---------------------------------------------------------')
 

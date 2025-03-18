@@ -6,12 +6,12 @@ from src.utils.plot_results import plot_p_ev, plot_agg_total_demand, plot_agg_p_
 
 def main():
     configurations = [
-        'config_1',
+        # 'config_1',
         'config_2',
-        'config_3',
+        # 'config_3',
     ]
     charging_strategies = [
-        'opportunistic',
+        # 'opportunistic',
         'flexible',
     ]
 
@@ -26,20 +26,22 @@ def main():
             if charging_strategy == 'opportunistic' and config != 'config_1':
                 verbose = True
                 mip_gap = 0.5
-                time_limit = 600
+                time_limit = 60 * 15
             elif charging_strategy == 'flexible' and config != 'config_1':
                 verbose = True
                 mip_gap = 0.9
-                time_limit = 1200
+                time_limit = 60 * 30
 
             # Run and solve model
             results = run_model(config, charging_strategy, mip_gap=mip_gap, time_limit=time_limit, verbose=verbose)
 
             # Compute evaluation metrics
-            metrics = EvaluationMetrics(results).format_metrics()
-
-            # Collect metrics
-            models_metrics[f'{config}_{charging_strategy}'] = metrics
+            # metrics = EvaluationMetrics(results)
+            # metrics.pprint()
+            # formatted_metrics = metrics.format_metrics()
+            #
+            # # Collect metrics
+            # models_metrics[f'{config}_{charging_strategy}'] = formatted_metrics
 
             # Plot results
             plot_p_ev(results)
@@ -50,8 +52,8 @@ def main():
                 plot_ev_charging_schedule(results)
 
     # Compile models metrics
-    results_df = compile_multiple_models_metrics(models_metrics, filename='compiled_metrics.csv')
-    print(results_df)
+    # results_df = compile_multiple_models_metrics(models_metrics, filename='compiled_metrics_3.csv')
+    # print(results_df)
 
     # model_data.p_ev.display()
     # model_data.num_cp.display()
