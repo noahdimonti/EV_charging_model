@@ -27,69 +27,63 @@ class EvaluationMetrics:
         # Collect metrics
         self._collect_metrics()
 
-    def get_economic_metrics(self):
+    def investor_metrics(self):
         # investment cost
         investment_cost = self.num_cp * sum(
             params.investment_cost[m] * self.variables['select_cp_rated_power'][m]
             for m in params.p_cp_rated_options_scaled)
 
-        # maintenance cost
-        maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * self.num_cp
-
-        # operational cost
-        operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type]
-
-        # electricity purchase cost
-        energy_purchase_cost = sum(
-            params.tariff_dict[independent_variables.tariff_type][t] * self.variables['p_grid'][t] for t in
-            self.sets['TIME']
-        )
-
-        total_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
+        # rated power of CP
+        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
 
         return {
             'investment_cost': investment_cost,
-            'total_cost': total_cost,
+            'p_cp_rated': p_cp_rated,
         }
 
-    def get_technical_metrics(self):
-        num_cp = self.num_cp
-        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
-        avg_p_daily = np.mean(
-            [self.variables['p_daily_avg'][d] for d in self.sets['DAY']]
-        )
+    def dso_metrics(self):
         avg_p_peak = np.mean(
             [self.variables['p_daily_peak'][d] for d in self.sets['DAY']]
         )
         avg_papr = np.mean(
             [(self.variables['p_daily_peak'][d] / self.variables['p_daily_avg'][d]) for d in self.sets['DAY']]
         )
+        avg_peak_increase = np.mean(
+            [(max([self.variables['p_grid'][t] for t in params.T_d[d]]) /
+              max([params.household_load.loc[t].values for t in params.T_d[d]]))
+             for d in self.sets['DAY']]
+        )
 
         return {
-            'num_cp': num_cp,
-            'p_cp_rated': p_cp_rated,
-            'avg_p_daily': avg_p_daily,
             'avg_p_peak': avg_p_peak,
             'avg_papr': avg_papr,
+            'avg_peak_increase': avg_peak_increase,
         }
 
-    def get_social_metrics(self):
-        total_ev_charging_cost_per_user = sum(
+    def ev_user_metrics(self):
+        num_cp = self.num_cp
+
+        # maintenance cost
+        maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * self.num_cp
+
+        total_cost_per_user = (sum(
             params.tariff_dict[independent_variables.tariff_type][t] * self.variables['p_ev'][i, t]
             for i in self.sets['EV_ID']
             for t in self.sets['TIME']
-        ) / len(self.sets['EV_ID'])
+        ) + maintenance_cost) / len(self.sets['EV_ID'])
 
-        avg_daily_ev_charging_cost_per_user = total_ev_charging_cost_per_user / len(self.sets['DAY'])
-
-        avg_soc_t_dep = sum(
-            self.variables['soc_ev'][i, t] for i in self.sets['EV_ID'] for t in ev_params.t_dep_dict[i]
-        ) / sum(len(ev_params.t_dep_dict[i]) for i in self.sets['EV_ID'])
-
-        avg_soc_t_dep_percentage = sum(
+        avg_soc_t_dep_percent = sum(
             (self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) for i in self.sets['EV_ID'] for t in
             ev_params.t_dep_dict[i]
         ) / sum(len(ev_params.t_dep_dict[i]) for i in self.sets['EV_ID']) * 100
+
+        lowest_soc_percent = min([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
+                                  for i in self.sets['EV_ID']
+                                  for t in self.sets['TIME']])
+
+        highest_soc_percent = max([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
+                                  for i in self.sets['EV_ID']
+                                  for t in self.sets['TIME']])
 
         avg_num_charging_days = None
         if self.results.charging_strategy.value == 'opportunistic':
@@ -116,17 +110,18 @@ class EvaluationMetrics:
             ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK']))
 
         return {
-            'total_ev_charging_cost_per_user': total_ev_charging_cost_per_user,
-            'avg_daily_ev_charging_cost_per_user': avg_daily_ev_charging_cost_per_user,
-            'avg_soc_t_dep': avg_soc_t_dep,
-            'avg_soc_t_dep_percentage': avg_soc_t_dep_percentage,
+            'num_cp': num_cp,
+            'total_cost_per_user': total_cost_per_user,
+            'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
+            'lowest_soc_percent': lowest_soc_percent,
+            'highest_soc_percent': highest_soc_percent,
             'avg_num_charging_days': avg_num_charging_days,
         }
 
     def _collect_metrics(self):
-        self.metrics.update(self.get_economic_metrics())
-        self.metrics.update(self.get_technical_metrics())
-        self.metrics.update(self.get_social_metrics())
+        self.metrics.update(self.investor_metrics())
+        self.metrics.update(self.dso_metrics())
+        self.metrics.update(self.ev_user_metrics())
         self.metrics.update({'mip_gap': self.results.mip_gap})
 
         return self.metrics
@@ -138,31 +133,30 @@ class EvaluationMetrics:
             avg_num_charging_days_str = f'{self.metrics['avg_num_charging_days']:.2f}'
 
         formatted_metrics = {
-                'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
-                'Total cost': f'${self.metrics['total_cost']:,.2f}',
+            'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
+            'CP rated power': f'{self.metrics['p_cp_rated']:,.1f} kW',
 
-                'Number of CP': f'{self.metrics['num_cp']} charging point(s)',
-                'CP rated power': f'{self.metrics['p_cp_rated']:,.1f} kW',
-                'Average daily power': f'{self.metrics['avg_p_daily']:,.2f} kW',
-                'Average daily peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
-                'Average PAPR': f'{self.metrics['avg_papr']:,.3f}',
+            'Average daily peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
+            'Average PAPR': f'{self.metrics['avg_papr']:,.3f}',
+            'Average peak increase from base load': f'{self.metrics['avg_peak_increase']:,.2f}%',
 
-                'Total EV charging cost per user': f'${self.metrics['total_ev_charging_cost_per_user']:,.2f} over {params.num_of_days} days',
-                'Average daily EV charging cost per user': f'${self.metrics['avg_daily_ev_charging_cost_per_user']:,.2f}',
-                'Average SOC at departure time (kWh)': f'{self.metrics['avg_soc_t_dep']:,.2f} kWh',
-                'Average SOC at departure time (%)': f'{self.metrics['avg_soc_t_dep_percentage']:,.1f}%',
-                'Average number of charging days': f'{avg_num_charging_days_str} days per week',
+            'Number of CP': f'{self.metrics['num_cp']} charging point(s)',
+            'Total cost per user': f'${self.metrics['total_cost_per_user']:,.2f} over {params.num_of_days} days',
+            'Average SOC at departure time': f'{self.metrics['avg_soc_t_dep_percent']:,.1f}%',
+            'Lowest SOC': f'{self.metrics['lowest_soc_percent']:,.2f}%',
+            'Highest SOC': f'{self.metrics['highest_soc_percent']:,.2f}%',
+            'Average number of charging days': f'{avg_num_charging_days_str} days per week',
 
-                'Optimality gap': f'{self.results.mip_gap:,.4f}%',
+            'Optimality gap': f'{self.results.mip_gap:,.4f}%',
         }
 
         return formatted_metrics
 
     def pprint(self):
         print(f'\n---------------------------------------------------------')
-        print(f'{self.results.config.value.capitalize()} - {self.results.charging_strategy.value.capitalize()} Charging Evaluation Metrics Summary')
+        print(
+            f'{self.results.config.value.capitalize()} - {self.results.charging_strategy.value.capitalize()} Charging Evaluation Metrics Summary')
         print(f'---------------------------------------------------------')
 
         pprint(self.format_metrics(), sort_dicts=False)
         print(f'\n---------------------------------------------------------')
-

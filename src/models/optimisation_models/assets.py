@@ -10,70 +10,70 @@ class Grid:
     def __init__(self, model):
         self.model = model
         self.initialise_variables()
-        self.initialise_constraints()
+        # self.initialise_constraints()
 
     def initialise_variables(self):
         # Grid import power
         self.model.p_grid = pyo.Var(self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
 
-        # Daily peak and average power
-        self.model.p_daily_peak = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        self.model.p_daily_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        self.model.delta_daily_peak_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        # # Daily peak and average power
+        # self.model.p_daily_peak = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        # self.model.p_daily_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        # self.model.delta_daily_peak_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
+        #
+        # # Weekly peak and average power
+        # self.model.p_weekly_peak = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
+        # self.model.p_weekly_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
+        # self.model.delta_weekly_peak_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
 
-        # Weekly peak and average power
-        self.model.p_weekly_peak = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-        self.model.p_weekly_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-        self.model.delta_weekly_peak_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-
-    def _add_peak_constraints(self, peak_var, avg_var, delta_var, time_sets, index_set, name_prefix):
-        """ Generalised function to add peak constraints (daily/weekly). """
-
-        # Peak power constraint
-        constraint_list = pyo.ConstraintList()
-        setattr(self.model, f"{name_prefix}_peak_power_constraint", constraint_list)
-
-        for idx in index_set:
-            for t in time_sets[idx]:
-                constraint_list.add(peak_var[idx] >= self.model.p_grid[t])
-
-        # Average peak constraint
-        def peak_average_rule(model, idx):
-            return avg_var[idx] == (1 / len(time_sets[idx])) * sum(model.p_grid[t] for t in time_sets[idx])
-
-        setattr(self.model, f"{name_prefix}_peak_average_constraint",
-                pyo.Constraint(index_set, rule=peak_average_rule))
-
-        # Delta peak constraint
-        delta_constraint_list = pyo.ConstraintList()
-        setattr(self.model, f"{name_prefix}_delta_peak_avg_constraint", delta_constraint_list)
-
-        for idx in index_set:
-            delta_constraint_list.add(delta_var[idx] >= (peak_var[idx] - avg_var[idx]))
-            delta_constraint_list.add(delta_var[idx] >= (avg_var[idx] - peak_var[idx]))
-
-    def initialise_constraints(self):
-        """ Initialise constraints by calling the generalised function for daily and weekly peaks. """
-
-        # Daily constraints
-        self._add_peak_constraints(
-            peak_var=self.model.p_daily_peak,
-            avg_var=self.model.p_daily_avg,
-            delta_var=self.model.delta_daily_peak_avg,
-            time_sets=params.T_d,
-            index_set=self.model.DAY,
-            name_prefix="daily"
-        )
-
-        # Weekly constraints
-        self._add_peak_constraints(
-            peak_var=self.model.p_weekly_peak,
-            avg_var=self.model.p_weekly_avg,
-            delta_var=self.model.delta_weekly_peak_avg,
-            time_sets=params.T_w,
-            index_set=self.model.WEEK,
-            name_prefix="weekly"
-        )
+    # def _add_peak_constraints(self, peak_var, avg_var, delta_var, time_sets, index_set, name_prefix):
+    #     """ Generalised function to add peak constraints (daily/weekly). """
+    #
+    #     # Peak power constraint
+    #     constraint_list = pyo.ConstraintList()
+    #     setattr(self.model, f"{name_prefix}_peak_power_constraint", constraint_list)
+    #
+    #     for idx in index_set:
+    #         for t in time_sets[idx]:
+    #             constraint_list.add(peak_var[idx] >= self.model.p_grid[t])
+    #
+    #     # Average peak constraint
+    #     def peak_average_rule(model, idx):
+    #         return avg_var[idx] == (1 / len(time_sets[idx])) * sum(model.p_grid[t] for t in time_sets[idx])
+    #
+    #     setattr(self.model, f"{name_prefix}_peak_average_constraint",
+    #             pyo.Constraint(index_set, rule=peak_average_rule))
+    #
+    #     # Delta peak constraint
+    #     delta_constraint_list = pyo.ConstraintList()
+    #     setattr(self.model, f"{name_prefix}_delta_peak_avg_constraint", delta_constraint_list)
+    #
+    #     for idx in index_set:
+    #         delta_constraint_list.add(delta_var[idx] >= (peak_var[idx] - avg_var[idx]))
+    #         delta_constraint_list.add(delta_var[idx] >= (avg_var[idx] - peak_var[idx]))
+    #
+    # def initialise_constraints(self):
+    #     """ Initialise constraints by calling the generalised function for daily and weekly peaks. """
+    #
+    #     # Daily constraints
+    #     self._add_peak_constraints(
+    #         peak_var=self.model.p_daily_peak,
+    #         avg_var=self.model.p_daily_avg,
+    #         delta_var=self.model.delta_daily_peak_avg,
+    #         time_sets=params.T_d,
+    #         index_set=self.model.DAY,
+    #         name_prefix="daily"
+    #     )
+    #
+    #     # Weekly constraints
+    #     self._add_peak_constraints(
+    #         peak_var=self.model.p_weekly_peak,
+    #         avg_var=self.model.p_weekly_avg,
+    #         delta_var=self.model.delta_weekly_peak_avg,
+    #         time_sets=params.T_w,
+    #         index_set=self.model.WEEK,
+    #         name_prefix="weekly"
+    #     )
 
 
 class HouseholdLoad:
@@ -318,7 +318,7 @@ class ElectricVehicle:
         self.model.p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, None))
         self.model.soc_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals,
                                     bounds=lambda model, i, t: (0, model.soc_max[i]))
-        self.model.delta_p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
+        # self.model.delta_p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
 
         if self.charging_strategy == ChargingStrategy.FLEXIBLE:
             self._scheduling_variables()
@@ -380,25 +380,25 @@ class ElectricVehicle:
 
         self.model.final_soc_constraint = pyo.Constraint(self.model.EV_ID, rule=final_soc_rule)
 
-    def _charging_discontinuity_constraints(self):
-        self.model.charging_discontinuity_constraint = pyo.ConstraintList()
-
-        for i in self.model.EV_ID:
-            for t in self.model.TIME:
-                if t == self.model.TIME.first():
-                    self.model.charging_discontinuity_constraint.add(
-                        self.model.delta_p_ev[i, t] == 0
-                    )
-                else:
-                    if self.model.ev_at_home_status[i, t] == 1:
-                        self.model.charging_discontinuity_constraint.add(
-                            self.model.delta_p_ev[i, t] >=
-                            self.model.p_ev[i, t] - self.model.p_ev[i, self.model.TIME.prev(t)]
-                        )
-                        self.model.charging_discontinuity_constraint.add(
-                            self.model.delta_p_ev[i, t] >=
-                            self.model.p_ev[i, self.model.TIME.prev(t)] - self.model.p_ev[i, t]
-                        )
+    # def _charging_discontinuity_constraints(self):
+    #     self.model.charging_discontinuity_constraint = pyo.ConstraintList()
+    #
+    #     for i in self.model.EV_ID:
+    #         for t in self.model.TIME:
+    #             if t == self.model.TIME.first():
+    #                 self.model.charging_discontinuity_constraint.add(
+    #                     self.model.delta_p_ev[i, t] == 0
+    #                 )
+    #             else:
+    #                 if self.model.ev_at_home_status[i, t] == 1:
+    #                     self.model.charging_discontinuity_constraint.add(
+    #                         self.model.delta_p_ev[i, t] >=
+    #                         self.model.p_ev[i, t] - self.model.p_ev[i, self.model.TIME.prev(t)]
+    #                     )
+    #                     self.model.charging_discontinuity_constraint.add(
+    #                         self.model.delta_p_ev[i, t] >=
+    #                         self.model.p_ev[i, self.model.TIME.prev(t)] - self.model.p_ev[i, t]
+    #                     )
 
     def _ev_assignment_and_mutual_exclusivity_constraints_config_2_3(self):
         # Constraint: EVs can only be assigned to existing CPs

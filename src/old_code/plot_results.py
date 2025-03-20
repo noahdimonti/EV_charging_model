@@ -63,7 +63,7 @@ def plot_results(model_output):
     plt.close(fig)
 
 
-df = pd.read_csv('../../reports/simulation_results.csv')
+df = pd.read_csv('../../reports/old_files/simulation_results.csv')
 
 # Extract the row where 'Metric' is 'Max charging power (kW)'
 max_charging_row = df[df['Metric'] == 'Max charging power (kW)']

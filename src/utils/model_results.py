@@ -26,7 +26,7 @@ class ModelResults:
 
     def save_model_to_pickle(self):
         filename = f'{self.config.value}_{self.charging_strategy.value}_{params.num_of_evs}EVs_{params.num_of_days}days.pkl'
-        folder_path = '../../reports/'
+        folder_path = '../../reports/pkl'
         file_path = folder_path + filename
         try:
             with open(file_path, 'wb') as f:

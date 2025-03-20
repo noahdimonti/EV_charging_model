@@ -11,6 +11,7 @@ from src.models.optimisation_models.assets import (
     ChargingPoint,
     ElectricVehicle
 )
+from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
 
 
 class BuildModel:
@@ -33,7 +34,6 @@ class BuildModel:
 
     def initialise_sets(self):
         self.model.EV_ID = pyo.Set(initialize=[_ for _ in range(params.num_of_evs)])
-
         self.model.TIME = pyo.Set(initialize=params.timestamps)
         self.model.DAY = pyo.Set(initialize=[_ for _ in params.T_d.keys()])
         self.model.WEEK = pyo.Set(initialize=[_ for _ in params.D_w.keys()])
@@ -52,40 +52,11 @@ class BuildModel:
         self.assets['cp'].initialise_constraints()
         self.assets['ev'].initialise_constraints()
 
-    def define_objective(self):
-        def get_economic_cost(model):
-            investment_cost = model.num_cp * sum(params.investment_cost[m] * model.select_cp_rated_power[m]
-                                                 for m in params.p_cp_rated_options_scaled)
-
-            maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * model.num_cp
-
-            operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type]
-
-            energy_purchase_cost = sum(
-                params.tariff_dict[independent_variables.tariff_type][t] * model.p_grid[t] for t in model.TIME
-            )
-
-            # total costs
-            total_economic_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
-
-            return total_economic_cost
-
-        def get_technical_cost(model):
-            daily_load_variance = sum(model.delta_daily_peak_avg[d] for d in model.DAY)
-            weekly_load_variance = sum(model.delta_weekly_peak_avg[w] for w in model.WEEK)
-            charging_discontinuity = sum(
-                model.delta_p_ev[i, t] for i in model.EV_ID for t in model.TIME
-            )
-
-            return daily_load_variance + weekly_load_variance + charging_discontinuity
-
-        def get_social_cost(model):
-            return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in ev_params.t_dep_dict[i])
-
+        # Define objective function
         def obj_function(model):
-            economic_cost = get_economic_cost(model)
-            technical_cost = get_technical_cost(model)
-            social_cost = get_social_cost(model)
+            economic_cost = EconomicObjective(model)
+            technical_cost = TechnicalObjective(model)
+            social_cost = SocialObjective(model)
 
             return (independent_variables.w_economic * economic_cost) + (
                     independent_variables.w_technical * technical_cost) + (
@@ -93,6 +64,45 @@ class BuildModel:
 
         self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
+    # def define_objective(self):
+    #     def get_economic_cost(model):
+    #         investment_cost = model.num_cp * sum(params.investment_cost[m] * model.select_cp_rated_power[m]
+    #                                              for m in params.p_cp_rated_options_scaled)
+    #
+    #         maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * model.num_cp
+    #
+    #         operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type]
+    #
+    #         energy_purchase_cost = sum(
+    #             params.tariff_dict[independent_variables.tariff_type][t] * model.p_grid[t] for t in model.TIME
+    #         )
+    #
+    #         # total costs
+    #         total_economic_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
+    #
+    #         return total_economic_cost
+    #
+    #     def get_technical_cost(model):
+    #         daily_load_variance = sum(model.delta_daily_peak_avg[d] for d in model.DAY)
+    #         weekly_load_variance = sum(model.delta_weekly_peak_avg[w] for w in model.WEEK)
+    #         charging_discontinuity = sum(
+    #             model.delta_p_ev[i, t] for i in model.EV_ID for t in model.TIME
+    #         )
+    #
+    #         return daily_load_variance + weekly_load_variance + charging_discontinuity
+    #
+    #     def get_social_cost(model):
+    #         return sum(model.soc_max[i] - model.soc_ev[i, t] for i in model.EV_ID for t in ev_params.t_dep_dict[i])
+    #
+    #     def obj_function(model):
+    #         economic_cost = get_economic_cost(model)
+    #         technical_cost = get_technical_cost(model)
+    #         social_cost = get_social_cost(model)
+    #
+    #         return (independent_variables.w_economic * economic_cost) + (
+    #                 independent_variables.w_technical * technical_cost) + (
+    #                 independent_variables.w_social * social_cost)
+    #
+    #     self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
     def get_optimisation_model(self):
         return self.model
-
