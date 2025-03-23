@@ -84,6 +84,5 @@ def run_and_save_solved_model(config: str,
     return results
 
 
-
 if __name__ == '__main__':
     main()
