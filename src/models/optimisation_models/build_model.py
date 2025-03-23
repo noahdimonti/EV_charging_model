@@ -30,7 +30,6 @@ class BuildModel:
         # Run methods
         self.initialise_sets()
         self.assemble_components()
-        self.define_objective()
 
     def initialise_sets(self):
         self.model.EV_ID = pyo.Set(initialize=[_ for _ in range(params.num_of_evs)])
@@ -54,9 +53,17 @@ class BuildModel:
 
         # Define objective function
         def obj_function(model):
-            economic_cost = EconomicObjective(model)
-            technical_cost = TechnicalObjective(model)
-            social_cost = SocialObjective(model)
+            # Economic objective
+            economic_obj = EconomicObjective(model)
+            economic_cost = economic_obj.investment_cost() + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
+
+            # Technical objective
+            technical_obj = TechnicalObjective(model)
+            technical_cost = technical_obj.f_papr() + technical_obj.f_peak() + technical_obj.f_disc()
+
+            # Social objective
+            social_obj = SocialObjective(model)
+            social_cost = social_obj.f_soc() + social_obj.f_fair()
 
             return (independent_variables.w_economic * economic_cost) + (
                     independent_variables.w_technical * technical_cost) + (

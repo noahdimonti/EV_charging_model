@@ -1,4 +1,6 @@
-from src.utils.execute_model import run_model
+from src.models.optimisation_models import build_model, configs
+from src.utils import solve_model
+from src.utils.model_results import ModelResults
 
 
 def main():
@@ -11,6 +13,8 @@ def main():
         'opportunistic',
         'flexible',
     ]
+
+    file_version = 'test'
 
     for config in configurations:
         for charging_strategy in charging_strategies:
@@ -29,7 +33,56 @@ def main():
                 time_limit = 60 * 30
 
             # Run, solve, and save solved model
-            run_model(config, charging_strategy, mip_gap=mip_gap, time_limit=time_limit, verbose=verbose)
+            run_and_save_solved_model(
+                config,
+                charging_strategy,
+                file_version=file_version,
+                mip_gap=mip_gap,
+                time_limit=time_limit,
+                verbose=verbose
+            )
+
+
+def run_and_save_solved_model(config: str,
+                              charging_strategy: str,
+                              file_version: str,
+                              verbose=False,
+                              time_limit=None,
+                              mip_gap=None):
+    config_map = {
+        'config_1': configs.CPConfig.CONFIG_1,
+        'config_2': configs.CPConfig.CONFIG_2,
+        'config_3': configs.CPConfig.CONFIG_3,
+    }
+
+    strategy_map = {
+        'opportunistic': configs.ChargingStrategy.OPPORTUNISTIC,
+        'flexible': configs.ChargingStrategy.FLEXIBLE
+    }
+
+    if config not in config_map or charging_strategy not in strategy_map:
+        raise ValueError("Invalid config or charging strategy.")
+
+    model = build_model.BuildModel(
+        config=config_map[config],
+        charging_strategy=strategy_map[charging_strategy]
+    )
+    opt_model = model.get_optimisation_model()
+
+    # Solve model_data
+    solved_model, calc_mip_gap = solve_model.solve_optimisation_model(
+        opt_model,
+        verbose=verbose,
+        time_limit=time_limit,
+        mip_gap=mip_gap
+    )
+
+    # Save results
+    results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], calc_mip_gap)
+    results.save_model_to_pickle(file_version=file_version)
+
+    return results
+
 
 
 if __name__ == '__main__':

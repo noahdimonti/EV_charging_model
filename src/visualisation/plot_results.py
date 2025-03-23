@@ -8,7 +8,7 @@ from pprint import pprint
 fig_size = (12, 8)
 
 
-def plot_p_ev(results: ModelResults, show_plot=False):
+def plot_p_ev(results: ModelResults, save_img=False):
     p_ev_data = {i: [results.variables['p_ev'][i, t] for t in results.sets['TIME']] for i in results.sets['EV_ID']}
 
     plt.figure(figsize=fig_size)
@@ -42,15 +42,15 @@ def plot_p_ev(results: ModelResults, show_plot=False):
     plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
 
     # Save or show the plot
-    plt.savefig(
-        f'../../reports/figures/p_ev_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
-        dpi=300)
+    if save_img:
+        plt.savefig(
+            f'../../reports/figures/p_ev_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
+            dpi=300)
 
-    if show_plot:
-        plt.show()
+    plt.show()
 
 
-def plot_agg_p_ev(results: ModelResults, show_plot=False):
+def plot_agg_p_ev(results: ModelResults, save_img=False):
     plt.figure(figsize=fig_size)
 
     # Plot
@@ -83,26 +83,33 @@ def plot_agg_p_ev(results: ModelResults, show_plot=False):
     plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
 
     # Save or show the plot
-    plt.savefig(
-        f'../../reports/figures/agg_p_ev-{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
-        dpi=300)
+    if save_img:
+        plt.savefig(
+            f'../../reports/figures/agg_p_ev-{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
+            dpi=300)
 
-    if show_plot:
-        plt.show()
+    plt.show()
 
 
-def plot_agg_total_demand(results: ModelResults, show_plot=False):
+def plot_agg_total_demand(results: ModelResults, save_img=False):
     # Create the plot
     fig, ax = plt.subplots(figsize=fig_size)
 
     # Plot household load
     house_load = [load for load in params.household_load['household_load']]
-    ax.fill_between(params.timestamps, house_load, color='skyblue', alpha=0.6, label='Household Load')
+    ax.fill_between(params.timestamps, house_load, color='skyblue', linewidth=1, alpha=0.6, label='Household Load')
 
     # Plot total demand
     ev_load = [sum(results.variables['p_ev'][i, t] for i in results.sets['EV_ID']) for t in results.sets['TIME']]
     total_demand = [h_l + ev_l for h_l, ev_l in zip(house_load, ev_load)]
-    ax.plot(params.timestamps, total_demand, color='orange', linewidth=2, label='Total Demand')
+    ax.plot(params.timestamps, total_demand, color='orange', linewidth=1, label='Total Demand')
+
+    # Plot peaks
+    base_load_peak = max(house_load)
+    total_load_peak = max(total_demand)
+
+    ax.plot(params.timestamps, [base_load_peak for _ in params.timestamps], color='skyblue', linewidth=1, label='Base load peak')
+    ax.plot(params.timestamps, [total_load_peak for _ in params.timestamps], color='orange', linewidth=1, label='Total load peak')
 
     # Add labels and title
     plt.ylabel('Power (kW)')
@@ -130,14 +137,15 @@ def plot_agg_total_demand(results: ModelResults, show_plot=False):
     plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
 
     # Save or show the plot
-    plt.savefig(
-        f'../../reports/figures/agg_power_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
-        dpi=300)
-    if show_plot:
-        plt.show()
+    if save_img:
+        plt.savefig(
+            f'../../reports/figures/agg_power_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
+            dpi=300)
+
+    plt.show()
 
 
-def plot_ev_charging_schedule(results: ModelResults, show_plot=False):
+def plot_ev_charging_schedule(results: ModelResults, save_img=False):
     # Convert the dictionary to a DataFrame
     df = pd.Series(results.variables['is_charging_day']).unstack(level=0).fillna(0)
     df.columns = [f'EV {i}' for i in df.columns]
@@ -179,11 +187,11 @@ def plot_ev_charging_schedule(results: ModelResults, show_plot=False):
     plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
 
     # Save or show the plot
-    plt.savefig(
-        f'../../reports/figures/ev_charging_schedule_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
-        dpi=300)
+    if save_img:
+        plt.savefig(
+            f'../../reports/figures/ev_charging_schedule_{results.config.value}_{results.charging_strategy.value}_{params.num_of_evs}EVs.png',
+            dpi=300)
 
-    if show_plot:
-        plt.show()
+    plt.show()
 
 

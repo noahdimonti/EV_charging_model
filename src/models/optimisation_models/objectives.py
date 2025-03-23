@@ -5,30 +5,27 @@ from src.config import params, ev_params, independent_variables
 class EconomicObjective:
     def __init__(self, model):
         self.model = model
-        self.get_economic_cost()
 
-    def get_economic_cost(self):
-        investment_cost = self.model.num_cp * sum(params.investment_cost[m] * self.model.select_cp_rated_power[m]
+    def investment_cost(self):
+        return self.model.num_cp * sum(params.investment_cost[m] * self.model.select_cp_rated_power[m]
                                                   for m in params.p_cp_rated_options_scaled)
 
-        maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * self.model.num_cp
+    def maintenance_cost(self):
+        return (params.annual_maintenance_cost / 365) * params.num_of_days * self.model.num_cp
 
-        operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type]
+    def energy_purchase_cost(self):
+        operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
 
         energy_purchase_cost = sum(
             params.tariff_dict[independent_variables.tariff_type][t] * self.model.p_grid[t] for t in self.model.TIME
         )
 
-        # total costs
-        total_economic_cost = investment_cost + maintenance_cost + operational_cost + energy_purchase_cost
-
-        return total_economic_cost
+        return operational_cost + energy_purchase_cost
 
 
 class TechnicalObjective:
     def __init__(self, model):
         self.model = model
-        self.get_technical_cost()
 
     def f_papr(self):
         # Initialise variables
@@ -50,7 +47,7 @@ class TechnicalObjective:
             delta_var=self.model.delta_daily_peak_avg,
             time_sets=params.T_d,
             index_set=self.model.DAY,
-            name_prefix="daily"
+            name_prefix='daily'
         )
 
         # Weekly constraints
@@ -60,7 +57,7 @@ class TechnicalObjective:
             delta_var=self.model.delta_weekly_peak_avg,
             time_sets=params.T_w,
             index_set=self.model.WEEK,
-            name_prefix="weekly"
+            name_prefix='weekly'
         )
 
         # Define objective
@@ -98,8 +95,8 @@ class TechnicalObjective:
     def f_peak(self):
         # Initialise parameters
         self.model.high_load_penalty = pyo.Param(self.model.TIME,
-                                                 initialize=lambda model, t: self.model.p_household_load[t] / max(
-                                                     self.model.p_household_load[t]))
+                                                 initialize=lambda model, t: (self.model.p_household_load[t] / max(
+                                                     [self.model.p_household_load[t]])))
         # Define constraints
         high_load_penalty = sum(
             self.model.high_load_penalty[t] * self.model.p_ev[i, t] for i in self.model.EV_ID for t in self.model.TIME)
@@ -140,14 +137,10 @@ class TechnicalObjective:
                             self.model.p_ev[i, self.model.TIME.prev(t)] - self.model.p_ev[i, t]
                         )
 
-    def get_technical_cost(self):
-        return self.f_papr() + self.f_peak() + self.f_disc()
-
 
 class SocialObjective:
     def __init__(self, model):
         self.model = model
-        self.get_social_cost()
 
     def f_soc(self):
         soc_max_deviation = sum(
@@ -183,6 +176,3 @@ class SocialObjective:
         soc_avg_deviation = sum(self.model.soc_avg_deviation[i, t] for i in self.model.EV_ID for t in self.model.TIME)
 
         return soc_avg_deviation
-
-    def get_social_cost(self):
-        return self.f_soc() + self.f_fair()

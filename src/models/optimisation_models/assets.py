@@ -531,7 +531,6 @@ class ElectricVehicle:
 
     def initialise_constraints(self):
         self._soc_constraints()
-        self._charging_discontinuity_constraints()
         self._charging_power_limit_constraints()
 
         if self.charging_strategy == ChargingStrategy.FLEXIBLE:

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pyomo.environ as pyo
 from src.config import params, ev_params, independent_variables
 from src.utils.model_results import ModelResults
@@ -33,12 +34,8 @@ class EvaluationMetrics:
             params.investment_cost[m] * self.variables['select_cp_rated_power'][m]
             for m in params.p_cp_rated_options_scaled)
 
-        # rated power of CP
-        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
-
         return {
             'investment_cost': investment_cost,
-            'p_cp_rated': p_cp_rated,
         }
 
     def dso_metrics(self):
@@ -48,7 +45,7 @@ class EvaluationMetrics:
         avg_papr = np.mean(
             [(self.variables['p_daily_peak'][d] / self.variables['p_daily_avg'][d]) for d in self.sets['DAY']]
         )
-        avg_peak_increase = np.mean(
+        avg_daily_peak_increase = np.mean(
             [(max([self.variables['p_grid'][t] for t in params.T_d[d]]) /
               max([params.household_load.loc[t].values for t in params.T_d[d]]))
              for d in self.sets['DAY']]
@@ -57,33 +54,39 @@ class EvaluationMetrics:
         return {
             'avg_p_peak': avg_p_peak,
             'avg_papr': avg_papr,
-            'avg_peak_increase': avg_peak_increase,
+            'avg_daily_peak_increase': avg_daily_peak_increase,
         }
 
     def ev_user_metrics(self):
         num_cp = self.num_cp
 
+        # rated power of CP
+        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
+
         # maintenance cost
         maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * self.num_cp
+
+        # operational cost
+        operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
 
         total_cost_per_user = (sum(
             params.tariff_dict[independent_variables.tariff_type][t] * self.variables['p_ev'][i, t]
             for i in self.sets['EV_ID']
             for t in self.sets['TIME']
-        ) + maintenance_cost) / len(self.sets['EV_ID'])
+        ) + maintenance_cost + operational_cost) / len(self.sets['EV_ID'])
 
-        avg_soc_t_dep_percent = sum(
+        avg_soc_t_arr_percent = sum(
             (self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) for i in self.sets['EV_ID'] for t in
-            ev_params.t_dep_dict[i]
-        ) / sum(len(ev_params.t_dep_dict[i]) for i in self.sets['EV_ID']) * 100
+            ev_params.t_arr_dict[i]
+        ) / sum(len(ev_params.t_arr_dict[i]) for i in self.sets['EV_ID']) * 100
 
         lowest_soc_percent = min([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
                                   for i in self.sets['EV_ID']
-                                  for t in self.sets['TIME']])
+                                  for t in ev_params.t_arr_dict[i]])
 
         highest_soc_percent = max([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
-                                  for i in self.sets['EV_ID']
-                                  for t in self.sets['TIME']])
+                                   for i in self.sets['EV_ID']
+                                   for t in ev_params.t_arr_dict[i]])
 
         avg_num_charging_days = None
         if self.results.charging_strategy.value == 'opportunistic':
@@ -111,8 +114,9 @@ class EvaluationMetrics:
 
         return {
             'num_cp': num_cp,
+            'p_cp_rated': p_cp_rated,
             'total_cost_per_user': total_cost_per_user,
-            'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
+            'avg_soc_t_arr_percent': avg_soc_t_arr_percent,
             'lowest_soc_percent': lowest_soc_percent,
             'highest_soc_percent': highest_soc_percent,
             'avg_num_charging_days': avg_num_charging_days,
@@ -134,17 +138,16 @@ class EvaluationMetrics:
 
         formatted_metrics = {
             'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
-            'CP rated power': f'{self.metrics['p_cp_rated']:,.1f} kW',
 
             'Average daily peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
-            'Average PAPR': f'{self.metrics['avg_papr']:,.3f}',
-            'Average peak increase from base load': f'{self.metrics['avg_peak_increase']:,.2f}%',
+            'Average daily PAPR': f'{self.metrics['avg_papr']:,.3f}',
+            'Average daily peak increase from base load': f'{self.metrics['avg_daily_peak_increase']:,.2f}%',
 
-            'Number of CP': f'{self.metrics['num_cp']} charging point(s)',
+            'Number of CP': f'{self.metrics['num_cp']} charging points ({self.metrics['p_cp_rated']:,.1f} kW)',
             'Total cost per user': f'${self.metrics['total_cost_per_user']:,.2f} over {params.num_of_days} days',
-            'Average SOC at departure time': f'{self.metrics['avg_soc_t_dep_percent']:,.1f}%',
-            'Lowest SOC': f'{self.metrics['lowest_soc_percent']:,.2f}%',
-            'Highest SOC': f'{self.metrics['highest_soc_percent']:,.2f}%',
+            'Average SOC at arrival time': f'{self.metrics['avg_soc_t_arr_percent']:,.1f}%',
+            'Lowest SOC at arrival time': f'{self.metrics['lowest_soc_percent']:,.2f}%',
+            'Highest SOC at arrival time': f'{self.metrics['highest_soc_percent']:,.2f}%',
             'Average number of charging days': f'{avg_num_charging_days_str} days per week',
 
             'Optimality gap': f'{self.results.mip_gap:,.4f}%',
@@ -160,3 +163,21 @@ class EvaluationMetrics:
 
         pprint(self.format_metrics(), sort_dicts=False)
         print(f'\n---------------------------------------------------------')
+
+
+def compile_multiple_models_metrics(models_metrics: dict, filename: str):
+    # Create a list of DataFrames, one for each results
+    dfs = [pd.DataFrame(data.values(), index=data.keys(), columns=[model_name])
+           for model_name, data in models_metrics.items()]
+
+    # Concatenate all DataFrames along columns
+    df = pd.concat(dfs, axis=1)
+
+    # Save compiled dataframe
+    folder_path = f'../../reports/'
+    file_path = folder_path + filename
+    df.to_csv(file_path)
+
+    print(f'\nCompiled metrics saved to {file_path}\n')
+
+    return df
