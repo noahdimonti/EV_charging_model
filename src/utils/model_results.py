@@ -22,9 +22,9 @@ class ModelResults:
         for model_set in opt_model.component_objects(pyo.Set, active=True):
             self.sets[model_set.name] = model_set.data()
 
-    def save_model_to_pickle(self, file_version: str):
-        filename = f'{self.config.value}_{self.charging_strategy.value}_{params.num_of_evs}EVs_{params.num_of_days}days_{file_version}.pkl'
-        folder_path = '../../results/pkl/'
+    def save_model_to_pickle(self, version: str):
+        filename = f'{self.config.value}_{self.charging_strategy.value}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.models'
+        folder_path = '../../data/outputs/models/'
         file_path = folder_path + filename
         try:
             with open(file_path, 'wb') as f:

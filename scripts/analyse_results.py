@@ -9,7 +9,7 @@ def main():
     pd.set_option('display.max_columns', None)
 
     num_ev = 5
-    file_version = 'test'
+    version = 'test'
 
     # plot = True
     plot = False
@@ -28,7 +28,9 @@ def main():
 
     for config in configurations:
         for strategy in charging_strategies:
-            with open(f'../../reports/pkl/{config}_{strategy}_{num_ev}EVs_7days.pkl', 'rb') as f:
+            filename = f'../../reports/pkl/{config}_{strategy}_{num_ev}EVs_7days.pkl'
+
+            with open(filename, 'rb') as f:
                 results = pickle.load(f)
 
             # Compute evaluation metrics
@@ -48,7 +50,8 @@ def main():
                     plot_ev_charging_schedule(results)
 
     # Compile models metrics
-    results_df = compile_multiple_models_metrics(models_metrics, filename='compiled_metrics_new.csv')
+    metrics_filename = 'compiled_metrics_new.csv'
+    results_df = compile_multiple_models_metrics(models_metrics, filename=metrics_filename)
     print(results_df)
 
 

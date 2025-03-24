@@ -1,7 +1,7 @@
 import pandas as pd
 
 from src.config import params
-from src.old_code.uncoordinated_model import UncoordinatedModel
+from old_files.old_code import UncoordinatedModel
 
 
 def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distance: float,

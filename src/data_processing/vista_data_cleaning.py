@@ -5,9 +5,9 @@ from src.config import params
 
 def main(start_date_time=params.start_date_time, min_at_home_time=params.min_time_at_home):
     # Files and folders path
-    vista_raw_path = '../../data/raw/T_VISTA1218_V1.csv'
-    work_ev_path = '../../data/raw/VISTA_Time_HomeDeAr_WorkVehicle.csv'
-    casual_ev_path = '../../data/raw/VISTA_Time_HomeDeAr_CasualVehicle.csv'
+    vista_raw_path = '../../data/inputs/raw/T_VISTA1218_V1.csv'
+    work_ev_path = '../../data/inputs/raw/VISTA_Time_HomeDeAr_WorkVehicle.csv'
+    casual_ev_path = '../../data/inputs/raw/VISTA_Time_HomeDeAr_CasualVehicle.csv'
 
     # create weekday and weekend dep-arr dataframes
     weekday = initialise_and_clean_work_ev(

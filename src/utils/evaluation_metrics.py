@@ -174,7 +174,7 @@ def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     df = pd.concat(dfs, axis=1)
 
     # Save compiled dataframe
-    folder_path = f'../../reports/'
+    folder_path = f'../../reports/csv/'
     file_path = folder_path + filename
     df.to_csv(file_path)
 

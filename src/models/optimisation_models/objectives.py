@@ -8,13 +8,14 @@ class EconomicObjective:
 
     def investment_cost(self):
         return self.model.num_cp * sum(params.investment_cost[m] * self.model.select_cp_rated_power[m]
-                                                  for m in params.p_cp_rated_options_scaled)
+                                       for m in params.p_cp_rated_options_scaled)
 
     def maintenance_cost(self):
         return (params.annual_maintenance_cost / 365) * params.num_of_days * self.model.num_cp
 
     def energy_purchase_cost(self):
-        operational_cost = params.daily_supply_charge_dict[independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
+        operational_cost = params.daily_supply_charge_dict[
+                               independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
 
         energy_purchase_cost = sum(
             params.tariff_dict[independent_variables.tariff_type][t] * self.model.p_grid[t] for t in self.model.TIME

@@ -246,5 +246,7 @@ reports/
 # Data
 /data/
 
+/.old_files
+
 
 .DS_Store

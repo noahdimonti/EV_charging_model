@@ -23,7 +23,7 @@ def main(num_of_evs, output_filename):
     )
 
     # Save data_processing into a pickle file
-    file_path = '../../data/processed'
+    file_path = '../../data/inputs/processed'
     filename = os.path.join(file_path, output_filename)
     with open(filename, "wb") as f:
         pickle.dump(ev_instances, f)

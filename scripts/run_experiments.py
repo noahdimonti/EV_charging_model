@@ -14,7 +14,7 @@ def main():
         'flexible',
     ]
 
-    file_version = 'test'
+    version = 'test'
 
     for config in configurations:
         for charging_strategy in charging_strategies:
@@ -36,7 +36,7 @@ def main():
             run_and_save_solved_model(
                 config,
                 charging_strategy,
-                file_version=file_version,
+                version=version,
                 mip_gap=mip_gap,
                 time_limit=time_limit,
                 verbose=verbose
@@ -45,7 +45,7 @@ def main():
 
 def run_and_save_solved_model(config: str,
                               charging_strategy: str,
-                              file_version: str,
+                              version: str,
                               verbose=False,
                               time_limit=None,
                               mip_gap=None):
@@ -79,7 +79,7 @@ def run_and_save_solved_model(config: str,
 
     # Save results
     results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], calc_mip_gap)
-    results.save_model_to_pickle(file_version=file_version)
+    results.save_model_to_pickle(version=version)
 
     return results
 
