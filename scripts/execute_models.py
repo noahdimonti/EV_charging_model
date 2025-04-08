@@ -11,10 +11,10 @@ def main():
     ]
     charging_strategies = [
         'opportunistic',
-        'flexible',
+        # 'flexible',
     ]
 
-    version = 'test'
+    version = 'avgdist25km'
 
     for config in configurations:
         for charging_strategy in charging_strategies:
