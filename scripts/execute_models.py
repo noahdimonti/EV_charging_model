@@ -3,19 +3,7 @@ from src.utils import solve_model
 from src.utils.model_results import ModelResults
 
 
-def main():
-    configurations = [
-        'config_1',
-        # 'config_2',
-        # 'config_3',
-    ]
-    charging_strategies = [
-        'opportunistic',
-        # 'flexible',
-    ]
-
-    version = 'avgdist25km'
-
+def execute_models(version, configurations, charging_strategies):
     for config in configurations:
         for charging_strategy in charging_strategies:
             # Set mip gap and time limit
@@ -84,5 +72,3 @@ def run_and_save_solved_model(config: str,
     return results
 
 
-if __name__ == '__main__':
-    main()

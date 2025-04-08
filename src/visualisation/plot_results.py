@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from src.visualisation.setup_plot import setup_plot, fig_size
 from src.config import params
 from src.utils.model_results import ModelResults
 from pprint import pprint
-
-fig_size = (12, 8)
 
 
 def plot_p_ev(results: ModelResults, save_img=False):
@@ -16,30 +15,12 @@ def plot_p_ev(results: ModelResults, save_img=False):
     for i in results.sets['EV_ID']:
         plt.plot(params.timestamps, p_ev_data[i], linestyle='-', label=f'EV_{i}')
 
-    # Add labels and title
-    plt.ylabel('Power (kW)')
-    plt.title('EV charging power')
-    plt.suptitle(
-        f'{results.config.value.capitalize()} {results.charging_strategy.value.capitalize()} Charging - {params.num_of_evs} EVs',
-        fontsize=12, fontweight='bold')
-
-    # Add grid
-    plt.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.3)  # Grid for major ticks
-
-    # Add top and right borders (spines)
-    ax = plt.gca()
-    ax.spines['top'].set_visible(True)
-    ax.spines['right'].set_visible(True)
-    ax.spines['top'].set_color('black')  # Set color of top border
-    ax.spines['right'].set_color('black')  # Set color of right border
-    ax.spines['top'].set_linewidth(1)  # Set line width for top border
-    ax.spines['right'].set_linewidth(1)  # Set line width for right border
-
-    # Add a legend outside the plot
-    ax.legend(fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.15), frameon=False, ncol=2)
-
-    # Adjust the layout
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
+    # Use the helper function
+    setup_plot(
+        title='EV charging power',
+        suptitle=f'{results.config.value.capitalize()} {results.charging_strategy.value.capitalize()} Charging - {params.num_of_evs} EVs',
+        ylabel='Power (kW)'
+    )
 
     # Save or show the plot
     if save_img:
@@ -57,30 +38,12 @@ def plot_agg_p_ev(results: ModelResults, save_img=False):
     ev_load = [sum(results.variables['p_ev'][i, t] for i in results.sets['EV_ID']) for t in results.sets['TIME']]
     plt.plot(params.timestamps, ev_load, linestyle='-', label='EV_load')
 
-    # Add labels and title
-    plt.ylabel('Power (kW)')
-    plt.title('EV charging power')
-    plt.suptitle(
-        f'{results.config.value.capitalize()} {results.charging_strategy.value.capitalize()} Charging - {params.num_of_evs} EVs',
-        fontsize=12, fontweight='bold')
-
-    # Add grid
-    plt.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.3)  # Grid for major ticks
-
-    # Add top and right borders (spines)
-    ax = plt.gca()
-    ax.spines['top'].set_visible(True)
-    ax.spines['right'].set_visible(True)
-    ax.spines['top'].set_color('black')  # Set color of top border
-    ax.spines['right'].set_color('black')  # Set color of right border
-    ax.spines['top'].set_linewidth(1)  # Set line width for top border
-    ax.spines['right'].set_linewidth(1)  # Set line width for right border
-
-    # Add a legend outside the plot
-    ax.legend(fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.15), frameon=False, ncol=2)
-
-    # Adjust the layout
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
+    # Use the helper function
+    setup_plot(
+        title='EV charging power',
+        suptitle=f'{results.config.value.capitalize()} {results.charging_strategy.value.capitalize()} Charging - {params.num_of_evs} EVs',
+        ylabel='Power (kW)'
+    )
 
     # Save or show the plot
     if save_img:

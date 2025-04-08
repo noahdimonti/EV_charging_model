@@ -1,7 +1,7 @@
 import pandas as pd
 from pprint import pprint
 
-csv_file = pd.read_csv('../../data/outputs/csv/compiled_metrics.csv')
+csv_file = pd.read_csv('../../data/outputs/csv/compiled_metrics_without_ffair_objective.csv')
 
 
 # Function to generate LaTeX table from DataFrame

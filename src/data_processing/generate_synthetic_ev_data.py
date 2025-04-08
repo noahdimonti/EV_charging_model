@@ -23,7 +23,8 @@ def main(num_of_evs, output_filename):
     )
 
     # Save data_processing into a pickle file
-    file_path = '../../data/inputs/processed'
+    folder_path = 'data/inputs/processed'
+    file_path = os.path.join(params.project_root, folder_path)
     filename = os.path.join(file_path, output_filename)
     with open(filename, "wb") as f:
         pickle.dump(ev_instances, f)
@@ -111,7 +112,8 @@ def generate_travel_energy_consumption(avg_travel_distance: float, rand_seed: in
 
 if __name__ == '__main__':
     num_evs = None
+    version = None
     if num_evs is not None:
-        main(num_evs, f'EV_instances_{num_evs}')
+        main(num_evs, f'EV_instances_{num_evs}_{version}')
     else:
         raise ValueError('Provide a number of EV instances.')

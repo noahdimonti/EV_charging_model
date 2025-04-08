@@ -1,6 +1,15 @@
 import pandas as pd
 import numpy as np
+import os
+from pathlib import Path
 from pprint import pprint
+
+
+# --------------------------
+# Project Root
+# --------------------------
+script_dir = Path(__file__).parent
+project_root = script_dir.parent.parent
 
 
 # --------------------------
@@ -84,7 +93,7 @@ p_cp_rated_max = max(p_cp_rated_options_scaled)
 # --------------------------
 # EV Travel Settings
 # --------------------------
-avg_travel_distance = 35  # (km)
+avg_travel_distance = 25  # (km)
 travel_dist_std_dev = 5  # (km)
 energy_consumption_per_km = 0.2  # (kWh/km)
 travel_freq_probability = {
@@ -191,7 +200,8 @@ P_grid_max = 500  # (kW)
 # --------------------------
 # Household Load Settings
 # --------------------------
-household_load_path = f'../../data/interim/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
+folder_path = f'data/inputs/interim/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
+household_load_path = os.path.join(project_root, folder_path)
 household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 
 
