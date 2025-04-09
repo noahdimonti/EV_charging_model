@@ -1,8 +1,15 @@
 import pandas as pd
+from src.config import params, ev_params, independent_variables
 
-from src.config import params
-from old_files.old_code import UncoordinatedModel
 
+def main():
+    # Household load
+    household_load = params.household_load
+
+    ev = ev_params.ev_instance_list
+    print(ev[0])
+
+main()
 
 def simulate_uncoordinated_model(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distance: float,
                                  min_soc: float):
@@ -191,34 +198,34 @@ def check(p_ev_max: float, tariff_type: str, num_of_evs: int, avg_travel_distanc
 
     return model
 
-
-import timeit
-
-p_max = 2.4
-tariff = 'flat'
-ev = 100
-avg_dist = 35
-min_soc = 0.5
-
-
-def before():
-    simulate_uncoordinated_model(p_max, tariff, ev, avg_dist, min_soc)
-
-old_model = simulate_uncoordinated_model(p_max, tariff, ev, avg_dist, min_soc)
-
-
-def after():
-    check(p_max, tariff, ev, avg_dist, min_soc)
-
-new_model = check(p_max, tariff, ev, avg_dist, min_soc)
-
-
-runtime_before = timeit.timeit(before, number=1)
-print(f'runtime before: {runtime_before}')
-
-runtime_after = timeit.timeit(after, number=1)
-print(f'runtime after: {runtime_after}')
-
-
-print(old_model.ev_load)
-print(new_model.ev_load)
+#
+# import timeit
+#
+# p_max = 2.4
+# tariff = 'flat'
+# ev = 100
+# avg_dist = 35
+# min_soc = 0.5
+#
+#
+# def before():
+#     simulate_uncoordinated_model(p_max, tariff, ev, avg_dist, min_soc)
+#
+# old_model = simulate_uncoordinated_model(p_max, tariff, ev, avg_dist, min_soc)
+#
+#
+# def after():
+#     check(p_max, tariff, ev, avg_dist, min_soc)
+#
+# new_model = check(p_max, tariff, ev, avg_dist, min_soc)
+#
+#
+# runtime_before = timeit.timeit(before, number=1)
+# print(f'runtime before: {runtime_before}')
+#
+# runtime_after = timeit.timeit(after, number=1)
+# print(f'runtime after: {runtime_after}')
+#
+#
+# print(old_model.ev_load)
+# print(new_model.ev_load)
