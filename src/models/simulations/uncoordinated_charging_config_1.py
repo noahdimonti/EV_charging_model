@@ -3,7 +3,7 @@ from src.config import params, ev_params, independent_variables
 from pprint import pprint
 
 
-def main(p_cp_rated: float):
+def simulate_model(p_cp_rated: float):
     # Household load
     household_load = params.household_load
 
@@ -60,7 +60,8 @@ def main(p_cp_rated: float):
 
                     # Subtract travel energy if t is at arrival time
                     if t in ev.t_arr:
-                        soc_ev[-1] -= ev.travel_energy[ev_id]
+                        k = ev_params.t_arr_dict[ev_id].index(t)
+                        soc_ev[-1] -= ev.travel_energy[k]
 
                     # Predict SOC based on available charging power
                     potential_soc = soc_ev[-1] + available_power
@@ -75,13 +76,9 @@ def main(p_cp_rated: float):
                         p_ev.append(available_power)
                         soc_ev.append(potential_soc)
 
+        # Assign charging power and soc list to dataframes in EV object
         ev.charging_power['charging_power'] = p_ev
         ev.soc['soc'] = soc_ev
-        print(ev.charging_power)
-        print(ev.soc)
-        pprint(ev.__dict__)
-
-        break
 
 
-main(2.4)
+simulate_model(2.4)
