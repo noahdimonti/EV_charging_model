@@ -1,5 +1,6 @@
 import pandas as pd
 from src.config import params, ev_params, independent_variables
+from pprint import pprint
 
 
 def main():
@@ -8,6 +9,10 @@ def main():
 
     ev = ev_params.ev_instance_list
     print(ev[0])
+
+    # Precompute grid capacity constraints to avoid repeated checks
+    if (household_load > params.P_grid_max).any().any():
+        raise ValueError("Demand is higher than the maximum grid capacity.")
 
 main()
 

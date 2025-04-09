@@ -23,3 +23,4 @@ t_dep_dict = {ev.ev_id: ev.t_dep for ev in ev_instance_list}
 travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
 
 charging_efficiency = 0.95  # (%)
+

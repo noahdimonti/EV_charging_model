@@ -21,7 +21,8 @@ def main():
     execute_models(version, configurations, charging_strategies)
 
     raw_metrics, formatted_metrics = analyse_results(version, configurations, charging_strategies, params.num_of_evs)
-    print(raw_metrics, formatted_metrics)
+
+    print(formatted_metrics)
 
 
 if __name__ == '__main__':

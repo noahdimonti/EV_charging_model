@@ -226,20 +226,6 @@ class ChargingPoint:
         )
 
     def _num_ev_per_cp_limit_constraints(self):
-        # def num_ev_per_cp_lower_bound(model_data, j):
-        #     return model_data.num_ev_sharing_cp[j] >= (params.num_of_evs / model_data.num_cp) - 1
-        #
-        # self.model_data.num_ev_per_cp_lower_bound_constraint = pyo.Constraint(
-        #     self.model_data.CP_ID, rule=num_ev_per_cp_lower_bound
-        # )
-        #
-        # def num_ev_per_cp_upper_bound(model_data, j):
-        #     return model_data.num_ev_sharing_cp[j] <= (params.num_of_evs / model_data.num_cp) + 1
-        #
-        # self.model_data.num_ev_per_cp_upper_bound_constraint = pyo.Constraint(
-        #     self.model_data.CP_ID, rule=num_ev_per_cp_upper_bound
-        # )
-
         def num_ev_per_cp_limit(model, j):
             return model.num_ev_sharing_cp[j] <= params.num_of_evs
 

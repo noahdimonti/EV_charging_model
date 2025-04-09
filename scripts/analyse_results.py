@@ -10,7 +10,7 @@ def analyse_results(version, configurations, charging_strategies, num_ev):
     pd.set_option('display.max_columns', None)
 
     formatted_models_metrics = {}
-    models_metrics = {}
+    raw_val_metrics = {}
 
     for config in configurations:
         for strategy in charging_strategies:
@@ -24,15 +24,15 @@ def analyse_results(version, configurations, charging_strategies, num_ev):
             formatted_metrics = results.format_metrics()
 
             # Collect metrics
-            models_metrics[f'{config}_{strategy}'] = results.metrics
+            raw_val_metrics[f'{config}_{strategy}'] = results.metrics
             formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
     # Compile formatted models metrics
-    formatted_filename = f'compiled_metrics_{version}.csv'
+    formatted_filename = f'{params.formatted_metrics_filename_format}_{version}.csv'
     formatted_results = compile_multiple_models_metrics(formatted_models_metrics, filename=formatted_filename)
 
     # Compile raw values models metrics
-    raw_metrics_filename = f'raw_values_compiled_metrics_{version}.csv'
-    raw_metrics_results = compile_multiple_models_metrics(models_metrics, filename=raw_metrics_filename)
+    raw_metrics_filename = f'{params.raw_val_metrics_filename_format}_{version}.csv'
+    raw_metrics_results = compile_multiple_models_metrics(raw_val_metrics, filename=raw_metrics_filename)
 
     return raw_metrics_results, formatted_results

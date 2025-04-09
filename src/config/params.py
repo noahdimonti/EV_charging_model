@@ -11,6 +11,19 @@ from pprint import pprint
 script_dir = Path(__file__).parent
 project_root = script_dir.parent.parent
 
+# --------------------------
+# Folder Paths
+# --------------------------
+model_results_folder_path = os.path.join(project_root, 'data/outputs/models/')
+compiled_metrics_folder_path = os.path.join(project_root, 'data/outputs/csv/')
+plots_folder_path = os.path.join(project_root, 'data/outputs/plots')
+
+# --------------------------
+# Filename formats
+# --------------------------
+formatted_metrics_filename_format = 'compiled_metrics'
+raw_val_metrics_filename_format = 'raw_values_compiled_metrics'
+
 
 # --------------------------
 # Time Settings
@@ -45,7 +58,7 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 5
+num_of_evs = 25
 num_of_households = 10
 
 

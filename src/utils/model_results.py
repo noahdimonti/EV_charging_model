@@ -9,24 +9,30 @@ from src.models.optimisation_models.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
-    def __init__(self, opt_model, config: CPConfig, charging_strategy: ChargingStrategy, mip_gap):
+    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, mip_gap):
         self.config = config
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
 
         # Solved model results extraction
         self.variables = {}
-        for var in opt_model.component_objects(pyo.Var, active=True):
-            # Check if the variable has indexes
-            if var.is_indexed():
-                self.variables[var.name] = {index: pyo.value(var[index]) for index in var}
-            # For scalar variables, store the value directly
-            else:
-                self.variables[var.name] = var.value
+        if charging_strategy.value == 'uncoordinated':
+            pass
+        else:
+            for var in model.component_objects(pyo.Var, active=True):
+                # Check if the variable has indexes
+                if var.is_indexed():
+                    self.variables[var.name] = {index: pyo.value(var[index]) for index in var}
+                # For scalar variables, store the value directly
+                else:
+                    self.variables[var.name] = var.value
 
         self.sets = {}
-        for model_set in opt_model.component_objects(pyo.Set, active=True):
-            self.sets[model_set.name] = model_set.data()
+        if charging_strategy.value == 'uncoordinated':
+            pass
+        else:
+            for model_set in model.component_objects(pyo.Set, active=True):
+                self.sets[model_set.name] = model_set.data()
 
         # Evaluation metrics initialisation
         # Define number of cp as it varies between configurations
@@ -42,18 +48,6 @@ class ModelResults:
 
         # Collect metrics
         self._collect_metrics()
-
-    def save_model_to_pickle(self, version: str):
-        filename = f'{self.config.value}_{self.charging_strategy.value}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
-        folder_path = 'data/outputs/models/'
-        file_path = os.path.join(params.project_root, folder_path, filename)
-        try:
-            with open(file_path, 'wb') as f:
-                pickle.dump(self, f)
-            print(f'Model saved to {file_path}')
-
-        except Exception as e:
-            print(f'Error saving results: {e}')
 
     # Evaluation metrics methods
     def _investor_metrics(self):
@@ -209,6 +203,18 @@ class ModelResults:
         pprint(self.format_metrics(), sort_dicts=False)
         print(f'\n---------------------------------------------------------')
 
+    # Save model as pickle
+    def save_model_to_pickle(self, version: str):
+        filename = f'{self.config.value}_{self.charging_strategy.value}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
+        file_path = os.path.join(params.model_results_folder_path, filename)
+        try:
+            with open(file_path, 'wb') as f:
+                pickle.dump(self, f)
+            print(f'Model saved to {file_path}')
+
+        except Exception as e:
+            print(f'Error saving results: {e}')
+
 
 def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     # Create a list of DataFrames, one for each results
@@ -219,8 +225,7 @@ def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     df = pd.concat(dfs, axis=1)
 
     # Save compiled dataframe
-    folder_path = f'data/outputs/csv/'
-    file_path = os.path.join(params.project_root, folder_path, filename)
+    file_path = os.path.join(params.compiled_metrics_folder_path, filename)
     df.to_csv(file_path)
 
     print(f'\nCompiled metrics saved to {file_path}\n')
