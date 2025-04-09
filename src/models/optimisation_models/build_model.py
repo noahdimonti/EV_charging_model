@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
-from src.config import params, ev_params, independent_variables
-from src.models.optimisation_models.configs import (
+from src.config import params, independent_variables
+from src.models.configs import (
     CPConfig,
     ChargingStrategy
 )

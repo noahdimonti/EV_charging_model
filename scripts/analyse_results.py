@@ -4,6 +4,7 @@ import os
 from src.config import params
 from src.utils.model_results import compile_multiple_models_metrics
 from src.visualisation.plot_results import plot_p_ev, plot_agg_p_ev, plot_agg_total_demand, plot_ev_charging_schedule
+from pprint import pprint
 
 
 def analyse_results(version, configurations, charging_strategies, num_ev):

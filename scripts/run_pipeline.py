@@ -1,7 +1,6 @@
 from scripts.execute_models import execute_models
 from scripts.analyse_results import analyse_results
 from src.config import params
-from src.visualisation.plot_models_comparison import plot_dso_metrics_comparison
 from pprint import pprint
 
 
@@ -14,6 +13,7 @@ def main():
         # 'config_3',
     ]
     charging_strategies = [
+        'uncoordinated',
         'opportunistic',
         'flexible',
     ]

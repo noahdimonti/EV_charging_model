@@ -76,9 +76,3 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
     print(f'---------------------------------------------------------\n')
 
     return model, calc_mip_gap
-
-
-def simulate_uncoordinated_model(model):
-    print(f'\n=========================================================\n'
-          f'Running {model.name} model ...'
-          f'\n=========================================================\n')

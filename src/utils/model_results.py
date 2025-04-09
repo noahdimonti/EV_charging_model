@@ -5,11 +5,11 @@ import os
 import pyomo.environ as pyo
 from pprint import pprint
 from src.config import params, ev_params, independent_variables
-from src.models.optimisation_models.configs import CPConfig, ChargingStrategy
+from src.models.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
-    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, mip_gap):
+    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
@@ -17,7 +17,7 @@ class ModelResults:
         # Solved model results extraction
         self.variables = {}
         if charging_strategy.value == 'uncoordinated':
-            pass
+            self.variables = model
         else:
             for var in model.component_objects(pyo.Var, active=True):
                 # Check if the variable has indexes
@@ -29,7 +29,12 @@ class ModelResults:
 
         self.sets = {}
         if charging_strategy.value == 'uncoordinated':
-            pass
+            self.sets = {
+                'EV_ID': [_ for _ in range(params.num_of_evs)],
+                'TIME': [_ for _ in params.timestamps],
+                'DAY': [_ for _ in params.T_d.keys()],
+                'WEEK': [_ for _ in params.D_w.keys()]
+            }
         else:
             for model_set in model.component_objects(pyo.Set, active=True):
                 self.sets[model_set.name] = model_set.data()
@@ -51,10 +56,14 @@ class ModelResults:
 
     # Evaluation metrics methods
     def _investor_metrics(self):
-        # investment cost
-        investment_cost = self.num_cp * sum(
-            params.investment_cost[m] * self.variables['select_cp_rated_power'][m]
-            for m in params.p_cp_rated_options_scaled)
+        investment_cost = None
+        if self.charging_strategy.value == 'uncoordinated':
+            investment_cost = self.num_cp * params.investment_cost[self.variables['p_cp_rated'] / params.charging_power_resolution_factor]
+
+        else:
+            investment_cost = self.num_cp * sum(
+                params.investment_cost[m] * self.variables['select_cp_rated_power'][m]
+                for m in params.p_cp_rated_options_scaled)
 
         return {
             'investment_cost': investment_cost,
@@ -74,13 +83,6 @@ class ModelResults:
                 for d in self.sets['DAY']
             ]
         )
-
-        # avg_p_peak = np.mean(
-        #     [self.variables['p_daily_peak'][d] for d in self.sets['DAY']]
-        # )
-        # avg_papr = np.mean(
-        #     [(self.variables['p_daily_peak'][d] / self.variables['p_daily_avg'][d]) for d in self.sets['DAY']]
-        # )
 
         avg_daily_peak_increase = np.mean(
             [(max([self.variables['p_grid'][t] for t in params.T_d[d]]) /
@@ -127,7 +129,7 @@ class ModelResults:
                                    for t in ev_params.t_arr_dict[i]])
 
         avg_num_charging_days = None
-        if self.charging_strategy.value == 'opportunistic':
+        if self.charging_strategy.value == 'uncoordinated' or self.charging_strategy.value == 'opportunistic':
             is_charging_day = {
                 (i, d): int(any(self.variables['p_ev'][i, t] > 0 for t in params.T_d[d]))
                 for i in self.sets['EV_ID'] for d in self.sets['DAY']
@@ -164,7 +166,9 @@ class ModelResults:
         self.metrics.update(self._investor_metrics())
         self.metrics.update(self._dso_metrics())
         self.metrics.update(self._ev_user_metrics())
-        self.metrics.update({'mip_gap': self.mip_gap})
+
+        if self.mip_gap is not None:
+            self.metrics.update({'mip_gap': self.mip_gap})
 
         return self.metrics
 
@@ -188,9 +192,12 @@ class ModelResults:
             'Lowest SOC at arrival time': f'{self.metrics['lowest_soc_percent']:,.2f}%',
             'Highest SOC at arrival time': f'{self.metrics['highest_soc_percent']:,.2f}%',
             'Average number of charging days': f'{avg_num_charging_days_str} days per week',
-
-            'Optimality gap': f'{self.mip_gap:,.4f}%',
         }
+
+        if self.charging_strategy.value != 'uncoordinated':
+            formatted_metrics.update({
+                'Optimality gap': f'{self.mip_gap:,.4f}%',
+            })
 
         return formatted_metrics
 

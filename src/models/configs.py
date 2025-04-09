@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class CPConfig(Enum):
     CONFIG_1 = 'config_1'
     CONFIG_2 = 'config_2'
@@ -13,6 +14,7 @@ class CPConfig(Enum):
 
 
 class ChargingStrategy(Enum):
+    UNCOORDINATED = 'uncoordinated'
     OPPORTUNISTIC = 'opportunistic'
     FLEXIBLE = 'flexible'
 
