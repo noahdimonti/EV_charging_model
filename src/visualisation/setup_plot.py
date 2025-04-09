@@ -47,10 +47,12 @@ def setup(title, ylabel, legend=True):
 
     # Add a legend if specified
     if legend:
-        ax.legend(fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.15), frameon=False, ncol=3)
+        ax.legend(fontsize=12, loc='upper center', bbox_to_anchor=(0.5, -0.1), frameon=False, ncol=4)
 
     # Adjust layout
     plt.subplots_adjust(left=0.1, right=0.95, top=0.85, bottom=0.2)
+
+    plt.tight_layout()
 
 
 def save_plot(filename: str):

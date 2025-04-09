@@ -63,7 +63,7 @@ class BuildModel:
 
             # Social objective
             social_obj = SocialObjective(model)
-            social_cost = social_obj.f_soc()
+            social_cost = social_obj.f_soc() + social_obj.f_fair()
 
             return (independent_variables.w_economic * economic_cost) + (
                     independent_variables.w_technical * technical_cost) + (

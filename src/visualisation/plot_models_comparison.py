@@ -46,7 +46,7 @@ from pprint import pprint
 #     plt.show()
 
 
-def plot_demand_comparison(configurations: list, charging_strategies: list, version: str, save_img=False):
+def demand_profiles(configurations: list, charging_strategies: list, version: str, save_img=False):
     # Create the plot
     fig, ax = plt.subplots(figsize=setup_plot.fig_size)
 
@@ -69,11 +69,12 @@ def plot_demand_comparison(configurations: list, charging_strategies: list, vers
 
     setup_plot.setup('Comparison of Charging Strategies Load Profiles', 'Load (kW)')
 
-    setup_plot.save_plot('testdemand')
+    if save_img:
+        setup_plot.save_plot(f'demand_profiles_{version}')
     plt.show()
 
 
-def plot_soc_distribution(configurations: list, charging_strategies: list, version: str, save_img=False):
+def soc_distribution(configurations: list, charging_strategies: list, version: str, save_img=False):
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
@@ -107,11 +108,12 @@ def plot_soc_distribution(configurations: list, charging_strategies: list, versi
     plt.ylim(0, 100)
     plt.tight_layout()
 
-    setup_plot.save_plot('testviolin')
+    if save_img:
+        setup_plot.save_plot(f'soc_distribution_{version}')
     plt.show()
 
 
-def plot_user_cost_distribution(configurations: list, charging_strategies: list, version: str, save_img=False):
+def users_cost_distribution(configurations: list, charging_strategies: list, version: str, save_img=False):
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
@@ -154,26 +156,6 @@ def plot_user_cost_distribution(configurations: list, charging_strategies: list,
     for line in ax.lines:
         line.set_linewidth(2.5)
 
-    setup_plot.save_plot('testcost')
+    if save_img:
+        setup_plot.save_plot(f'users_cost_distribution_{version}')
     plt.show()
-
-
-
-pd.set_option('display.max_columns', None)
-
-configs = ['config_1']
-strategies = [
-    'uncoordinated',
-    'opportunistic',
-    'flexible'
-]
-version = 'avgdist25km_without_f_fair'
-
-
-# plot_dso_metrics_comparison(version)
-
-# plot_demand_comparison(configs, strategies, version)
-
-# plot_soc_distribution(configs, strategies, version)
-#
-# plot_user_cost_distribution(configs, strategies, version)

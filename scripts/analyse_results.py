@@ -7,7 +7,7 @@ from src.visualisation.plot_results import plot_p_ev, plot_agg_p_ev, plot_agg_to
 from pprint import pprint
 
 
-def analyse_results(version, configurations, charging_strategies, num_ev):
+def analyse_results(configurations, charging_strategies, version, num_ev):
     pd.set_option('display.max_columns', None)
 
     formatted_models_metrics = {}
