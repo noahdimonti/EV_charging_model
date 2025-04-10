@@ -5,7 +5,7 @@ from src.visualisation import plot_models_comparison
 from pprint import pprint
 
 
-def main():
+def main(run_model: bool, analyse: bool, plot: bool):
     version = 'confpaper_complete_obj'
 
     configurations = [
@@ -14,40 +14,47 @@ def main():
         # 'config_3',
     ]
     charging_strategies = [
-        'uncoordinated',
-        'opportunistic',
+        # 'uncoordinated',
+        # 'opportunistic',
         'flexible',
     ]
 
-    execute_models(version, configurations, charging_strategies)
+    if run_model:
+        execute_models(version, configurations, charging_strategies)
 
-    raw_metrics, formatted_metrics = analyse_results(
-        configurations,
-        charging_strategies,
-        version,
-        params.num_of_evs
-    )
-    print(formatted_metrics)
+    if analyse:
+        raw_metrics, formatted_metrics = analyse_results(
+            configurations,
+            charging_strategies,
+            version,
+            params.num_of_evs
+        )
+        print(formatted_metrics)
 
-    plot_models_comparison.demand_profiles(
-        configurations,
-        charging_strategies,
-        version,
-        save_img=True
-    )
-    plot_models_comparison.soc_distribution(
-        configurations,
-        charging_strategies,
-        version,
-        save_img=True
-    )
-    plot_models_comparison.users_cost_distribution(
-        configurations,
-        charging_strategies,
-        version,
-        save_img=True
-    )
+    if plot:
+        plot_models_comparison.demand_profiles(
+            configurations,
+            charging_strategies,
+            version,
+            save_img=True
+        )
+        plot_models_comparison.soc_distribution(
+            configurations,
+            charging_strategies,
+            version,
+            save_img=True
+        )
+        plot_models_comparison.users_cost_distribution(
+            configurations,
+            charging_strategies,
+            version,
+            save_img=True
+        )
 
 
 if __name__ == '__main__':
-    main()
+    main(
+        run_model=True,
+        analyse=False,
+        plot=False
+    )

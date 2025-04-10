@@ -18,7 +18,7 @@ def execute_models(version, configurations, charging_strategies):
                 verbose = True
                 mip_gap = 0.5
                 time_limit = 60 * 15
-            elif charging_strategy == 'flexible' and config != 'config_1':
+            elif charging_strategy == 'flexible':
                 verbose = True
                 mip_gap = 0.9
                 time_limit = 60 * 30
