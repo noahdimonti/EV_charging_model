@@ -118,10 +118,11 @@ def simulate_model(p_cp_rated: float):
 
 def process_model_results(model: list, p_cp_rated: float):
     household_load = params.household_load
+    p_cp_rated_scaled = p_cp_rated / params.charging_power_resolution_factor
 
     all_results = {
         'p_grid': {},
-        'p_cp_rated': p_cp_rated,
+        'p_cp_rated': p_cp_rated_scaled,
         'p_ev': {},
         'soc_ev': {},
     }

@@ -56,9 +56,8 @@ class ModelResults:
 
     # Evaluation metrics methods
     def _investor_metrics(self):
-        investment_cost = None
         if self.charging_strategy.value == 'uncoordinated':
-            investment_cost = self.num_cp * params.investment_cost[self.variables['p_cp_rated'] / params.charging_power_resolution_factor]
+            investment_cost = self.num_cp * params.investment_cost[self.variables['p_cp_rated']]
 
         else:
             investment_cost = self.num_cp * sum(

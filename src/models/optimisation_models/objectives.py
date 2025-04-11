@@ -152,26 +152,45 @@ class SocialObjective:
     def f_fair(self):
         # Initialise variables
         self.model.soc_avg_deviation = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
-        self.model.soc_avg = pyo.Var(self.model.TIME, within=pyo.NonNegativeReals)
+        self.model.daily_soc_avg_t_dep = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
 
-        # Initialise constraints
-        def soc_average(model, t):
-            return model.soc_avg[t] == (1 / params.num_of_evs) * sum(model.soc_ev[i, t] for i in self.model.EV_ID)
+        def daily_soc_avg_t_dep_rule(model, d):
+            n = len(ev_params.t_dep_on_day[d])
+            return model.daily_soc_avg_t_dep[d] == (1 / n) * sum(
+                model.soc_ev[i, t] for (i, t) in ev_params.t_dep_on_day[d]
+            )
 
-        self.model.soc_average_constraint = pyo.Constraint(
-            self.model.TIME, rule=soc_average
-        )
+        self.model.daily_soc_avg_t_dep_constraint = pyo.Constraint(self.model.DAY, rule=daily_soc_avg_t_dep_rule)
 
         self.model.soc_avg_deviation_constraints = pyo.ConstraintList()
 
-        for i in self.model.EV_ID:
-            for t in self.model.TIME:
+        for d in ev_params.t_dep_on_day:
+            for (i, t) in ev_params.t_dep_on_day[d]:
                 self.model.soc_avg_deviation_constraints.add(
-                    self.model.soc_avg_deviation[i, t] >= self.model.soc_ev[i, t] - self.model.soc_avg[t]
+                    self.model.soc_avg_deviation[i, t] >= self.model.soc_ev[i, t] - self.model.daily_soc_avg_t_dep[d]
                 )
                 self.model.soc_avg_deviation_constraints.add(
-                    self.model.soc_avg_deviation[i, t] >= self.model.soc_avg[t] - self.model.soc_ev[i, t]
+                    self.model.soc_avg_deviation[i, t] >= self.model.daily_soc_avg_t_dep[d] - self.model.soc_ev[i, t]
                 )
+
+        # Initialise constraints
+        # def soc_average(model, t):
+        #     return model.soc_avg[t] == (1 / params.num_of_evs) * sum(model.soc_ev[i, t] for i in self.model.EV_ID)
+        #
+        # self.model.soc_average_constraint = pyo.Constraint(
+        #     self.model.TIME, rule=soc_average
+        # )
+        #
+        # self.model.soc_avg_deviation_constraints = pyo.ConstraintList()
+        #
+        # for i in self.model.EV_ID:
+        #     for t in self.model.TIME:
+        #         self.model.soc_avg_deviation_constraints.add(
+        #             self.model.soc_avg_deviation[i, t] >= self.model.soc_ev[i, t] - self.model.soc_avg[t]
+        #         )
+        #         self.model.soc_avg_deviation_constraints.add(
+        #             self.model.soc_avg_deviation[i, t] >= self.model.soc_avg[t] - self.model.soc_ev[i, t]
+        #         )
 
         # Define objective
         soc_avg_deviation = sum(self.model.soc_avg_deviation[i, t] for i in self.model.EV_ID for t in self.model.TIME)

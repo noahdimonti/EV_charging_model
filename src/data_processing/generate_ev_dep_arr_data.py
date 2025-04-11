@@ -33,11 +33,12 @@ def create_one_week_dep_arr_time(weekday_df, weekend_df_list: list, rand_seed: i
     weekdays = create_dep_arr_time(df=weekday_df, num_of_days=5, rand_seed=rand_seed)
 
     # create weekends departure arrival times
-    rng = np.random.default_rng(rand_seed)  # set random seed
-    rand_travel_freq = rng.choice([0, 1, 2], p=list(params.travel_freq_probability.values()))
     weekends = []
     for i in range(2):
-        new_time = create_dep_arr_time(df=weekend_df_list[rand_travel_freq], num_of_days=1, rand_seed=rand_seed)
+        rng = np.random.default_rng(rand_seed + i)  # set random seed
+        rand_travel_freq = rng.choice([0, 1, 2], p=list(params.travel_freq_probability.values()))
+
+        new_time = create_dep_arr_time(df=weekend_df_list[rand_travel_freq], num_of_days=1, rand_seed=rand_seed + i)
         new_time = [timestamp + pd.Timedelta(days=5 + i) for timestamp in new_time]
         weekends.append(new_time)
 

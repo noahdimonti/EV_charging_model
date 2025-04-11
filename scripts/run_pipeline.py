@@ -14,8 +14,8 @@ def main(run_model: bool, analyse: bool, plot: bool):
         # 'config_3',
     ]
     charging_strategies = [
-        # 'uncoordinated',
-        # 'opportunistic',
+        'uncoordinated',
+        'opportunistic',
         'flexible',
     ]
 
@@ -55,6 +55,6 @@ def main(run_model: bool, analyse: bool, plot: bool):
 if __name__ == '__main__':
     main(
         run_model=True,
-        analyse=False,
-        plot=False
+        analyse=True,
+        plot=True
     )

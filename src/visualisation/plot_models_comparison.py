@@ -5,45 +5,8 @@ import seaborn as sns
 import os
 from src.config import params, ev_params, independent_variables
 from src.visualisation import setup_plot
-from src.visualisation import plot_colours
+from src.visualisation import plot_configs
 from pprint import pprint
-
-
-# def plot_dso_metrics_comparison(version: str, save_img=False):
-#     metrics = setup_plot.get_metrics(version)
-#     dso_metrics = metrics.loc[['avg_p_peak', 'avg_papr', 'avg_daily_peak_increase']]
-#     avg_papr = metrics.loc['avg_papr']
-#     avg_daily_peak_increase = metrics.loc['avg_daily_peak_increase']
-#
-#     print(dso_metrics)
-#     print(avg_papr)
-#     print(avg_daily_peak_increase)
-#
-#     # Define units for each metric
-#     units = {
-#         'avg_p_peak': 'kW',
-#         'avg_papr': '',  # unitless
-#         'avg_daily_peak_increase': '%'
-#     }
-#
-#     ax = dso_metrics.T.plot(kind='bar', figsize=(10, 6))
-#
-#     plt.ylabel('Metric Value')
-#     plt.xlabel('Model Configuration')
-#     plt.title('Comparison of Metrics by Charging Strategy')
-#     plt.xticks(rotation=45)
-#     plt.grid(axis='y', linestyle='--', alpha=0.5)
-#
-#     # Add value labels with units
-#     for idx, container in enumerate(ax.containers):
-#         metric = dso_metrics.index[idx]
-#         unit = units[metric]
-#         ax.bar_label(container, labels=[f'{val.get_height():.3f} {unit}' for val in container], padding=3)
-#
-#     plt.tight_layout()
-#
-#     setup_plot.save_plot('test')
-#     plt.show()
 
 
 def demand_profiles(configurations: list, charging_strategies: list, version: str, save_img=False):
@@ -52,7 +15,7 @@ def demand_profiles(configurations: list, charging_strategies: list, version: st
 
     # Plot household load
     house_load = [load for load in params.household_load['household_load']]
-    ax.fill_between(params.timestamps, house_load, color=plot_colours.household_baseline_load, linewidth=1, alpha=0.6, label='Household Load')
+    ax.fill_between(params.timestamps, house_load, color=plot_configs.household_baseline_load, linewidth=1, alpha=0.6, label='Household Load')
 
     # Plot total demand
     for config in configurations:
@@ -63,7 +26,7 @@ def demand_profiles(configurations: list, charging_strategies: list, version: st
             ax.plot(
                 params.timestamps,
                 total_demand,
-                color=plot_colours.models_colour_dict[f'{config}_{strategy}'],
+                color=plot_configs.models_colour_dict[f'{config}_{strategy}'],
                 linewidth=1.5,
                 label=f'{strategy.capitalize()} Charging Load')
 
@@ -83,7 +46,7 @@ def soc_distribution(configurations: list, charging_strategies: list, version: s
             for i in results.sets['EV_ID']:
                 for t in results.sets['TIME']:
 
-                    if t in ev_params.t_arr_dict[i]:
+                    if t in ev_params.t_dep_dict[i]:
                         soc_t_arr = (results.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100
                         all_results.append({
                             'config': config,
@@ -95,15 +58,19 @@ def soc_distribution(configurations: list, charging_strategies: list, version: s
                         })
 
     df_results = pd.DataFrame(all_results)
-    print(df_results)
 
     # Violin plot with inner box
     plt.figure(figsize=(10, 6))
-    sns.violinplot(x='model', y='soc_t_arr', hue='model', data=df_results, inner='box', palette='Set2', legend=False)
+    ax = sns.violinplot(x='model', y='soc_t_arr', hue='model', data=df_results, inner='box', palette='Set2', legend=False)
 
-    plt.title('Distribution of SOC at Arrival')
-    plt.ylabel('SOC at Arrival (%)')
-    plt.xlabel('Model')
+    ax.set_title('Distribution of SOC at Departure', fontsize=plot_configs.title_fontsize, weight='bold')
+    ax.set_ylabel('SOC at Arrival (%)', fontsize=plot_configs.label_fontsize, weight='bold')
+    ax.set_xlabel('Model', fontsize=plot_configs.label_fontsize, weight='bold')
+    ax.tick_params(axis='both', labelsize=plot_configs.tick_fontsize)
+
+    for label in ax.get_xticklabels():
+        label.set_fontweight('bold')
+
     plt.grid(True, axis='y', linestyle='--', alpha=0.5)
     plt.ylim(0, 100)
     plt.tight_layout()
@@ -140,7 +107,6 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
                 })
 
     df_results = pd.DataFrame(all_results)
-    print(df_results)
 
     # Violin plot with inner box
     plt.figure(figsize=(10, 6))
@@ -159,3 +125,11 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
     if save_img:
         setup_plot.save_plot(f'users_cost_distribution_{version}')
     plt.show()
+
+
+# soc_distribution(
+#     ['config_1'],
+#     ['uncoordinated', 'opportunistic'],
+#     'confpaper_complete_obj',
+#     save_img=True
+# )

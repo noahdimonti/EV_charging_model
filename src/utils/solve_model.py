@@ -64,11 +64,12 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
         calc_mip_gap = (abs(upper_bound - lower_bound) / abs(upper_bound)) * 100
         print(f"Calculated MIP Gap: {calc_mip_gap:.4f}%")
 
-        # Information that time is prioritised if both time_limit and mip_gap have values
+        # Information if solver is aborted
         if time_limit is not None and mip_gap is not None:
-            print(f'\nSolver terminated due to time limit')
-            if calc_mip_gap > decimal_mip_gap:
-                print(f'MIP gap condition not met')
+            if solving_time >= time_limit:
+                print(f'\nSolver terminated due to time limit')
+            elif calc_mip_gap > mip_gap:
+                print(f'\nMIP gap condition not met')
 
     else:
         print("Bounds not available for MIP gap calculation.")

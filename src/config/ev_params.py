@@ -1,10 +1,12 @@
 import pickle
 import os
+from collections import defaultdict
 from src.config import params
 from pprint import pprint
 
 # Load EV data
 folder_path = f'data/inputs/processed/EV_instances_100_avgdist{params.avg_travel_distance}km'
+
 filename = os.path.join(params.project_root, folder_path)
 with open(filename, 'rb') as f:
     ev_instance_list = pickle.load(f)
@@ -24,3 +26,10 @@ travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
 
 charging_efficiency = 0.95  # (%)
 
+t_dep_on_day = defaultdict(list)  # {day: [(ev_id, t_dep), ...]}
+
+for ev_id, times in t_dep_dict.items():
+    for t in times:
+        t_dep_on_day[t.date()].append((ev_id, t))
+
+pprint(t_dep_on_day)
