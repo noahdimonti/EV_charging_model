@@ -114,18 +114,18 @@ class ModelResults:
             for t in self.sets['TIME']
         ) + maintenance_cost + operational_cost) / len(self.sets['EV_ID'])
 
-        avg_soc_t_arr_percent = sum(
+        avg_soc_t_dep_percent = sum(
             (self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) for i in self.sets['EV_ID'] for t in
-            ev_params.t_arr_dict[i]
-        ) / sum(len(ev_params.t_arr_dict[i]) for i in self.sets['EV_ID']) * 100
+            ev_params.t_dep_dict[i]
+        ) / sum(len(ev_params.t_dep_dict[i]) for i in self.sets['EV_ID']) * 100
 
         lowest_soc_percent = min([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
                                   for i in self.sets['EV_ID']
-                                  for t in ev_params.t_arr_dict[i]])
+                                  for t in ev_params.t_dep_dict[i]])
 
         highest_soc_percent = max([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
                                    for i in self.sets['EV_ID']
-                                   for t in ev_params.t_arr_dict[i]])
+                                   for t in ev_params.t_dep_dict[i]])
 
         avg_num_charging_days = None
         if self.charging_strategy.value == 'uncoordinated' or self.charging_strategy.value == 'opportunistic':
@@ -139,9 +139,9 @@ class ModelResults:
                 for i in self.sets['EV_ID'] for w in self.sets['WEEK']
             }
 
-            avg_num_charging_days = int(sum(
+            avg_num_charging_days = sum(
                 num_charging_days[i, w] for i in self.sets['EV_ID'] for w in self.sets['WEEK']
-            ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK'])))
+            ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK']))
 
         elif self.charging_strategy.value == 'flexible':
             avg_num_charging_days = pyo.value(
@@ -155,7 +155,7 @@ class ModelResults:
             'num_cp': num_cp,
             'p_cp_rated': p_cp_rated,
             'total_cost_per_user': total_cost_per_user,
-            'avg_soc_t_arr_percent': avg_soc_t_arr_percent,
+            'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
             'lowest_soc_percent': lowest_soc_percent,
             'highest_soc_percent': highest_soc_percent,
             'avg_num_charging_days': avg_num_charging_days,
@@ -173,24 +173,19 @@ class ModelResults:
 
     # Format metrics
     def format_metrics(self):
-        if self.charging_strategy == 'opportunistic':
-            avg_num_charging_days_str = f'{int(self.metrics['avg_num_charging_days'])}'
-        else:
-            avg_num_charging_days_str = f'{self.metrics['avg_num_charging_days']:.2f}'
-
         formatted_metrics = {
             'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
 
-            'Average daily peak': f'{self.metrics['avg_p_peak']:,.2f} kW',
+            'Average daily peak': f'{self.metrics['avg_p_peak']:,.3f} kW',
             'Average daily PAPR': f'{self.metrics['avg_papr']:,.3f}',
-            'Average daily peak increase from base load': f'{self.metrics['avg_daily_peak_increase']:,.2f}%',
+            'Average daily peak increase from base load': f'{self.metrics['avg_daily_peak_increase']:,.3f}%',
 
             'Number of CP': f'{self.metrics['num_cp']} charging points ({self.metrics['p_cp_rated']:,.1f} kW)',
             'Average total cost per user': f'${self.metrics['total_cost_per_user']:,.2f} over {params.num_of_days} days',
-            'Average SOC at arrival time': f'{self.metrics['avg_soc_t_arr_percent']:,.1f}%',
-            'Lowest SOC at arrival time': f'{self.metrics['lowest_soc_percent']:,.2f}%',
-            'Highest SOC at arrival time': f'{self.metrics['highest_soc_percent']:,.2f}%',
-            'Average number of charging days': f'{avg_num_charging_days_str} days per week',
+            'Average SOC at departure time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
+            'Lowest SOC at departure time': f'{self.metrics['lowest_soc_percent']:,.2f}%',
+            'Highest SOC at departure time': f'{self.metrics['highest_soc_percent']:,.2f}%',
+            'Average number of charging days': f'{self.metrics['avg_num_charging_days']:.2f} days per week',
         }
 
         if self.charging_strategy.value != 'uncoordinated':

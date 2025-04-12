@@ -97,7 +97,8 @@ class TechnicalObjective:
         # Initialise parameters
         self.model.high_load_penalty = pyo.Param(self.model.TIME,
                                                  initialize=lambda model, t: (self.model.p_household_load[t] / max(
-                                                     [self.model.p_household_load[t]])))
+                                                     [self.model.p_household_load[t] for t in self.model.TIME])))
+
         # Define constraints
         high_load_penalty = sum(
             self.model.high_load_penalty[t] * self.model.p_ev[i, t] for i in self.model.EV_ID for t in self.model.TIME)
@@ -172,25 +173,6 @@ class SocialObjective:
                 self.model.soc_avg_deviation_constraints.add(
                     self.model.soc_avg_deviation[i, t] >= self.model.daily_soc_avg_t_dep[d] - self.model.soc_ev[i, t]
                 )
-
-        # Initialise constraints
-        # def soc_average(model, t):
-        #     return model.soc_avg[t] == (1 / params.num_of_evs) * sum(model.soc_ev[i, t] for i in self.model.EV_ID)
-        #
-        # self.model.soc_average_constraint = pyo.Constraint(
-        #     self.model.TIME, rule=soc_average
-        # )
-        #
-        # self.model.soc_avg_deviation_constraints = pyo.ConstraintList()
-        #
-        # for i in self.model.EV_ID:
-        #     for t in self.model.TIME:
-        #         self.model.soc_avg_deviation_constraints.add(
-        #             self.model.soc_avg_deviation[i, t] >= self.model.soc_ev[i, t] - self.model.soc_avg[t]
-        #         )
-        #         self.model.soc_avg_deviation_constraints.add(
-        #             self.model.soc_avg_deviation[i, t] >= self.model.soc_avg[t] - self.model.soc_ev[i, t]
-        #         )
 
         # Define objective
         soc_avg_deviation = sum(self.model.soc_avg_deviation[i, t] for i in self.model.EV_ID for t in self.model.TIME)

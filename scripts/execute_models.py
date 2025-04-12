@@ -6,40 +6,12 @@ from src.config import independent_variables
 from src.models.simulations import uncoordinated_charging_config_1
 
 
-def execute_models(version, configurations, charging_strategies):
-    for config in configurations:
-        for charging_strategy in charging_strategies:
-            # Set mip gap and time limit
-            mip_gap = None
-            time_limit = None
-            verbose = False
-
-            if charging_strategy == 'opportunistic' and config != 'config_1':
-                verbose = True
-                mip_gap = 0.5
-                time_limit = 60 * 15
-            elif charging_strategy == 'flexible' and config != 'config_1':
-                verbose = True
-                mip_gap = 0.9
-                time_limit = 60 * 45
-
-            # Run, solve, and save solved model
-            run_and_save_solved_model(
-                config,
-                charging_strategy,
-                version=version,
-                mip_gap=mip_gap,
-                time_limit=time_limit,
-                verbose=verbose
-            )
-
-
-def run_and_save_solved_model(config: str,
-                              charging_strategy: str,
-                              version: str,
-                              verbose=False,
-                              time_limit=None,
-                              mip_gap=None):
+def execute_model(config: str,
+                  charging_strategy: str,
+                  version: str,
+                  verbose=False,
+                  time_limit=None,
+                  mip_gap=None):
     config_map = {
         'config_1': configs.CPConfig.CONFIG_1,
         'config_2': configs.CPConfig.CONFIG_2,
@@ -84,5 +56,3 @@ def run_and_save_solved_model(config: str,
     results.save_model_to_pickle(version=version)
 
     return results
-
-

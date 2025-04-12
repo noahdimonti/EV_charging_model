@@ -47,21 +47,21 @@ def soc_distribution(configurations: list, charging_strategies: list, version: s
                 for t in results.sets['TIME']:
 
                     if t in ev_params.t_dep_dict[i]:
-                        soc_t_arr = (results.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100
+                        soc_t_dep = (results.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100
                         all_results.append({
                             'config': config,
                             'strategy': strategy,
                             'model': f"{strategy.capitalize()} Charging",
                             'ev_id': i,
                             'time': t,
-                            'soc_t_arr': soc_t_arr
+                            'soc_t_dep': soc_t_dep
                         })
 
     df_results = pd.DataFrame(all_results)
 
     # Violin plot with inner box
     plt.figure(figsize=(10, 6))
-    ax = sns.violinplot(x='model', y='soc_t_arr', hue='model', data=df_results, inner='box', palette='Set2', legend=False)
+    ax = sns.violinplot(x='model', y='soc_t_dep', hue='model', data=df_results, inner='box', palette='Set2', legend=False)
 
     ax.set_title('Distribution of SOC at Departure', fontsize=plot_configs.title_fontsize, weight='bold')
     ax.set_ylabel('SOC at Arrival (%)', fontsize=plot_configs.label_fontsize, weight='bold')
@@ -112,11 +112,17 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
     plt.figure(figsize=(10, 6))
     ax = sns.boxplot(x='model', y='user_cost', hue='model', data=df_results, palette='Set2', legend=False, width=0.25)
 
-    plt.title('Statistics of EV Charging Cost')
-    plt.ylabel('Cost ($)')
-    plt.xlabel('Model')
+    ax.set_title('Statistics of EV Charging Cost', fontsize=plot_configs.title_fontsize, weight='bold')
+    ax.set_ylabel('Cost ($)', fontsize=plot_configs.label_fontsize, weight='bold')
+    ax.set_xlabel('Model', fontsize=plot_configs.label_fontsize, weight='bold')
+    ax.tick_params(axis='both', labelsize=plot_configs.tick_fontsize)
+
+    for label in ax.get_xticklabels():
+        label.set_fontweight('bold')
+
     plt.grid(True, axis='y', linestyle='--', alpha=0.5)
     plt.tight_layout()
+
 
     # Loop through the lines and modify thickness
     for line in ax.lines:

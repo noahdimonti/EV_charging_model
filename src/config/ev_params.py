@@ -24,12 +24,11 @@ t_arr_dict = {ev.ev_id: ev.t_arr for ev in ev_instance_list}
 t_dep_dict = {ev.ev_id: ev.t_dep for ev in ev_instance_list}
 travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
 
-charging_efficiency = 0.95  # (%)
-
 t_dep_on_day = defaultdict(list)  # {day: [(ev_id, t_dep), ...]}
 
 for ev_id, times in t_dep_dict.items():
     for t in times:
         t_dep_on_day[t.date()].append((ev_id, t))
 
-pprint(t_dep_on_day)
+# EV charging efficiency
+charging_efficiency = 0.95  # (%)
