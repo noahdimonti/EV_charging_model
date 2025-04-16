@@ -97,24 +97,17 @@ class ModelResults:
         }
 
     def _ev_user_metrics(self):
-        num_cp = self.num_cp
-
-        # rated power of CP
-        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
-
-        # maintenance cost
+        # User costs
         maintenance_cost = (params.annual_maintenance_cost / 365) * params.num_of_days * self.num_cp
-
-        # operational cost
         operational_cost = params.daily_supply_charge_dict[
                                independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
-
         total_cost_per_user = (sum(
             params.tariff_dict[independent_variables.tariff_type][t] * self.variables['p_ev'][i, t]
             for i in self.sets['EV_ID']
             for t in self.sets['TIME']
         ) + maintenance_cost + operational_cost) / len(self.sets['EV_ID'])
 
+        # SOC metrics
         avg_soc_t_dep_percent = sum(
             (self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) for i in self.sets['EV_ID'] for t in
             ev_params.t_dep_dict[i]
@@ -128,6 +121,24 @@ class ModelResults:
                                    for i in self.sets['EV_ID']
                                    for t in ev_params.t_dep_dict[i]])
 
+        soc_range = highest_soc_percent - lowest_soc_percent
+
+        return {
+            'total_cost_per_user': total_cost_per_user,
+            'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
+            'lowest_soc_percent': lowest_soc_percent,
+            'highest_soc_percent': highest_soc_percent,
+            'soc_range': soc_range
+        }
+
+    def _general_metrics(self):
+        # Number of CP
+        num_cp = self.num_cp
+
+        # Rated power of CP
+        p_cp_rated = self.variables['p_cp_rated'] * params.charging_power_resolution_factor
+
+        # Average number of charging days
         avg_num_charging_days = None
         if self.charging_strategy.value == 'uncoordinated' or self.charging_strategy.value == 'opportunistic':
             is_charging_day = {
@@ -155,10 +166,6 @@ class ModelResults:
         return {
             'num_cp': num_cp,
             'p_cp_rated': p_cp_rated,
-            'total_cost_per_user': total_cost_per_user,
-            'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
-            'lowest_soc_percent': lowest_soc_percent,
-            'highest_soc_percent': highest_soc_percent,
             'avg_num_charging_days': avg_num_charging_days,
         }
 
@@ -166,6 +173,7 @@ class ModelResults:
         self.metrics.update(self._investor_metrics())
         self.metrics.update(self._dso_metrics())
         self.metrics.update(self._ev_user_metrics())
+        self.metrics.update(self._general_metrics())
         self.metrics.update(self.obj_weights)
 
         if self.mip_gap is not None:
@@ -186,11 +194,13 @@ class ModelResults:
             'Average daily PAPR': f'{self.metrics['avg_papr']:,.3f}',
             'Average daily peak increase from base load': f'{self.metrics['avg_daily_peak_increase']:,.3f}%',
 
-            'Number of CP': f'{self.metrics['num_cp']} charging points ({self.metrics['p_cp_rated']:,.1f} kW)',
             'Average total cost per user': f'${self.metrics['total_cost_per_user']:,.2f} over {params.num_of_days} days',
             'Average SOC at departure time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
             'Lowest SOC at departure time': f'{self.metrics['lowest_soc_percent']:,.2f}%',
             'Highest SOC at departure time': f'{self.metrics['highest_soc_percent']:,.2f}%',
+            'SOC min-max gap at departure time': f'{self.metrics['soc_range']:,.2f}%',
+
+            'Number of CP': f'{self.metrics['num_cp']} charging points ({self.metrics['p_cp_rated']:,.1f} kW)',
             'Average number of charging days': f'{self.metrics['avg_num_charging_days']:.2f} days per week',
         }
 

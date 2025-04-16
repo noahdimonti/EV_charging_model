@@ -1,19 +1,16 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-import pyomo.environ as pyo
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
 import itertools
-from src.models.optimisation_models.build_model import BuildModel
-from src.models.optimisation_models.solve_model import solve_optimisation_model
-from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
-from src.models.mapping import config_map, strategy_map
 from scripts.execute_models import execute_model
 from scripts.analyse_results import analyse_results
-from src.config import independent_variables, params
+from src.config import params
 from pprint import pprint
 
 # Generate weights that sum to 1
-step = 1
+step = 0.1
 w_vals = np.arange(0, 1 + step, step)
 
 weight_dicts = []
@@ -34,53 +31,72 @@ num_ev = params.num_of_evs
 verbose = False
 time_limit = 10
 mip_gap = 0.9
+analyse = False
+filename = f'{params.project_root}/data/outputs/metrics/sensitivity_analysis_{step}step.csv'
 
-df = pd.DataFrame()
+if analyse:
+    df = pd.DataFrame()
 
-for weights in weight_dicts:
-    print(f'\nw: {weights}')
+    for weights in weight_dicts:
+        print(f'\nObjective weights: {weights}')
 
-    execute_model(
-        config,
-        strategy,
-        version,
-        weights
-    )
+        execute_model(
+            config,
+            strategy,
+            version,
+            weights
+        )
 
-    raw, formatted = analyse_results([config], [strategy], version, num_ev)
+        raw, formatted = analyse_results([config], [strategy], version, num_ev)
 
-    df = pd.concat([raw, df], axis=1)
+        df = pd.concat([raw, df], axis=1)
 
-print(df)
+    df = df.T  # Transpose so each row is one config
+
+    df.to_csv(filename)
 
 
-df = df.T  # Transpose so each row is one config
+# Normalise metrics
+def normalise_metrics(df):
+    df = df.drop('Unnamed: 0', axis=1)
+    normalised = pd.DataFrame(index=df.index)
+    for col in df.columns:
+        min_val = df[col].min()
+        max_val = df[col].max()
+        normalised[col] = (df[col] - min_val) / (max_val - min_val) if max_val != min_val else 0
 
-# Define metrics: lower is better vs higher is better
-lower_better = [
-    'investment_cost',
-    'avg_p_peak',
-    'avg_papr',
-    'avg_daily_peak_increase',
-    'total_cost_per_user'
-]
-higher_better = [
-    'avg_soc_t_dep_percent',
+    return normalised
 
-]
 
-# Normalise each metric manually
-normalised = pd.DataFrame(index=df.index)
+pd.set_option('display.max_columns', None)
+df = pd.read_csv(filename)
+# print(df)
 
-for col in lower_better:
-    min_val = df[col].min()
-    max_val = df[col].max()
-    normalised[col] = (df[col] - min_val) / (max_val - min_val) if max_val != min_val else 0
+normalised = normalise_metrics(df)
+print(normalised)
 
-for col in higher_better:
-    min_val = df[col].min()
-    max_val = df[col].max()
-    normalised[col] = (max_val - df[col]) / (max_val - min_val) if max_val != min_val else 0
+# Create holistic score dataframe
+holistic_metrics = pd.DataFrame(columns=['economic_score', 'technical_score', 'social_score'])
+holistic_metrics = pd.concat([holistic_metrics, normalised[['economic', 'technical', 'social']]], axis=1)
+holistic_metrics.rename(columns={
+    'economic': 'economic_weight',
+    'technical': 'technical_weight',
+    'social': 'social_weight'
+}, inplace=True)
 
-print(normalised.head())
+# Economic score
+holistic_metrics['economic_score'] = 1 - normalised['investment_cost']
+
+# Technical score
+holistic_metrics['technical_score'] = ((1 - normalised['avg_p_peak']) *
+                                       (1 - normalised['avg_papr']) *
+                                       (1 - normalised['avg_daily_peak_increase']))
+
+# Social score - NOT FINALISED
+holistic_metrics['social_score'] = ((1 - normalised['total_cost_per_user']) *  # cost component
+                                    (normalised['avg_soc_t_dep_percent']) *  # how much SOC
+                                    (1 - normalised['soc_range']))  # fairness
+
+print(holistic_metrics)
+
 
