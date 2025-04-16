@@ -1,46 +1,50 @@
 from scripts.execute_models import execute_model
 from scripts.analyse_results import analyse_results
-from src.config import params
+from src.config import params, independent_variables
 from src.visualisation import plot_models_comparison
 from pprint import pprint
 
 
 def main():
-    version = 'confpaper_complete_obj'
+    version = 'runtime_test'
+    obj_weights = independent_variables.obj_weights
 
     configurations = [
-        'config_1',
+        # 'config_1',
         # 'config_2',
-        # 'config_3',
+        'config_3',
     ]
     charging_strategies = [
         # 'uncoordinated',
-        # 'opportunistic',
+        'opportunistic',
         'flexible',
     ]
 
+    # Actions in pipeline
+    run_model = False
+    analyse = False
+    plot = True
+
     # Mapping for mip_gap, time_limit, and verbose for each model
-    solver_settings = {  # { model_name: [mip_gap, time_limit, verbose] }
+    solver_settings = {  # { model_name: [mip_gap (%), time_limit (minute), verbose] }
         'config_1_uncoordinated': [None, None, False],
         'config_1_opportunistic': [None, None, False],
-        'config_1_flexible': [0.5, 5, True],
-        'config_2_uncoordinated': [],
-        'config_2_opportunistic': [],
-        'config_2_flexible': [],
-        'config_3_uncoordinated': [],
-        'config_3_opportunistic': [],
-        'config_3_flexible': [],
-    }
+        'config_1_flexible': [0.1, 25, True],
 
-    # Actions in pipeline
-    run_model = True
-    analyse = False
-    plot = False
+        'config_2_uncoordinated': [],
+        'config_2_opportunistic': [0.9, 40, True],
+        'config_2_flexible': [0.9, 60, True],
+
+        'config_3_uncoordinated': [],
+        'config_3_opportunistic': [0.9, 25, True],
+        'config_3_flexible': [0.9, 25, True],
+    }
 
     # Execute model, analyse, and plot
     run_pipeline(
         configurations=configurations,
         charging_strategies=charging_strategies,
+        obj_weights=obj_weights,
         version=version,
         run_model=run_model,
         solver_settings=solver_settings,
@@ -51,6 +55,7 @@ def main():
 
 def run_pipeline(configurations: list,
                  charging_strategies: list,
+                 obj_weights: dict,
                  version: str,
                  run_model: bool,
                  solver_settings: dict,
@@ -69,6 +74,7 @@ def run_pipeline(configurations: list,
                 execute_model(
                     config,
                     charging_strategy,
+                    obj_weights,
                     version=version,
                     mip_gap=mip_gap,
                     time_limit=time_limit,

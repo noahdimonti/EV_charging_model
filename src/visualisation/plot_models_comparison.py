@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from src.config import params, ev_params, independent_variables
-from src.visualisation import setup_plot
+from src.visualisation import plot_setups
 from src.visualisation import plot_configs
 from pprint import pprint
 
 
 def demand_profiles(configurations: list, charging_strategies: list, version: str, save_img=False):
     # Create the plot
-    fig, ax = plt.subplots(figsize=setup_plot.fig_size)
+    fig, ax = plt.subplots(figsize=plot_setups.fig_size)
 
     # Plot household load
     house_load = [load for load in params.household_load['household_load']]
@@ -20,7 +20,7 @@ def demand_profiles(configurations: list, charging_strategies: list, version: st
     # Plot total demand
     for config in configurations:
         for strategy in charging_strategies:
-            results = setup_plot.get_model_results_data(config, strategy, version)
+            results = plot_setups.get_model_results_data(config, strategy, version)
             ev_load = [sum(results.variables['p_ev'][i, t] for i in results.sets['EV_ID']) for t in results.sets['TIME']]
             total_demand = [h_l + ev_l for h_l, ev_l in zip(house_load, ev_load)]
             ax.plot(
@@ -30,10 +30,20 @@ def demand_profiles(configurations: list, charging_strategies: list, version: st
                 linewidth=1.5,
                 label=f'{strategy.capitalize()} Charging Load')
 
-    setup_plot.setup('Comparison of Charging Strategies Load Profiles', 'Load (kW)')
+    # setup_plot.setup('Comparison of Charging Strategies Load Profiles', 'Load (kW)')
+
+    plot_setups.setup(
+        title='Comparison of Charging Strategies Load Profiles',
+        ylabel='Load (kW)',
+        xlabel='Day',
+        legend=True,
+        ax=ax
+    )
+
+    plot_setups.timeseries_setup(ax=ax)
 
     if save_img:
-        setup_plot.save_plot(f'demand_profiles_{version}')
+        plot_setups.save_plot(f'demand_profiles_{params.num_of_evs}EVs_{version}')
     plt.show()
 
 
@@ -41,7 +51,7 @@ def soc_distribution(configurations: list, charging_strategies: list, version: s
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
-            results = setup_plot.get_model_results_data(config, strategy, version)
+            results = plot_setups.get_model_results_data(config, strategy, version)
 
             for i in results.sets['EV_ID']:
                 for t in results.sets['TIME']:
@@ -60,23 +70,22 @@ def soc_distribution(configurations: list, charging_strategies: list, version: s
     df_results = pd.DataFrame(all_results)
 
     # Violin plot with inner box
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(plot_setups.fig_size))
     ax = sns.violinplot(x='model', y='soc_t_dep', hue='model', data=df_results, inner='box', palette='Set2', legend=False)
 
-    ax.set_title('Distribution of SOC at Departure', fontsize=plot_configs.title_fontsize, weight='bold')
-    ax.set_ylabel('SOC at Arrival (%)', fontsize=plot_configs.label_fontsize, weight='bold')
-    ax.set_xlabel('Model', fontsize=plot_configs.label_fontsize, weight='bold')
-    ax.tick_params(axis='both', labelsize=plot_configs.tick_fontsize)
+    plot_setups.setup(
+        title='Distribution of SOC at Departure Time',
+        ylabel='SOC at Departure Time (%)',
+        xlabel='Model',
+        legend=False,
+        ax=ax
+    )
 
-    for label in ax.get_xticklabels():
-        label.set_fontweight('bold')
-
-    plt.grid(True, axis='y', linestyle='--', alpha=0.5)
-    plt.ylim(0, 100)
-    plt.tight_layout()
+    # Set y axis limits
+    plt.ylim(30, 100)
 
     if save_img:
-        setup_plot.save_plot(f'soc_distribution_{version}')
+        plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
     plt.show()
 
 
@@ -84,7 +93,7 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
-            results = setup_plot.get_model_results_data(config, strategy, version)
+            results = plot_setups.get_model_results_data(config, strategy, version)
 
             # maintenance cost
             maintenance_cost_per_user = (params.annual_maintenance_cost / 365) * params.num_of_days
@@ -110,32 +119,51 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
 
     # Violin plot with inner box
     plt.figure(figsize=(10, 6))
-    ax = sns.boxplot(x='model', y='user_cost', hue='model', data=df_results, palette='Set2', legend=False, width=0.25)
+    ax = sns.boxplot(x='model', y='user_cost', hue='model', data=df_results, palette='Set2', legend=False, width=0.45)
 
-    ax.set_title('Statistics of EV Charging Cost', fontsize=plot_configs.title_fontsize, weight='bold')
-    ax.set_ylabel('Cost ($)', fontsize=plot_configs.label_fontsize, weight='bold')
-    ax.set_xlabel('Model', fontsize=plot_configs.label_fontsize, weight='bold')
-    ax.tick_params(axis='both', labelsize=plot_configs.tick_fontsize)
+    plot_setups.setup(
+        title='Statistical Summary of EV Charging Cost',
+        ylabel='Cost ($)',
+        xlabel='Model',
+        legend=False,
+        ax=ax
+    )
 
-    for label in ax.get_xticklabels():
-        label.set_fontweight('bold')
+    # Add values of median, Q1, and Q3 to the plot
+    groups = df_results.groupby('model')
 
-    plt.grid(True, axis='y', linestyle='--', alpha=0.5)
-    plt.tight_layout()
+    # Create a mapping of model names to positions on the x-axis
+    xtick_labels = [tick.get_text() for tick in ax.get_xticklabels()]
+    model_to_x = {model: i for i, model in enumerate(xtick_labels)}
 
+    for model, group in groups:
+        values = group['user_cost']
+        q1 = values.quantile(0.25)
+        median = values.median()
+        q3 = values.quantile(0.75)
+        xpos = model_to_x[model]
 
-    # Loop through the lines and modify thickness
+        # Add annotations to the plot
+        ax.text(xpos, median + 0.5, f'Median: {median:.2f}', ha='center', va='bottom',
+                fontsize=9, weight='bold', color='black')
+        ax.text(
+            xpos, q1 - 0.5, f'Q1: {q1:.2f}',
+            ha='center', va='top',
+            fontsize=9, weight='bold', color='black',
+            bbox=dict(facecolor='white', edgecolor='none', boxstyle='round,pad=0.3', alpha=0.95)
+        )
+
+        ax.text(
+            xpos, q3 + 0.5, f'Q3: {q3:.2f}',
+            ha='center', va='bottom',
+            fontsize=9, weight='bold', color='black',
+            bbox=dict(facecolor='white', edgecolor='none', boxstyle='round,pad=0.3', alpha=0.95)
+        )
+
+    # Loop through the lines and modify whiskers thickness
     for line in ax.lines:
         line.set_linewidth(2.5)
 
     if save_img:
-        setup_plot.save_plot(f'users_cost_distribution_{version}')
+        plot_setups.save_plot(f'users_cost_distribution_{params.num_of_evs}EVs_{version}')
     plt.show()
-
-
-# soc_distribution(
-#     ['config_1'],
-#     ['uncoordinated', 'opportunistic'],
-#     'confpaper_complete_obj',
-#     save_img=True
-# )

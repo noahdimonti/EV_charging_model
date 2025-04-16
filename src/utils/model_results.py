@@ -9,9 +9,10 @@ from src.models.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
-    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, mip_gap=None):
+    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, obj_weights: dict, mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
+        self.obj_weights = obj_weights
         self.mip_gap = mip_gap
 
         # Solved model results extraction
@@ -165,6 +166,7 @@ class ModelResults:
         self.metrics.update(self._investor_metrics())
         self.metrics.update(self._dso_metrics())
         self.metrics.update(self._ev_user_metrics())
+        self.metrics.update(self.obj_weights)
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
@@ -174,6 +176,10 @@ class ModelResults:
     # Format metrics
     def format_metrics(self):
         formatted_metrics = {
+            'Economic weight': self.obj_weights['economic'],
+            'Technical weight': self.obj_weights['technical'],
+            'Social weight': self.obj_weights['social'],
+
             'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
 
             'Average daily peak': f'{self.metrics['avg_p_peak']:,.3f} kW',
@@ -229,6 +235,9 @@ def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     file_path = os.path.join(params.compiled_metrics_folder_path, filename)
     df.to_csv(file_path)
 
-    print(f'\nCompiled metrics saved to {file_path}\n')
+    if 'raw' in filename:
+        print(f'\nRaw compiled metrics saved to {file_path}\n')
+    else:
+        print(f'\nFormatted compiled metrics saved to {file_path}\n')
 
     return df

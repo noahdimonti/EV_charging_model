@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from src.visualisation.setup_plot import setup, fig_size
+from src.visualisation.plot_setups import setup, fig_size
 from src.config import params
 from src.utils.model_results import ModelResults
 from pprint import pprint

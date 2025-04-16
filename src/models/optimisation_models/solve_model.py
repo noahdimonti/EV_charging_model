@@ -11,6 +11,7 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
           f'\n=========================================================\n')
 
     # Set time limit
+    time_limit_seconds = None
     if time_limit is not None:
         time_limit_seconds = time_limit * 60
         solver.options['TimeLimit'] = time_limit_seconds
@@ -67,7 +68,7 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
 
         # Information if solver is aborted
         if time_limit is not None and mip_gap is not None:
-            if solving_time >= time_limit:
+            if solving_time >= time_limit_seconds:
                 print(f'\nSolver terminated due to time limit')
             elif calc_mip_gap > mip_gap:
                 print(f'\nMIP gap condition not met')

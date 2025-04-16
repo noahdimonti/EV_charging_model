@@ -304,7 +304,6 @@ class ElectricVehicle:
         self.model.p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, None))
         self.model.soc_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals,
                                     bounds=lambda model, i, t: (0, model.soc_max[i]))
-        # self.model.delta_p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
 
         if self.charging_strategy == ChargingStrategy.FLEXIBLE:
             self._scheduling_variables()
@@ -365,26 +364,6 @@ class ElectricVehicle:
             return model.soc_ev[i, model.TIME.last()] >= model.soc_init[i]
 
         self.model.final_soc_constraint = pyo.Constraint(self.model.EV_ID, rule=final_soc_rule)
-
-    # def _charging_discontinuity_constraints(self):
-    #     self.model.charging_discontinuity_constraint = pyo.ConstraintList()
-    #
-    #     for i in self.model.EV_ID:
-    #         for t in self.model.TIME:
-    #             if t == self.model.TIME.first():
-    #                 self.model.charging_discontinuity_constraint.add(
-    #                     self.model.delta_p_ev[i, t] == 0
-    #                 )
-    #             else:
-    #                 if self.model.ev_at_home_status[i, t] == 1:
-    #                     self.model.charging_discontinuity_constraint.add(
-    #                         self.model.delta_p_ev[i, t] >=
-    #                         self.model.p_ev[i, t] - self.model.p_ev[i, self.model.TIME.prev(t)]
-    #                     )
-    #                     self.model.charging_discontinuity_constraint.add(
-    #                         self.model.delta_p_ev[i, t] >=
-    #                         self.model.p_ev[i, self.model.TIME.prev(t)] - self.model.p_ev[i, t]
-    #                     )
 
     def _ev_assignment_and_mutual_exclusivity_constraints_config_2_3(self):
         # Constraint: EVs can only be assigned to existing CPs

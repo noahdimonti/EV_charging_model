@@ -7,7 +7,7 @@ from src.visualisation.plot_results import plot_p_ev, plot_agg_p_ev, plot_agg_to
 from pprint import pprint
 
 
-def analyse_results(configurations, charging_strategies, version, num_ev):
+def analyse_results(configurations: list, charging_strategies: list, version: str, num_ev: int):
     pd.set_option('display.max_columns', None)
 
     formatted_models_metrics = {}
@@ -29,11 +29,11 @@ def analyse_results(configurations, charging_strategies, version, num_ev):
             formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
     # Compile formatted models metrics
-    formatted_filename = f'{params.formatted_metrics_filename_format}_{version}.csv'
+    formatted_filename = f'{params.formatted_metrics_filename_format}_{params.num_of_evs}EVs_{version}.csv'
     formatted_results = compile_multiple_models_metrics(formatted_models_metrics, filename=formatted_filename)
 
     # Compile raw values models metrics
-    raw_metrics_filename = f'{params.raw_val_metrics_filename_format}_{version}.csv'
+    raw_metrics_filename = f'{params.raw_val_metrics_filename_format}_{params.num_of_evs}EVs_{version}.csv'
     raw_metrics_results = compile_multiple_models_metrics(raw_val_metrics, filename=raw_metrics_filename)
 
     return raw_metrics_results, formatted_results

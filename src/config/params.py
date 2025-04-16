@@ -15,7 +15,7 @@ project_root = script_dir.parent.parent
 # Folder Paths
 # --------------------------
 model_results_folder_path = os.path.join(project_root, 'data/outputs/models/')
-compiled_metrics_folder_path = os.path.join(project_root, 'data/outputs/csv/')
+compiled_metrics_folder_path = os.path.join(project_root, 'data/outputs/metrics/')
 plots_folder_path = os.path.join(project_root, 'data/outputs/plots')
 
 # --------------------------
@@ -58,7 +58,7 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 50
+num_of_evs = 10
 num_of_households = 10
 
 

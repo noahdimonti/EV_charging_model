@@ -1,5 +1,5 @@
 import pyomo.environ as pyo
-from src.config import params, independent_variables
+from src.config import params
 from src.models.configs import (
     CPConfig,
     ChargingStrategy
@@ -17,9 +17,12 @@ from src.models.optimisation_models.objectives import EconomicObjective, Technic
 class BuildModel:
     def __init__(self,
                  config: CPConfig,
-                 charging_strategy: ChargingStrategy):
+                 charging_strategy: ChargingStrategy,
+                 obj_weights: dict):
         self.config = config
         self.charging_strategy = charging_strategy
+        self.obj_weights = obj_weights
+
         self.model = pyo.ConcreteModel(name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs')
         self.assets = {}
 
@@ -54,20 +57,29 @@ class BuildModel:
         # Define objective function
         def obj_function(model):
             # Economic objective
-            economic_obj = EconomicObjective(model)
-            economic_cost = economic_obj.investment_cost() + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
+            if self.obj_weights['economic'] > 0:
+                economic_obj = EconomicObjective(model)
+                economic_cost = economic_obj.investment_cost() + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
+            else:
+                economic_cost = 0
 
             # Technical objective
-            technical_obj = TechnicalObjective(model)
-            technical_cost = technical_obj.f_disc() + technical_obj.f_peak() + technical_obj.f_papr()
+            if self.obj_weights['technical'] > 0:
+                technical_obj = TechnicalObjective(model)
+                technical_cost = technical_obj.f_disc() + technical_obj.f_peak() + technical_obj.f_papr()
+            else:
+                technical_cost = 0
 
             # Social objective
-            social_obj = SocialObjective(model)
-            social_cost = social_obj.f_soc() + social_obj.f_fair()
+            if self.obj_weights['social'] > 0:
+                social_obj = SocialObjective(model)
+                social_cost = social_obj.f_soc() + social_obj.f_fair()
+            else:
+                social_cost = 0
 
-            return (independent_variables.w_economic * economic_cost) + (
-                    independent_variables.w_technical * technical_cost) + (
-                    independent_variables.w_social * social_cost)
+            return (self.obj_weights['economic'] * economic_cost) + (
+                    self.obj_weights['technical'] * technical_cost) + (
+                    self.obj_weights['social'] * social_cost)
 
         self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
