@@ -1,13 +1,9 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
 import itertools
-from scripts.execute_models import execute_model
-from scripts.analyse_results import analyse_results
+from scripts.experiments_pipeline.execute_models import execute_model
+from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
-from pprint import pprint
 
 # Generate weights that sum to 1
 step = 0.1
@@ -40,19 +36,14 @@ if analyse:
     for weights in weight_dicts:
         print(f'\nObjective weights: {weights}')
 
-        execute_model(
-            config,
-            strategy,
-            version,
-            weights
-        )
-
+        # Run model and analyse results
+        execute_model(config, strategy, version, weights)
         raw, formatted = analyse_results([config], [strategy], version, num_ev)
 
+        # Store results in a dataframe
         df = pd.concat([raw, df], axis=1)
 
     df = df.T  # Transpose so each row is one config
-
     df.to_csv(filename)
 
 
@@ -73,10 +64,10 @@ df = pd.read_csv(filename)
 # print(df)
 
 normalised = normalise_metrics(df)
-print(normalised)
+# print(normalised)
 
 # Create holistic score dataframe
-holistic_metrics = pd.DataFrame(columns=['economic_score', 'technical_score', 'social_score'])
+holistic_metrics = pd.DataFrame(columns=['investor_score', 'dso_score', 'user_score'])
 holistic_metrics = pd.concat([holistic_metrics, normalised[['economic', 'technical', 'social']]], axis=1)
 holistic_metrics.rename(columns={
     'economic': 'economic_weight',
@@ -85,18 +76,19 @@ holistic_metrics.rename(columns={
 }, inplace=True)
 
 # Economic score
-holistic_metrics['economic_score'] = 1 - normalised['investment_cost']
+holistic_metrics['investor_score'] = 1 - normalised['investment_cost']
 
 # Technical score
-holistic_metrics['technical_score'] = ((1 - normalised['avg_p_peak']) *
+holistic_metrics['dso_score'] = ((1 - normalised['avg_p_peak']) *
                                        (1 - normalised['avg_papr']) *
                                        (1 - normalised['avg_daily_peak_increase']))
 
 # Social score - NOT FINALISED
-holistic_metrics['social_score'] = ((1 - normalised['total_cost_per_user']) *  # cost component
+holistic_metrics['user_score'] = ((1 - normalised['total_cost_per_user']) *  # cost component
                                     (normalised['avg_soc_t_dep_percent']) *  # how much SOC
                                     (1 - normalised['soc_range']))  # fairness
 
-print(holistic_metrics)
+# print(holistic_metrics)
+
 
 

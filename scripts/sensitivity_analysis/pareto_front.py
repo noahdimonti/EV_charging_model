@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
-from scripts.sensitivity_analysis import holistic_metrics, step
+from scripts.sensitivity_analysis.sensitivity_analysis import holistic_metrics, step
 from src.config import params
 
 
@@ -24,11 +24,11 @@ def pareto_front(df):
     return front_indices
 
 
-data = holistic_metrics[['economic_score', 'technical_score', 'social_score']]
+data = holistic_metrics[['investor_score', 'dso_score', 'user_score']]
 
 pareto_idxs = pareto_front(data)
-print("Pareto front indices:", pareto_idxs)
-print("Pareto-optimal rows:\n", holistic_metrics.loc[pareto_idxs])
+# print("Pareto front indices:", pareto_idxs)
+# print("Pareto-optimal rows:\n", holistic_metrics.loc[pareto_idxs])
 
 
 def pareto_rank(df: pd.DataFrame) -> pd.Series:
@@ -78,13 +78,21 @@ final_df.to_csv(pareto_front_filename)
 # Load the previously saved DataFrame
 df = pd.read_csv(pareto_front_filename, index_col=0)
 
+# Rename labels
+rename_dict = {
+    'investor_score': 'Investor Score',
+    'dso_score': 'DSO Score',
+    'user_score': 'User Score'
+}
+df.rename(columns=rename_dict, inplace=True)
+
 # 1. 2D Scatter Plots: Pairwise trade-offs
 plt.figure(figsize=(15, 5))
 
-metrics = ['economic_score', 'technical_score', 'social_score']
-pairs = [('economic_score', 'technical_score'),
-         ('economic_score', 'social_score'),
-         ('technical_score', 'social_score')]
+metrics = ['Investor Score', 'DSO Score', 'User Score']
+pairs = [('Investor Score', 'DSO Score'),
+         ('Investor Score', 'User Score'),
+         ('DSO Score', 'User Score')]
 
 for i, (x, y) in enumerate(pairs, 1):
     plt.subplot(1, 3, i)
@@ -95,6 +103,9 @@ for i, (x, y) in enumerate(pairs, 1):
     plt.legend(title='Pareto Rank')
 
 plt.tight_layout()
+
+plt.savefig(f'{params.project_root}/data/outputs/plots/pareto_front.png', dpi=300)
+# plt.show()
 
 # 2. Parallel Coordinates Plot
 parallel_df = df[metrics + ['pareto_rank']].copy()
@@ -108,7 +119,7 @@ fig_parallel = px.parallel_coordinates(
     color='pareto_rank_flipped',  # Use flipped rank for colour mapping
     dimensions=metrics,
     color_continuous_scale=px.colors.diverging.Tealrose[::-1],
-    title="Parallel Coordinates Plot (Pareto Ranks)"
+    title="Parallel Coordinates Plot (Pareto Ranks) - Config 1 Opportunistic"
 )
 
 # Correct colorbar labels back to original pareto_rank
@@ -121,5 +132,6 @@ fig_parallel.update_layout(
 )
 
 
-plt.show()
-fig_parallel.show()
+fig_parallel.write_image(f'{params.project_root}/data/outputs/plots/pareto_parallel.png', scale=2)
+# fig_parallel.show()
+

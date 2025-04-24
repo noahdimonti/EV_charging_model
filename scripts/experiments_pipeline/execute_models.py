@@ -9,10 +9,11 @@ import pyomo.environ as pyo
 def execute_model(config: str,
                   charging_strategy: str,
                   version: str,
-                  obj_weights: dict,
+                  obj_weights: dict[str, float],
                   verbose=False,
                   time_limit: float = None,
                   mip_gap: float = None):
+
     if config not in config_map or charging_strategy not in strategy_map:
         raise ValueError("Invalid config or charging strategy.")
 

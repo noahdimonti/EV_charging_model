@@ -1,17 +1,15 @@
-from scripts.execute_models import execute_model
-from scripts.analyse_results import analyse_results
+from scripts.experiments_pipeline.execute_models import execute_model
+from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params, independent_variables
 from src.visualisation import plot_models_comparison
-from pprint import pprint
 
 
 def main():
-    version = 'runtime_test'
     obj_weights = independent_variables.obj_weights
 
     configurations = [
-        # 'config_1',
-        # 'config_2',
+        'config_1',
+        'config_2',
         'config_3',
     ]
     charging_strategies = [
@@ -21,6 +19,7 @@ def main():
     ]
 
     # Actions in pipeline
+    version = 'prelim_results'
     run_model = False
     analyse = False
     plot = True
@@ -32,12 +31,12 @@ def main():
         'config_1_flexible': [0.1, 25, True],
 
         'config_2_uncoordinated': [],
-        'config_2_opportunistic': [0.9, 40, True],
-        'config_2_flexible': [0.9, 60, True],
+        'config_2_opportunistic': [0.9, 25, True],
+        'config_2_flexible': [0.9, 30, True],
 
         'config_3_uncoordinated': [],
         'config_3_opportunistic': [0.9, 25, True],
-        'config_3_flexible': [0.9, 25, True],
+        'config_3_flexible': [0.9, 30, True],
     }
 
     # Execute model, analyse, and plot
@@ -74,7 +73,7 @@ def run_pipeline(configurations: list,
                 execute_model(
                     config,
                     charging_strategy,
-                    obj_weights,
+                    obj_weights=obj_weights,
                     version=version,
                     mip_gap=mip_gap,
                     time_limit=time_limit,
