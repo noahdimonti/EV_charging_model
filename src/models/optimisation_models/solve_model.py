@@ -6,9 +6,9 @@ from src.config import params
 def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=None, mip_gap=None):
     """ MIP gap in percentage and time_limit in minutes """
     solver = pyo.SolverFactory(solver)
-    print(f'\n=========================================================\n'
+    print(f'\n=============================================================\n'
           f'Solving {model.name} model ...'
-          f'\n=========================================================\n')
+          f'\n=============================================================\n')
 
     # Set time limit
     time_limit_seconds = None
@@ -76,6 +76,6 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
     else:
         print("Bounds not available for MIP gap calculation.")
 
-    print(f'---------------------------------------------------------\n')
+    print(f'-------------------------------------------------------------\n')
 
     return model, calc_mip_gap

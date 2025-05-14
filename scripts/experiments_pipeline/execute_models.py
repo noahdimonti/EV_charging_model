@@ -8,6 +8,7 @@ import pyomo.environ as pyo
 
 def execute_model(config: str,
                   charging_strategy: str,
+                  num_cp: int,
                   version: str,
                   obj_weights: dict[str, float],
                   verbose=False,
@@ -19,10 +20,12 @@ def execute_model(config: str,
 
     if charging_strategy == 'uncoordinated':
         model = run_simulation.run_simulation_model(
-            config_map[config],
-            strategy_map[charging_strategy],
-            independent_variables.p_cp_rated_uncoordinated_strategy
+            config,
+            charging_strategy,
+            independent_variables.p_cp_rated_uncoordinated_strategy,
+            num_cp
         )
+
         results = ModelResults(model, config_map[config], strategy_map[charging_strategy], obj_weights)
 
     else:

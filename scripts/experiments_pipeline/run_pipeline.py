@@ -5,30 +5,38 @@ from src.visualisation import plot_models_comparison
 
 
 def main():
-    obj_weights = independent_variables.obj_weights
-
     configurations = [
         'config_1',
-        'config_2',
-        'config_3',
+        # 'config_2',
+        # 'config_3',
     ]
     charging_strategies = [
-        # 'uncoordinated',
+        'uncoordinated',
         'opportunistic',
         'flexible',
     ]
 
+    # Objective weights
+    obj_weights = {
+        'economic': 0.5,
+        'technical': 0.5,
+        'social': 0
+    }
+
+    # Number of CP for uncoordinated strategy
+    num_cp = params.num_of_evs
+
     # Actions in pipeline
-    version = 'prelim_results'
+    version = 'test'
     run_model = False
     analyse = False
-    plot = True
+    plot = False
 
     # Mapping for mip_gap, time_limit, and verbose for each model
     solver_settings = {  # { model_name: [mip_gap (%), time_limit (minute), verbose] }
         'config_1_uncoordinated': [None, None, False],
         'config_1_opportunistic': [None, None, False],
-        'config_1_flexible': [0.1, 25, True],
+        'config_1_flexible': [0.1, 25, False],
 
         'config_2_uncoordinated': [],
         'config_2_opportunistic': [0.9, 25, True],
@@ -43,6 +51,7 @@ def main():
     run_pipeline(
         configurations=configurations,
         charging_strategies=charging_strategies,
+        num_cp=num_cp,
         obj_weights=obj_weights,
         version=version,
         run_model=run_model,
@@ -54,6 +63,7 @@ def main():
 
 def run_pipeline(configurations: list,
                  charging_strategies: list,
+                 num_cp: int,
                  obj_weights: dict,
                  version: str,
                  run_model: bool,
@@ -73,6 +83,7 @@ def run_pipeline(configurations: list,
                 execute_model(
                     config,
                     charging_strategy,
+                    num_cp=num_cp,
                     obj_weights=obj_weights,
                     version=version,
                     mip_gap=mip_gap,
@@ -85,7 +96,7 @@ def run_pipeline(configurations: list,
             configurations,
             charging_strategies,
             version,
-            params.num_of_evs
+            num_cp
         )
         print(formatted_metrics)
 

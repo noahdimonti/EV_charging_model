@@ -72,7 +72,9 @@ def setup(title: str, ylabel: str, xlabel: str = None, legend=True, ax=None):
     ax.tick_params(axis='both', labelsize=plot_configs.tick_fontsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontweight('bold')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
+
+    # Tilting tick labels
+    # ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Grid
     ax.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.3)
