@@ -7,19 +7,16 @@ from src.config import params, ev_params
 class ChargingPointSlot:
     def __init__(self, cp_id: int):
         self.cp_id = cp_id
-
         self.ev_id = None
+
+        self.charging_duration = None
         self.charging_start_time = None
         self.charging_end_time = None
-        self.charging_duration = None
 
     def connect_ev(self, ev_id, start_time):
         self.ev_id = ev_id
         self.charging_start_time = start_time
         self.charging_end_time = None
-
-    def charge_ev(self, ev_id):
-        pass
 
     def disconnect_ev(self, end_time):
         self.ev_id = None
