@@ -18,9 +18,6 @@ class ChargingPointSlot:
         self.charging_start_time = start_time
         self.charging_end_time = None
 
-    def charge_ev(self, ev_id):
-        pass
-
     def disconnect_ev(self, end_time):
         self.ev_id = None
         self.charging_end_time = end_time
@@ -52,7 +49,6 @@ def uncoordinated_model_config_2(
     num_available_cp = num_cp
 
     # Initiate a set of helper lists
-    unordered_waiting_list = []
     is_charging = []
     idle = [i for i in range(num_ev)]
     charging_queue = deque()
@@ -68,40 +64,77 @@ def uncoordinated_model_config_2(
         print(f'\nTIMESTAMP: {t}\n')
         print('----------------------------------')
 
+        # if t == pd.Timestamp('2022-02-21 03:15:00'):
+        #     break
+
+
+        # Check if EVs in the idle list need to be added to the charging queue
         for ev in idle[:]:
             ev_at_home = merged_ev_at_home_status[f'EV_ID{ev}'].loc[t]
             soc = ev_data[ev].soc.loc[t].values.item()
             soc_max = ev_data[ev].soc_max
 
-            if (ev_at_home == 1) and (soc < soc_max):  # AND soc < soc_max
-                unordered_waiting_list.append(ev)
+            # Add EVs to charging queue
+            if (ev_at_home == 1) and (soc < soc_max) and (ev not in charging_queue):
+                charging_queue.append(ev)
                 idle.remove(ev)
-                if len(charging_queue) > 0:
-                    charging_queue.appendleft(ev)
 
-        if len(charging_queue) == 0:
-            charging_queue.extend(
-                sorted(
-                    unordered_waiting_list,
-                    key=lambda ev_id: (next_departure(ev_id, t), get_soc(ev_id, t))
-                )
-            )
 
-        if len(charging_queue) > 0:
-            if num_available_cp > 0:  # if there is available CP
-                for cp in cp_slot_objs:
-                    if cp.ev_id is None:
-                        try:
-                            # Update lists
-                            ev_queue_id = charging_queue.popleft()
-                            cp.connect_ev(ev_queue_id, t)
-                            num_available_cp -= 1
-                            unordered_waiting_list.remove(ev_queue_id)
-                            is_charging.append(ev_queue_id)
-                        except IndexError:
-                            continue
+        # Sort charging queue based on priority
+        charging_queue = deque(sorted(
+            charging_queue,
+            key=lambda ev_id: (next_departure(ev_id, t), get_soc(ev_id, t))
+        ))
 
-        # calculate maximum charging power per CP
+
+        # Connect EVs in the charging queue to available CPs
+        if (len(charging_queue) > 0) and (num_available_cp > 0):
+            for cp in cp_slot_objs:
+                if cp.ev_id is None:
+                    try:
+                        # Update lists
+                        ev_queue_id = charging_queue.popleft()
+                        cp.connect_ev(ev_queue_id, t)
+                        num_available_cp -= 1
+                        is_charging.append(ev_queue_id)
+                    except IndexError:
+                        continue
+
+
+        # Conditions for when ev has to stop charging
+        for ev in is_charging[:]:
+            prev_time = t - pd.Timedelta(minutes=params.time_resolution)
+            t_dep = next_departure(ev, prev_time)
+
+            current_time = t.time()
+            if idle_start_time <= current_time <= idle_end_time:
+                pass
+
+            # Get charging duration, and stop charging after max charging duration
+            for cp in cp_slot_objs:
+                if cp.ev_id == ev:
+                    cp.charging_duration = t - cp.charging_start_time
+                    soc_ev = ev_data[ev].soc.loc[t].values.item()
+                    soc_max = ev_data[ev].soc_max
+
+                    if (t_dep == t) or (soc_ev == soc_max) or (
+                            cp.charging_duration >= max_charging_duration):
+                        # Update lists:
+                        is_charging.remove(ev)
+                        idle.append(ev)
+                        cp.disconnect_ev(prev_time)
+
+                        # Connect the next EV in the queue to the unoccupied CP
+                        if len(charging_queue) > 0:
+                            next_ev_in_queue = charging_queue.popleft()
+                            cp.connect_ev(next_ev_in_queue, t)
+                            is_charging.append(next_ev_in_queue)
+
+                        else:
+                            num_available_cp += 1
+
+
+        # Calculate maximum charging power per CP
         available_power_at_cp = (params.P_grid_max - household_load.loc[t].values.item()) / num_cp
 
         # Calculate p_ev and soc_ev for each EV
@@ -140,42 +173,6 @@ def uncoordinated_model_config_2(
                         p_ev = available_power
                         soc_ev = potential_soc
 
-                    # Conditions for when ev has to stop charging
-                    prev_time = t - pd.Timedelta(minutes=params.time_resolution)
-                    t_dep = next_departure(ev, prev_time)
-
-                    # current_time = t.time()
-                    # if idle_start_time <= current_time <= idle_end_time:
-                    #     print(f'idle time: {current_time}')
-
-                    # Get charging duration
-                    for cp in cp_slot_objs:
-                        if cp.ev_id == ev:
-                            cp.charging_duration = t - cp.charging_start_time
-
-                            if (t_dep == t) or (soc_ev == soc_max) or (
-                                    cp.charging_duration >= max_charging_duration):
-                                # Update lists:
-                                is_charging.remove(ev)
-                                idle.append(ev)
-                                cp.disconnect_ev(prev_time)
-
-                                # cp_slot_objs[cp_id].disconnect_ev(prev_time)
-                                # Stop charging EV
-                                ...
-
-                                # Connect the next EV in the queue to the unoccupied CP
-                                if len(charging_queue) > 0:
-                                    next_ev_in_queue = charging_queue.popleft()
-                                    cp.connect_ev(next_ev_in_queue, t)
-                                    unordered_waiting_list.remove(next_ev_in_queue)
-                                    is_charging.append(next_ev_in_queue)
-
-                                    # Charge EV
-                                    ...
-                                else:
-                                    num_available_cp += 1
-
                 else:
                     # EV is NOT connected to CP: charging power is 0 and soc remains unchanged
                     p_ev = 0
@@ -187,8 +184,7 @@ def uncoordinated_model_config_2(
 
 
 
-
-        print(f'\nunordered waiting list: {unordered_waiting_list}')
+        # Print debug info
         print(f'charging queue: {charging_queue}')
         print(f'is charging: {is_charging}')
         print(f'idle: {idle}')
