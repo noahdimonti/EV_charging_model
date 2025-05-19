@@ -1,7 +1,9 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import datetime
 from collections import deque
 from src.config import params, ev_params
+from pprint import pprint
 
 
 class ChargingPointSlot:
@@ -55,19 +57,15 @@ def uncoordinated_model_config_2(
     charging_queue = deque()
     ev_to_cp = {}
 
-    # Define CP maximum charging time settings
-    idle_start_time = datetime.time(hour=params.idle_start_hour, minute=0)
-    idle_end_time = datetime.time(hour=params.idle_end_hour, minute=0)
-
-    max_charging_duration = pd.Timedelta(hours=params.max_charging_duration)
 
     for t in params.timestamps:
         print('----------------------------------')
         print(f'\nTIMESTAMP: {t}\n')
         print('----------------------------------')
 
-        if t == pd.Timestamp('2022-02-21 06:30:00'):
-            break
+        # if t == pd.Timestamp('2022-02-21 07:45:00'):
+        #     break
+
 
 
         # Check if EVs in the idle list need to be added to the charging queue
@@ -81,18 +79,24 @@ def uncoordinated_model_config_2(
                 charging_queue.append(ev)
                 idle.remove(ev)
 
-        print(f'queue before sorted: {charging_queue}')
+
+        # Remove EV from charging queue if EV is away
+        for ev in charging_queue.copy():
+            if t in ev_data[ev].t_dep:
+                charging_queue.remove(ev)
+                idle.append(ev)
+
+
         # Sort charging queue based on priority
         charging_queue = deque(sorted(
             charging_queue,
             key=lambda ev_id: (next_departure(ev_id, t), get_soc(ev_data, ev_id, t))
         ))
 
-        print(f'queue after sorted: {charging_queue}')
 
 
         # Connect EVs in the charging queue to available CPs
-        if (len(charging_queue) > 0) and (num_available_cp > 0):
+        if (len(charging_queue) > 0) and (num_available_cp > 0) and (t.time() not in params.no_charging_range_time):
             for cp in charging_points:
                 if cp.ev_id is None:
                     try:
@@ -118,12 +122,12 @@ def uncoordinated_model_config_2(
             soc_ev = ev_data[ev].soc.loc[t].values.item()
             soc_max = ev_data[ev].soc_max
 
-            # Time settings
+            # Get next departure time
             prev_time = t - pd.Timedelta(minutes=params.time_resolution)
             t_dep = next_departure(ev, prev_time)
 
             # Switch EV connections when EV has to stop charging
-            if (t_dep == t) or (soc_ev == soc_max) or (cp.charging_duration >= max_charging_duration):
+            if (t_dep == t) or (soc_ev == soc_max) or (cp.charging_duration >= params.max_charging_duration):
                 # Disconnect EV
                 is_charging.remove(ev)
                 idle.append(ev)
@@ -157,41 +161,40 @@ def uncoordinated_model_config_2(
             # Define t-1
             delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-            for ev in is_charging:
+            for ev in range(num_ev):
                 # Define helper variables
                 soc_max = ev_data[ev].soc_max
                 prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
 
-                # EV is connected to CP: calculate charging power and soc
-                # Define available power and soc(t-1)
-                available_power = min(available_power_at_cp, p_cp_rated_scaled)
-
                 # Subtract travel energy if t is at arrival time
                 if t in ev_data[ev].t_arr:
+                    print(f'ev {ev}: ARRIVAL TIME')
                     k = ev_params.t_arr_dict[ev].index(t)
                     prev_soc -= ev_data[ev].travel_energy[k]
 
-                # Predict SOC based on available charging power
-                potential_soc = prev_soc + available_power
+                if ev in is_charging:
+                    # Define available power and soc(t-1)
+                    available_power = min(available_power_at_cp, p_cp_rated_scaled)
 
-                if potential_soc > soc_max:
-                    # Calculate how much energy is needed to reach SOC max
-                    remaining_to_charge = soc_max - prev_soc
-                    p_ev = remaining_to_charge
-                    soc_ev = soc_max
-                else:
-                    # Assign available power to charging power and SOC accordingly
-                    p_ev = available_power
-                    soc_ev = potential_soc
+                    # Predict SOC based on available charging power
+                    potential_soc = prev_soc + available_power
 
-                ev_data[ev].charging_power.loc[t] = p_ev
-                ev_data[ev].soc.loc[t] = soc_ev
+                    if potential_soc > soc_max:
+                        # Calculate how much energy is needed to reach SOC max
+                        remaining_to_charge = soc_max - prev_soc
+                        p_ev = remaining_to_charge
+                        soc_ev = soc_max
+                    else:
+                        # Assign available power to charging power and SOC accordingly
+                        p_ev = available_power
+                        soc_ev = potential_soc
 
-            for ev in range(num_ev):
-                if ev not in is_charging:
+                    ev_data[ev].charging_power.loc[t] = p_ev
+                    ev_data[ev].soc.loc[t] = soc_ev
+
+                elif ev not in is_charging:
                     ev_data[ev].charging_power.loc[t] = 0
-                    ev_data[ev].soc.loc[t] = ev_data[ev].soc.loc[t - delta_t]
-
+                    ev_data[ev].soc.loc[t] = prev_soc
 
 
 
@@ -208,28 +211,37 @@ def uncoordinated_model_config_2(
 
         print('\n')
 
-        def print_stats():
+        def print_stats(ev):
+            soc = ev_data[ev].soc.loc[t].values.item()
+            soc_max = ev_data[ev].soc_max
+
             print(f'EV ID: {ev}')
             print(f'at home status: {ev_data[ev].at_home_status.loc[t].values.item()}')
             print(f'p ev: {ev_data[ev].charging_power.loc[t].values.item()}')
-            print(f'soc: {ev_data[ev].soc.loc[t].values.item()}')
-            print(f'soc max: {ev_data[ev].soc_max}')
-            print(f'de')
+            print(f'soc: {soc}')
+            print(f'soc max: {soc_max}')
+            print(f'soc percentage: {(soc / soc_max * 100):.2f}%')
+
+            print(f'dep times of ev {ev}:')
+            # pprint(ev_params.t_dep_dict[ev])
 
         for ev in range(num_ev):
             if ev in is_charging:
                 print(f'{params.GREEN}', end='')
-                print_stats()
+                print_stats(ev)
                 print(f'{params.RESET}', end='')
             else:
-                print_stats()
+                print_stats(ev)
             print('\n', end='')
 
 
         print('\n')
 
-        # break
+    print(f'arrival time of EV 1: {ev_params.t_arr_dict[1]}')
 
+    for ev in range(num_ev):
+        plt.plot(ev_data[ev].soc)
+        # plt.show()
 
 
 
