@@ -63,28 +63,40 @@ def uncoordinated_model_config_2(
         print(f'\nTIMESTAMP: {t}\n')
         print('----------------------------------')
 
-        # if t == pd.Timestamp('2022-02-21 07:45:00'):
-        #     break
+
+        if t == pd.Timestamp('2022-02-23 01:00:00'):
+            break
+
+        # Define t-1
+        delta_t = pd.Timedelta(minutes=params.time_resolution)
 
 
 
         # Check if EVs in the idle list need to be added to the charging queue
         for ev in idle[:]:
             ev_at_home = merged_ev_at_home_status[f'EV_ID{ev}'].loc[t]
-            soc = ev_data[ev].soc.loc[t].values.item()
-            soc_max = ev_data[ev].soc_max
+            if t == params.start_date_time:
+                pass
+            else:
+                prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
+                soc_max = ev_data[ev].soc_max
 
-            # Add EVs to charging queue
-            if (ev_at_home == 1) and (soc < soc_max) and (ev not in charging_queue):
-                charging_queue.append(ev)
-                idle.remove(ev)
+                # Add EVs to charging queue
+                if (ev_at_home == 1) and (prev_soc < soc_max) and (ev not in charging_queue):
+                    charging_queue.append(ev)
+                    idle.remove(ev)
 
 
-        # Remove EV from charging queue if EV is away
+        # Remove EV from charging queue if EV is away or has already reached soc_max
         for ev in charging_queue.copy():
-            if t in ev_data[ev].t_dep:
-                charging_queue.remove(ev)
-                idle.append(ev)
+            if t == params.start_date_time:
+                pass
+            else:
+                prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
+                soc_max = ev_data[ev].soc_max
+                if (t in ev_data[ev].t_dep) or (prev_soc == soc_max):
+                    charging_queue.remove(ev)
+                    idle.append(ev)
 
 
         # Sort charging queue based on priority
@@ -94,13 +106,12 @@ def uncoordinated_model_config_2(
         ))
 
 
-
         # Connect EVs in the charging queue to available CPs
         if (len(charging_queue) > 0) and (num_available_cp > 0) and (t.time() not in params.no_charging_range_time):
             for cp in charging_points:
                 if cp.ev_id is None:
                     try:
-                        # Update lists
+                        # Connect EV to CP and add it to is_charging list
                         ev_queue_id = charging_queue.popleft()
                         cp.connect_ev(ev_queue_id, t)
                         ev_to_cp[ev_queue_id] = cp.cp_id
@@ -119,19 +130,20 @@ def uncoordinated_model_config_2(
 
             # Conditions for when to stop charging
             cp.charging_duration = t - cp.charging_start_time
-            soc_ev = ev_data[ev].soc.loc[t].values.item()
-            soc_max = ev_data[ev].soc_max
 
             # Get next departure time
-            prev_time = t - pd.Timedelta(minutes=params.time_resolution)
-            t_dep = next_departure(ev, prev_time)
+            next_t_dep = next_departure(ev, (t - delta_t))
+
+            # Define helper variables
+            soc_max = ev_data[ev].soc_max
+            prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
 
             # Switch EV connections when EV has to stop charging
-            if (t_dep == t) or (soc_ev == soc_max) or (cp.charging_duration >= params.max_charging_duration):
+            if (next_t_dep == t) or (prev_soc == soc_max) or (cp.charging_duration >= params.max_charging_duration):
                 # Disconnect EV
                 is_charging.remove(ev)
                 idle.append(ev)
-                cp.disconnect_ev(prev_time)
+                cp.disconnect_ev(t - delta_t)
                 ev_to_cp.pop(ev)
 
                 # Connect the next EV in the queue to the unoccupied CP
@@ -158,9 +170,6 @@ def uncoordinated_model_config_2(
 
         # Calculate p_ev and soc_ev for each EV if not the first timestamp
         else:
-            # Define t-1
-            delta_t = pd.Timedelta(minutes=params.time_resolution)
-
             for ev in range(num_ev):
                 # Define helper variables
                 soc_max = ev_data[ev].soc_max
@@ -168,7 +177,6 @@ def uncoordinated_model_config_2(
 
                 # Subtract travel energy if t is at arrival time
                 if t in ev_data[ev].t_arr:
-                    print(f'ev {ev}: ARRIVAL TIME')
                     k = ev_params.t_arr_dict[ev].index(t)
                     prev_soc -= ev_data[ev].travel_energy[k]
 
