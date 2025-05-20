@@ -232,30 +232,6 @@ class UncoordinatedModelConfig2:
 
 
 
-# Filter for the first departure after current time t
-def next_departure(ev_id, t):
-    return min((dep_time for dep_time in ev_params.t_dep_dict[ev_id] if dep_time > t), default=max(params.timestamps))
-
-
-# Filter for EV SOC at time t
-def get_soc_priority(ev_data, ev_id, t):
-    return ev_data[ev_id].soc.loc[t].values.item() / ev_data[ev_id].soc_max
-
-
-def get_soc_and_max(ev_data, ev_id, t, delta_t):
-    prev_soc = ev_data[ev_id].soc.loc[t - delta_t].values.item()
-    soc_max = ev_data[ev_id].soc_max
-
-    return prev_soc, soc_max
-
-
-def is_at_home(ev_data, ev_id, t):
-    # Create dataframe for merged EV at home status
-    merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in ev_data], axis=1)
-
-    return merged_ev_at_home_status[f'EV_ID{ev_id}'].loc[t] == 1
-
-
 
 
 
