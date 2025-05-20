@@ -33,12 +33,14 @@ def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
     simulated_data = None
 
     if config == 'config_1':
-        simulated_data = config_1.uncoordinated_model_config_1(
+        config_1_simulator = config_1.UncoordinatedModelConfig1(
             ev_data,
             household_load,
             num_ev_at_home_df,
             p_cp_rated_scaled
         )
+        return config_1_simulator.run()
+
     elif config == 'config_2':
         config_2_simulator = config_2.UncoordinatedModelConfig2(
             ev_data,
@@ -54,7 +56,7 @@ def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
     return simulated_data
 
 
-data = simulate_uncoordinated_model(2.4, 'config_2', 2)
+data = simulate_uncoordinated_model(2.4, 'config_1', 5)
 print(data)
 
 

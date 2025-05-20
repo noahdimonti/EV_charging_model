@@ -26,7 +26,7 @@ class ChargingPointSlot:
 
 
 class UncoordinatedModelConfig2:
-    def __init__(self, ev_data, household_load, p_cp_rated_scaled, num_cp):
+    def __init__(self, ev_data: list, household_load: pd.DataFrame, p_cp_rated_scaled: float, num_cp: int):
         self.ev_data = ev_data
         self.household_load = household_load
         self.p_cp_rated_scaled = p_cp_rated_scaled
