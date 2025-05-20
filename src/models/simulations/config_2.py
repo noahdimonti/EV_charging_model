@@ -29,9 +29,24 @@ class ChargingPointSlot:
 def next_departure(ev_id, t):
     return min((dep_time for dep_time in ev_params.t_dep_dict[ev_id] if dep_time > t), default=max(params.timestamps))
 
+
 # Filter for EV SOC at time t
-def get_soc(ev_data, ev_id, t):
+def get_soc_priority(ev_data, ev_id, t):
     return ev_data[ev_id].soc.loc[t].values.item() / ev_data[ev_id].soc_max
+
+
+def get_soc_and_max(ev_data, ev_id, t, delta_t):
+    prev_soc = ev_data[ev_id].soc.loc[t - delta_t].values.item()
+    soc_max = ev_data[ev_id].soc_max
+
+    return prev_soc, soc_max
+
+
+def is_at_home(ev_data, ev_id, t):
+    # Create dataframe for merged EV at home status
+    merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in ev_data], axis=1)
+
+    return merged_ev_at_home_status[f'EV_ID{ev_id}'].loc[t] == 1
 
 
 
@@ -44,8 +59,8 @@ def uncoordinated_model_config_2(
 ):
     num_ev = params.num_of_evs
 
-    # Create dataframe for merged EV at home status
-    merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in ev_data], axis=1)
+    # # Create dataframe for merged EV at home status
+    # merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in ev_data], axis=1)
 
     # Instantiate CP charging slots
     charging_points = [ChargingPointSlot(i) for i in range(num_cp)]
@@ -64,36 +79,38 @@ def uncoordinated_model_config_2(
         print('----------------------------------')
 
 
-        if t == pd.Timestamp('2022-02-23 01:00:00'):
-            break
+        # if t == pd.Timestamp('2022-02-23 01:00:00'):
+        #     break
+
+
+        # Assign initial soc for all EVs
+        if t == params.start_date_time:
+            for ev in range(num_ev):
+                ev_data[ev].charging_power.loc[t] = 0
+                ev_data[ev].soc.loc[t] = ev_data[ev].soc_init
+
+
 
         # Define t-1
         delta_t = pd.Timedelta(minutes=params.time_resolution)
 
 
 
-        # Check if EVs in the idle list need to be added to the charging queue
-        for ev in idle[:]:
-            ev_at_home = merged_ev_at_home_status[f'EV_ID{ev}'].loc[t]
-            if t == params.start_date_time:
-                pass
-            else:
-                prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
-                soc_max = ev_data[ev].soc_max
+        if t != params.start_date_time:
+            # Check if EVs in the idle list need to be added to the charging queue
+            for ev in idle[:]:
+                prev_soc, soc_max = get_soc_and_max(ev_data, ev, t, delta_t)
 
                 # Add EVs to charging queue
-                if (ev_at_home == 1) and (prev_soc < soc_max) and (ev not in charging_queue):
+                if (is_at_home(ev_data, ev, t)) and (prev_soc < soc_max) and (ev not in charging_queue):
                     charging_queue.append(ev)
                     idle.remove(ev)
 
+            # Remove EV from charging queue if EV is away or has already reached soc_max
+            for ev in charging_queue.copy():
+                prev_soc, soc_max = get_soc_and_max(ev_data, ev, t, delta_t)
 
-        # Remove EV from charging queue if EV is away or has already reached soc_max
-        for ev in charging_queue.copy():
-            if t == params.start_date_time:
-                pass
-            else:
-                prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
-                soc_max = ev_data[ev].soc_max
+                # Remove EV from charging queue
                 if (t in ev_data[ev].t_dep) or (prev_soc == soc_max):
                     charging_queue.remove(ev)
                     idle.append(ev)
@@ -102,24 +119,20 @@ def uncoordinated_model_config_2(
         # Sort charging queue based on priority
         charging_queue = deque(sorted(
             charging_queue,
-            key=lambda ev_id: (next_departure(ev_id, t), get_soc(ev_data, ev_id, t))
+            key=lambda ev_id: (next_departure(ev_id, t), get_soc_priority(ev_data, ev_id, t))
         ))
 
 
         # Connect EVs in the charging queue to available CPs
         if (len(charging_queue) > 0) and (num_available_cp > 0) and (t.time() not in params.no_charging_range_time):
             for cp in charging_points:
-                if cp.ev_id is None:
-                    try:
-                        # Connect EV to CP and add it to is_charging list
-                        ev_queue_id = charging_queue.popleft()
-                        cp.connect_ev(ev_queue_id, t)
-                        ev_to_cp[ev_queue_id] = cp.cp_id
-                        num_available_cp -= 1
-                        is_charging.append(ev_queue_id)
-                    except IndexError:
-                        continue
-
+                if (cp.ev_id is None) and charging_queue:
+                    # Connect EV to CP and add it to is_charging list
+                    ev_queue_id = charging_queue.popleft()
+                    cp.connect_ev(ev_queue_id, t)
+                    ev_to_cp[ev_queue_id] = cp.cp_id
+                    is_charging.append(ev_queue_id)
+                    num_available_cp -= 1
 
 
         # Conditions for when ev-cp connection has to be switched to another ev
@@ -135,8 +148,7 @@ def uncoordinated_model_config_2(
             next_t_dep = next_departure(ev, (t - delta_t))
 
             # Define helper variables
-            soc_max = ev_data[ev].soc_max
-            prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
+            prev_soc, soc_max = get_soc_and_max(ev_data, ev, t, delta_t)
 
             # Switch EV connections when EV has to stop charging
             if (next_t_dep == t) or (prev_soc == soc_max) or (cp.charging_duration >= params.max_charging_duration):
@@ -149,7 +161,6 @@ def uncoordinated_model_config_2(
                 # Connect the next EV in the queue to the unoccupied CP
                 if len(charging_queue) > 0:
                     next_ev_in_queue = charging_queue.popleft()
-                    print(f'next ev: {next_ev_in_queue}')
                     cp.connect_ev(next_ev_in_queue, t)
                     ev_to_cp[next_ev_in_queue] = cp.cp_id
                     is_charging.append(next_ev_in_queue)
@@ -162,18 +173,11 @@ def uncoordinated_model_config_2(
         # Calculate maximum charging power per CP
         available_power_at_cp = (params.P_grid_max - household_load.loc[t].values.item()) / num_cp
 
-        # Assigning initial soc for all EVs
-        if t == params.start_date_time:
-            for ev in range(num_ev):
-                ev_data[ev].charging_power.loc[t] = 0
-                ev_data[ev].soc.loc[t] = ev_data[ev].soc_init
-
         # Calculate p_ev and soc_ev for each EV if not the first timestamp
-        else:
+        if t != params.start_date_time:
             for ev in range(num_ev):
                 # Define helper variables
-                soc_max = ev_data[ev].soc_max
-                prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
+                prev_soc, soc_max = get_soc_and_max(ev_data, ev, t, delta_t)
 
                 # Subtract travel energy if t is at arrival time
                 if t in ev_data[ev].t_arr:
@@ -230,7 +234,7 @@ def uncoordinated_model_config_2(
             print(f'soc max: {soc_max}')
             print(f'soc percentage: {(soc / soc_max * 100):.2f}%')
 
-            print(f'dep times of ev {ev}:')
+            # print(f'dep times of ev {ev}:')
             # pprint(ev_params.t_dep_dict[ev])
 
         for ev in range(num_ev):
