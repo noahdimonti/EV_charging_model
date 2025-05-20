@@ -1,6 +1,6 @@
 import pandas as pd
 from src.config import params, ev_params
-from src.models.simulations import config_1, config_2
+from src.models.simulations import config_1, config_2, config_3
 
 
 def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
@@ -31,27 +31,31 @@ def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
     num_ev_at_home_df = pd.DataFrame(num_ev_at_home_list).set_index('timestamp')
 
     if config == 'config_1':
-
         config_1_simulator = config_1.UncoordinatedModelConfig1(
             ev_data,
             household_load,
             num_ev_at_home_df,
             p_cp_rated_scaled
         )
+
         return config_1_simulator.run()
 
     elif config == 'config_2':
-
         config_2_simulator = config_2.UncoordinatedModelConfig2(
             ev_data,
             household_load,
             p_cp_rated_scaled,
             num_cp
         )
+
         return config_2_simulator.run()
 
     elif config == 'config_3':
-        pass
+        config_3_simulator = config_3.UncoordinatedModelConfig3(
+
+        )
+
+        return config_3_simulator.run()
 
 
 data = simulate_uncoordinated_model(2.4, 'config_2', 2)

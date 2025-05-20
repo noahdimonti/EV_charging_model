@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import datetime
 from collections import deque
 from src.config import params, ev_params
 from pprint import pprint

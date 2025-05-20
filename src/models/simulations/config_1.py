@@ -37,9 +37,6 @@ class UncoordinatedModelConfig1:
                     soc_ev.append(soc)
 
             # Assign charging power and soc list to dataframes in EV object
-            print(f'ev: {ev}')
-            print(f'p ev: {p_ev}')
-            print(f'soc ev: {soc_ev}')
             ev.charging_power['charging_power'] = p_ev
             ev.soc['soc'] = soc_ev
 
