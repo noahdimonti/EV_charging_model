@@ -2,6 +2,18 @@ import pandas as pd
 from src.config import params, ev_params
 
 
+class UncoordinatedModelConfig1:
+    def __init__(self, ev_data, household_load, num_ev_at_home, p_cp_rated_scaled):
+        self.ev_data = ev_data
+        self.household_load = household_load
+        self.num_ev_at_home = num_ev_at_home
+        self.p_cp_rated_scaled = p_cp_rated_scaled
+
+    def run(self):
+        for i, ev in enumerate(self.ev_data):
+            ...
+        return self.ev_data
+
 def uncoordinated_model_config_1(
         ev_data: list,
         household_load: pd.DataFrame,

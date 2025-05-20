@@ -40,20 +40,22 @@ def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
             p_cp_rated_scaled
         )
     elif config == 'config_2':
-        simulated_data = config_2.uncoordinated_model_config_2(
+        config_2_simulator = config_2.UncoordinatedModelConfig2(
             ev_data,
             household_load,
-            num_ev_at_home_df,
             p_cp_rated_scaled,
             num_cp
         )
+        return config_2_simulator.run()
+
     elif config == 'config_3':
         pass
 
     return simulated_data
 
 
-simulate_uncoordinated_model(2.4, 'config_2', 2)
+data = simulate_uncoordinated_model(2.4, 'config_2', 2)
+print(data)
 
 
 def process_model_results(model: list, p_cp_rated: float):
