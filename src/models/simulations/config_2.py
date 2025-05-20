@@ -1,14 +1,15 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import datetime
 from collections import deque
 from src.config import params, ev_params
+from pprint import pprint
 
 
 class ChargingPointSlot:
     def __init__(self, cp_id: int):
         self.cp_id = cp_id
         self.ev_id = None
-
         self.charging_duration = None
         self.charging_start_time = None
         self.charging_end_time = None
@@ -24,101 +25,150 @@ class ChargingPointSlot:
         self.charging_duration = None
 
 
-def update_ev_queue_status(t, ev_data, idle, unordered_waiting_list, charging_queue, merged_ev_at_home_status):
-    for ev in idle[:]:
-        ev_at_home = merged_ev_at_home_status[f'EV_ID{ev}'].loc[t]
-        soc = ev_data[ev].soc.loc[t].values.item()
-        soc_max = ev_data[ev].soc_max
+class UncoordinatedModelConfig2:
+    def __init__(self, ev_data: list, household_load: pd.DataFrame, p_cp_rated_scaled: float, num_cp: int):
+        self.ev_data = ev_data
+        self.household_load = household_load
+        self.p_cp_rated_scaled = p_cp_rated_scaled
+        self.num_cp = num_cp
+        self.num_ev = params.num_of_evs
+        self.charging_points = [ChargingPointSlot(i) for i in range(num_cp)]
+        self.num_available_cp = num_cp
+        self.is_charging = []
+        self.idle = [i for i in range(self.num_ev)]
+        self.charging_queue = deque()
+        self.ev_to_cp = {}
+        self.delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-        if (ev_at_home == 1) and (soc < soc_max):
-            unordered_waiting_list.append(ev)
-            idle.remove(ev)
-            if len(charging_queue) > 0:
-                charging_queue.appendleft(ev)
+    def run(self):
+        for t in params.timestamps:
+            if t == params.start_date_time:
+                self._initialise_soc(t)
+            else:
+                self._update_charging_queue(t)
+                self._sort_charging_queue(t)
+                self._connect_evs_to_available_cps(t)
+                self._handle_ev_disconnections(t)
+                self._update_soc_and_power(t)
+            self.print_debug(t)
 
+        self.quick_plot()
 
-# Filter for the first departure after current time t
-def next_departure(ev_id, t):
-    return min((dep_time for dep_time in ev_params.t_dep_dict[ev_id] if dep_time > t),
-               default=max(params.timestamps))
+        return self.ev_data
 
+    def _initialise_soc(self, t):
+        for ev in range(self.num_ev):
+            self.ev_data[ev].charging_power.loc[t] = 0
+            self.ev_data[ev].soc.loc[t] = self.ev_data[ev].soc_init
 
-# Filter for EV SOC at time t
-def get_soc(ev_id, t, ev_data):
-    return ev_data[ev_id].soc.loc[t].values.item() / ev_data[ev_id].soc_max
+    @staticmethod
+    def _next_departure(ev_id, t):
+        return min((dep_time for dep_time in ev_params.t_dep_dict[ev_id] if dep_time > t),
+                   default=max(params.timestamps))
 
+    def _get_soc_priority(self, ev_id, t):
+        return self.ev_data[ev_id].soc.loc[t].values.item() / self.ev_data[ev_id].soc_max
 
-def fill_charging_queue(t, ev_data, charging_queue, unordered_waiting_list):
-    if len(charging_queue) == 0:
-        charging_queue.extend(
-            sorted(
-                unordered_waiting_list,
-                key=lambda ev_id: (next_departure(ev_id, t), get_soc(ev_id, t, ev_data))
-            )
-        )
+    def _get_soc_and_max(self, ev_id, t):
+        prev_soc = self.ev_data[ev_id].soc.loc[t - self.delta_t].values.item()
+        soc_max = self.ev_data[ev_id].soc_max
 
+        return prev_soc, soc_max
 
-def assign_charging_points(t, cp_slot_objs, num_available_cp, charging_queue, unordered_waiting_list, is_charging):
-    if len(charging_queue) > 0:
-        if num_available_cp > 0:  # if there is available CP
-            for cp in cp_slot_objs:
-                if cp.ev_id is None:
-                    try:
-                        # Update lists
-                        ev_queue_id = charging_queue.popleft()
-                        cp.connect_ev(ev_queue_id, t)
-                        num_available_cp -= 1
-                        unordered_waiting_list.remove(ev_queue_id)
-                        is_charging.append(ev_queue_id)
-                    except IndexError:
-                        continue
+    def _is_at_home(self, ev_id, t):
+        # Create dataframe for merged EV at home status
+        merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in self.ev_data], axis=1)
 
+        return merged_ev_at_home_status[f'EV_ID{ev_id}'].loc[t] == 1
 
-def update_ev_charging_state(
-        t,
-        ev_data,
-        num_ev,
-        num_cp,
-        p_cp_rated_scaled,
-        household_load,
-        cp_slot_objs,
-        num_available_cp,
-        is_charging,
-        charging_queue,
-        unordered_waiting_list,
-        idle
-):
-    # calculate maximum charging power per CP
-    available_power_at_cp = (params.P_grid_max - household_load.loc[t].values.item()) / num_cp
+    def _update_charging_queue(self, t):
+        # Check if EVs in the idle list need to be added to the charging queue
+        for ev in self.idle[:]:
+            # Define previous soc and soc_max
+            prev_soc, soc_max = self._get_soc_and_max(ev, t)
 
-    # Define CP maximum charging time settings
-    idle_start_time = datetime.time(hour=params.idle_start_hour, minute=0)
-    idle_end_time = datetime.time(hour=params.idle_end_hour, minute=0)
+            # Add EVs to charging queue
+            if (self._is_at_home(ev, t)) and (prev_soc < soc_max) and (ev not in self.charging_queue):
+                self.charging_queue.append(ev)
+                self.idle.remove(ev)
 
-    max_charging_duration = pd.Timedelta(hours=params.max_charging_duration)
+        # Remove EV from charging queue if EV is away or has already reached soc_max
+        for ev in self.charging_queue.copy():
+            # Define previous soc and soc_max
+            prev_soc, soc_max = self._get_soc_and_max(ev, t)
 
-    # Calculate p_ev and soc_ev for each EV
-    for ev in range(num_ev):
-        # Define helper variables
-        soc_max = ev_data[ev].soc_max
-        delta_t = pd.Timedelta(minutes=params.time_resolution)
+            # Remove EV from charging queue
+            if (t in self.ev_data[ev].t_dep) or (prev_soc == soc_max):
+                self.charging_queue.remove(ev)
+                self.idle.append(ev)
 
-        # Assign charging power and soc initial
-        if t == params.start_date_time:
-            ev_data[ev].charging_power.loc[t] = 0
-            ev_data[ev].soc.loc[t] = ev_data[ev].soc_init
-        else:
-            prev_soc = ev_data[ev].soc.loc[t - delta_t].values.item()
+    def _sort_charging_queue(self, t):
+        self.charging_queue = deque(sorted(
+            self.charging_queue,
+            key=lambda ev_id: (self._next_departure(ev_id, t), self._get_soc_priority(ev_id, t))
+        ))
 
-            if ev in is_charging:
-                # EV is connected to CP: calculate charging power and soc
+    def _connect_evs_to_available_cps(self, t):
+        if (len(self.charging_queue) > 0) and (self.num_available_cp > 0) and (t.time() not in params.no_charging_range_time):
+            for cp in self.charging_points:
+                if (cp.ev_id is None) and self.charging_queue:
+                    # Connect EV to CP and add it to is_charging list
+                    ev_queue_id = self.charging_queue.popleft()
+                    cp.connect_ev(ev_queue_id, t)
+                    self.ev_to_cp[ev_queue_id] = cp.cp_id
+                    self.is_charging.append(ev_queue_id)
+                    self.num_available_cp -= 1
+
+    def _handle_ev_disconnections(self, t):
+        for ev in self.is_charging[:]:
+            # CP connection settings
+            cp_id = self.ev_to_cp[ev]
+            cp = self.charging_points[cp_id]
+
+            # Calculate charging duration at time t
+            cp.charging_duration = t - cp.charging_start_time
+
+            # Get next departure time
+            next_t_dep = self._next_departure(ev, (t - self.delta_t))
+
+            # Define previous soc and soc_max
+            prev_soc, soc_max = self._get_soc_and_max(ev, t)
+
+            # Switch EV connections when EV has to stop charging
+            if (next_t_dep == t) or (prev_soc == soc_max) or (cp.charging_duration >= params.max_charging_duration):
+                # Disconnect EV
+                self.is_charging.remove(ev)
+                self.idle.append(ev)
+                cp.disconnect_ev(t - self.delta_t)
+                self.ev_to_cp.pop(ev)
+
+                # Connect the next EV in the queue to the unoccupied CP
+                if self.charging_queue:
+                    next_ev_in_queue = self.charging_queue.popleft()
+                    cp.connect_ev(next_ev_in_queue, t)
+                    self.ev_to_cp[next_ev_in_queue] = cp.cp_id
+                    self.is_charging.append(next_ev_in_queue)
+
+                else:
+                    self.num_available_cp += 1
+
+    def _update_soc_and_power(self, t):
+        # Calculate maximum charging power per CP
+        available_power_at_cp = (params.P_grid_max - self.household_load.loc[t].values.item()) / self.num_cp
+
+        # Calculate p_ev and soc_ev for each EV
+        for ev in range(self.num_ev):
+            # Define previous soc and soc_max
+            prev_soc, soc_max = self._get_soc_and_max(ev, t)
+
+            # Subtract travel energy if t is at arrival time
+            if t in self.ev_data[ev].t_arr:
+                k = ev_params.t_arr_dict[ev].index(t)
+                prev_soc -= self.ev_data[ev].travel_energy[k]
+
+            if ev in self.is_charging:
                 # Define available power and soc(t-1)
-                available_power = min(available_power_at_cp, p_cp_rated_scaled)
-
-                # Subtract travel energy if t is at arrival time
-                if t in ev_data[ev].t_arr:
-                    k = ev_params.t_arr_dict[ev].index(t)
-                    prev_soc -= ev_data[ev].travel_energy[k]
+                available_power = min(available_power_at_cp, self.p_cp_rated_scaled)
 
                 # Predict SOC based on available charging power
                 potential_soc = prev_soc + available_power
@@ -133,127 +183,55 @@ def update_ev_charging_state(
                     p_ev = available_power
                     soc_ev = potential_soc
 
-                # Conditions for when ev has to stop charging
-                prev_time = t - pd.Timedelta(minutes=params.time_resolution)
-                t_dep = next_departure(ev, prev_time)
+                self.ev_data[ev].charging_power.loc[t] = p_ev
+                self.ev_data[ev].soc.loc[t] = soc_ev
 
-                # current_time = t.time()
-                # if idle_start_time <= current_time <= idle_end_time:
-                #     print(f'idle time: {current_time}')
+            elif ev not in self.is_charging:
+                self.ev_data[ev].charging_power.loc[t] = 0
+                self.ev_data[ev].soc.loc[t] = prev_soc
 
-                # Get charging duration
-                for cp in cp_slot_objs:
-                    if cp.ev_id == ev:
-                        cp.charging_duration = t - cp.charging_start_time
-
-                        if (t_dep == t) or (soc_ev == soc_max) or (
-                                cp.charging_duration >= max_charging_duration):
-                            # Update lists:
-                            is_charging.remove(ev)
-                            idle.append(ev)
-                            cp.disconnect_ev(prev_time)
-
-                            # cp_slot_objs[cp_id].disconnect_ev(prev_time)
-                            # Stop charging EV
-                            ...
-
-                            # Connect the next EV in the queue to the unoccupied CP
-                            if len(charging_queue) > 0:
-                                next_ev_in_queue = charging_queue.popleft()
-                                cp.connect_ev(next_ev_in_queue, t)
-                                unordered_waiting_list.remove(next_ev_in_queue)
-                                is_charging.append(next_ev_in_queue)
-
-                                # Charge EV
-                                ...
-                            else:
-                                num_available_cp += 1
-
-            else:
-                # EV is NOT connected to CP: charging power is 0 and soc remains unchanged
-                p_ev = 0
-                soc_ev = prev_soc
-
-            ev_data[ev].charging_power.loc[t] = p_ev
-            ev_data[ev].soc.loc[t] = soc_ev
-
-
-def print_debug_info(
-        t,
-        unordered_waiting_list,
-        charging_queue,
-        is_charging,
-        idle,
-        num_available_cp,
-        cp_slot_objs,
-        ev_data,
-        num_ev
-):
-    print(f'\nunordered waiting list: {unordered_waiting_list}')
-    print(f'charging queue: {charging_queue}')
-    print(f'is charging: {is_charging}')
-    print(f'idle: {idle}')
-    print(f'available cp: {num_available_cp}\n')
-
-    for cp in cp_slot_objs:
-        print(cp.__dict__)
-
-    print('\n')
-
-    def print_stats():
-        print(f'EV ID: {ev}')
-        print(f'at home status: {ev_data[ev].at_home_status.loc[t].values.item()}')
-        print(f'p ev: {ev_data[ev].charging_power.loc[t].values.item()}')
-        print(f'soc: {ev_data[ev].soc.loc[t].values.item()}')
-        print(f'soc max: {ev_data[ev].soc_max}')
-
-    for ev in range(num_ev):
-        if ev in is_charging:
-            print(f'{params.GREEN}', end='')
-            print_stats()
-            print(f'{params.RESET}', end='')
-        else:
-            print_stats()
-        print('\n', end='')
-
-    print('\n')
-
-
-def uncoordinated_model_config_2(
-        ev_data: list,
-        household_load: pd.DataFrame,
-        num_ev_at_home: pd.DataFrame,
-        p_cp_rated_scaled: float,
-        num_cp: int
-):
-    num_ev = params.num_of_evs
-
-    # Create dataframe for merged EV at home status
-    merged_ev_at_home_status = pd.concat([ev.at_home_status for ev in ev_data], axis=1)
-
-    # Instantiate CP charging slots
-    cp_slot_objs = [ChargingPointSlot(i) for i in range(num_cp)]
-    num_available_cp = num_cp
-
-    # Initiate a set of helper lists
-    unordered_waiting_list = []
-    is_charging = []
-    idle = [i for i in range(num_ev)]
-    charging_queue = deque()
-
-    for t in params.timestamps:
+    def print_debug(self, t):
+        # Print debug info
         print('----------------------------------')
         print(f'\nTIMESTAMP: {t}\n')
         print('----------------------------------')
 
-        update_ev_queue_status(t, ev_data, idle, unordered_waiting_list, charging_queue, merged_ev_at_home_status)
-        fill_charging_queue(t, ev_data, charging_queue, unordered_waiting_list)
-        assign_charging_points(t, cp_slot_objs, num_available_cp, charging_queue, unordered_waiting_list, is_charging)
-        update_ev_charging_state(t, ev_data, num_ev, num_cp, p_cp_rated_scaled, household_load, cp_slot_objs, num_available_cp, is_charging, charging_queue, unordered_waiting_list, idle)
+        print(f'charging queue: {self.charging_queue}')
+        print(f'is charging: {self.is_charging}')
+        print(f'idle: {self.idle}')
+        print(f'available cp: {self.num_available_cp}\n')
 
-        print_debug_info(t, unordered_waiting_list, charging_queue, is_charging, idle, num_available_cp, cp_slot_objs, ev_data, num_ev)
+        for cp in self.charging_points:
+            print(cp.__dict__)
 
+        print('\n')
 
+        def _print_stats(ev_id):
+            soc = self.ev_data[ev_id].soc.loc[t].values.item()
+            soc_max = self.ev_data[ev_id].soc_max
+
+            print(f'EV ID: {ev_id}')
+            print(f'at home status: {self.ev_data[ev_id].at_home_status.loc[t].values.item()}')
+            print(f'p ev: {self.ev_data[ev_id].charging_power.loc[t].values.item()}')
+            print(f'soc: {soc}')
+            print(f'soc max: {soc_max}')
+            print(f'soc percentage: {(soc / soc_max * 100):.2f}%')
+
+        for ev in range(self.num_ev):
+            if ev in self.is_charging:
+                print(f'{params.GREEN}', end='')
+                _print_stats(ev)
+                print(f'{params.RESET}', end='')
+            else:
+                _print_stats(ev)
+            print('\n', end='')
+
+        print('\n')
+
+    def quick_plot(self):
+        for ev in range(self.num_ev):
+            plt.plot(self.ev_data[ev].soc)
+            plt.show()
 
 
 

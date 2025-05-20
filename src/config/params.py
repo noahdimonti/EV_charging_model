@@ -77,10 +77,8 @@ num_cp_min = 1
 num_cp_max = num_of_evs - 1
 
 # CP charging settings for configuration 2 and 3
-max_charging_duration = 3
-idle_start_hour = 0
-# idle_start_minute = 59
-idle_end_hour = 6
+max_charging_duration = pd.Timedelta(hours=3)
+no_charging_range_time = pd.date_range('00:00', '05:59', freq='15min').time
 
 
 # --------------------------

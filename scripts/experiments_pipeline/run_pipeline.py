@@ -19,8 +19,8 @@ def main():
     # Objective weights
     obj_weights = {
         'economic': 0.5,
-        'technical': 0.5,
-        'social': 0
+        'technical': 0.3,
+        'social': 0.2
     }
 
     # Number of CP for uncoordinated strategy
@@ -28,9 +28,9 @@ def main():
 
     # Actions in pipeline
     version = 'test'
-    run_model = False
-    analyse = False
-    plot = False
+    run_model = True
+    analyse = True
+    plot = True
 
     # Mapping for mip_gap, time_limit, and verbose for each model
     solver_settings = {  # { model_name: [mip_gap (%), time_limit (minute), verbose] }
