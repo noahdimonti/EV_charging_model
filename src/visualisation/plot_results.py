@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from src.visualisation.plot_setups import setup, fig_size
+from src.visualisation.plot_setups import fig_size
 from src.config import params
-from src.utils.model_results import ModelResults
-from pprint import pprint
+from src.models.model_results import ModelResults
 
 
 def plot_p_ev(results: ModelResults, save_img=False):

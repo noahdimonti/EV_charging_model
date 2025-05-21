@@ -2,9 +2,7 @@ import pandas as pd
 import pickle
 import os
 from src.config import params
-from src.utils.model_results import compile_multiple_models_metrics
-from src.visualisation.plot_results import plot_p_ev, plot_agg_p_ev, plot_agg_total_demand, plot_ev_charging_schedule
-from pprint import pprint
+from src.models.model_results import compile_multiple_models_metrics
 
 
 def analyse_results(configurations: list, charging_strategies: list, version: str, num_ev: int):

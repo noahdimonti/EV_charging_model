@@ -6,31 +6,31 @@ from src.visualisation import plot_models_comparison
 
 def main():
     configurations = [
-        'config_1',
+        # 'config_1',
         # 'config_2',
-        # 'config_3',
+        'config_3',
     ]
     charging_strategies = [
-        'uncoordinated',
+        # 'uncoordinated',
         'opportunistic',
-        'flexible',
+        # 'flexible',
     ]
 
     # Objective weights
     obj_weights = {
-        'economic': 0.5,
-        'technical': 0.3,
-        'social': 0.2
+        'economic': 1,
+        'technical': 0,
+        'social': 0
     }
 
     # Number of CP for uncoordinated strategy
     num_cp = params.num_of_evs
 
     # Actions in pipeline
-    version = 'test'
+    version = 'test_conf3_bug'
     run_model = True
-    analyse = True
-    plot = True
+    analyse = False
+    plot = False
 
     # Mapping for mip_gap, time_limit, and verbose for each model
     solver_settings = {  # { model_name: [mip_gap (%), time_limit (minute), verbose] }
@@ -43,7 +43,7 @@ def main():
         'config_2_flexible': [0.9, 30, True],
 
         'config_3_uncoordinated': [],
-        'config_3_opportunistic': [0.9, 25, True],
+        'config_3_opportunistic': [10, 25, True],
         'config_3_flexible': [0.9, 30, True],
     }
 

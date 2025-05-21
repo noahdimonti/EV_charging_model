@@ -1,9 +1,8 @@
 from src.models.optimisation_models import build_model, solve_model
 from src.models.mapping import config_map, strategy_map
-from src.utils.model_results import ModelResults
+from src.models.model_results import ModelResults
 from src.config import independent_variables
 from src.models.simulations import run_simulation
-import pyomo.environ as pyo
 
 
 def execute_model(config: str,

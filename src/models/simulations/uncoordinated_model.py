@@ -58,8 +58,8 @@ def simulate_uncoordinated_model(p_cp_rated: float, config: str, num_cp: int):
         return config_3_simulator.run()
 
 
-data = simulate_uncoordinated_model(2.4, 'config_2', 2)
-print(data)
+# data = simulate_uncoordinated_model(2.4, 'config_2', 2)
+# print(data)
 
 
 def process_model_results(model: list, p_cp_rated: float):

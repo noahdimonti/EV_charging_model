@@ -1,12 +1,10 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
 import pickle
 from src.config import params
 from src.visualisation import plot_configs
-from src.utils.model_results import ModelResults
 
 fig_size = (12, 8)
 

@@ -58,7 +58,7 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 5
+num_of_evs = 10
 num_of_households = 10
 
 
@@ -75,6 +75,7 @@ max_charged_evs_daily_margin = 0
 # --------------------------
 num_cp_min = 1
 num_cp_max = num_of_evs - 1
+ev_distribution_imbalance_threshold = 2
 
 # CP charging settings for configuration 2 and 3
 max_charging_duration = pd.Timedelta(hours=3)

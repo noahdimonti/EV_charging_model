@@ -1,4 +1,5 @@
 import pyomo.environ as pyo
+import math
 from src.config import params, ev_params
 from src.models.configs import (
     CPConfig,
@@ -10,70 +11,10 @@ class Grid:
     def __init__(self, model):
         self.model = model
         self.initialise_variables()
-        # self.initialise_constraints()
 
     def initialise_variables(self):
         # Grid import power
         self.model.p_grid = pyo.Var(self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, params.P_grid_max))
-
-        # # Daily peak and average power
-        # self.model.p_daily_peak = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        # self.model.p_daily_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        # self.model.delta_daily_peak_avg = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
-        #
-        # # Weekly peak and average power
-        # self.model.p_weekly_peak = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-        # self.model.p_weekly_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-        # self.model.delta_weekly_peak_avg = pyo.Var(self.model.WEEK, within=pyo.NonNegativeReals)
-
-    # def _add_peak_constraints(self, peak_var, avg_var, delta_var, time_sets, index_set, name_prefix):
-    #     """ Generalised function to add peak constraints (daily/weekly). """
-    #
-    #     # Peak power constraint
-    #     constraint_list = pyo.ConstraintList()
-    #     setattr(self.model, f"{name_prefix}_peak_power_constraint", constraint_list)
-    #
-    #     for idx in index_set:
-    #         for t in time_sets[idx]:
-    #             constraint_list.add(peak_var[idx] >= self.model.p_grid[t])
-    #
-    #     # Average peak constraint
-    #     def peak_average_rule(model, idx):
-    #         return avg_var[idx] == (1 / len(time_sets[idx])) * sum(model.p_grid[t] for t in time_sets[idx])
-    #
-    #     setattr(self.model, f"{name_prefix}_peak_average_constraint",
-    #             pyo.Constraint(index_set, rule=peak_average_rule))
-    #
-    #     # Delta peak constraint
-    #     delta_constraint_list = pyo.ConstraintList()
-    #     setattr(self.model, f"{name_prefix}_delta_peak_avg_constraint", delta_constraint_list)
-    #
-    #     for idx in index_set:
-    #         delta_constraint_list.add(delta_var[idx] >= (peak_var[idx] - avg_var[idx]))
-    #         delta_constraint_list.add(delta_var[idx] >= (avg_var[idx] - peak_var[idx]))
-    #
-    # def initialise_constraints(self):
-    #     """ Initialise constraints by calling the generalised function for daily and weekly peaks. """
-    #
-    #     # Daily constraints
-    #     self._add_peak_constraints(
-    #         peak_var=self.model.p_daily_peak,
-    #         avg_var=self.model.p_daily_avg,
-    #         delta_var=self.model.delta_daily_peak_avg,
-    #         time_sets=params.T_d,
-    #         index_set=self.model.DAY,
-    #         name_prefix="daily"
-    #     )
-    #
-    #     # Weekly constraints
-    #     self._add_peak_constraints(
-    #         peak_var=self.model.p_weekly_peak,
-    #         avg_var=self.model.p_weekly_avg,
-    #         delta_var=self.model.delta_weekly_peak_avg,
-    #         time_sets=params.T_w,
-    #         index_set=self.model.WEEK,
-    #         name_prefix="weekly"
-    #     )
 
 
 class HouseholdLoad:
@@ -129,6 +70,9 @@ class ChargingPoint:
         self.model.p_cp_total = pyo.Var(
             within=pyo.NonNegativeReals
         )
+
+        self.model.max_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
+        self.model.min_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
 
     def _config3_variables(self):
         self.model.num_ev_sharing_cp = pyo.Var(self.model.CP_ID, within=pyo.NonNegativeIntegers)
@@ -226,11 +170,38 @@ class ChargingPoint:
         )
 
     def _num_ev_per_cp_limit_constraints(self):
-        def num_ev_per_cp_limit(model, j):
-            return model.num_ev_sharing_cp[j] <= params.num_of_evs
+        bigM = params.num_of_evs
 
-        self.model.num_ev_per_cp_limit_constraints = pyo.Constraint(
-            self.model.CP_ID, rule=num_ev_per_cp_limit
+        # Constraint: Each CP's EV count must be <= max_ev_per_cp
+        def num_ev_per_cp_upper_limit(model, j):
+            return model.num_ev_sharing_cp[j] <= model.max_ev_per_cp + (bigM * (1 - model.cp_is_installed[j]))
+
+        self.model.num_ev_per_cp_upper_limit_constraints = pyo.Constraint(
+            self.model.CP_ID, rule=num_ev_per_cp_upper_limit
+        )
+
+        # Constraint: Each CP's EV count must be >= min_ev_per_cp
+        def num_ev_per_cp_lower_limit(model, j):
+            return model.num_ev_sharing_cp[j] >= model.min_ev_per_cp - (bigM * (1 - model.cp_is_installed[j]))
+
+        self.model.num_ev_per_cp_lower_limit_constraints = pyo.Constraint(
+            self.model.CP_ID, rule=num_ev_per_cp_lower_limit
+        )
+
+        # No EVs can be assigned to a CP that isn't installed
+        def cp_ev_count_zero_if_not_installed(model, j):
+            return model.num_ev_sharing_cp[j] <= bigM * model.cp_is_installed[j]
+
+        self.model.zero_if_not_installed = pyo.Constraint(
+            self.model.CP_ID, rule=cp_ev_count_zero_if_not_installed
+        )
+
+        # Constraint: The difference between max and min must be at most a certain threshold
+        def even_distribution_rule(model):
+            return model.max_ev_per_cp - model.min_ev_per_cp <= params.ev_distribution_imbalance_threshold
+
+        self.model.even_distribution_constraint = pyo.Constraint(
+            rule=even_distribution_rule
         )
 
     def _evs_share_installed_cp_constraints(self):
@@ -366,7 +337,7 @@ class ElectricVehicle:
         self.model.final_soc_constraint = pyo.Constraint(self.model.EV_ID, rule=final_soc_rule)
 
     def _ev_assignment_and_mutual_exclusivity_constraints_config_2_3(self):
-        # Constraint: EVs can only be assigned to existing CPs
+        # Constraint: EVs can only be assigned to existing CPs and only one EV can charge at each CP
         def ev_assigned_to_existing_cp(model, j, t):
             return sum(model.ev_is_connected_to_cp_j[i, j, t] for i in model.EV_ID) <= model.cp_is_installed[j]
 
@@ -407,6 +378,7 @@ class ElectricVehicle:
 
     def __charging_power_limit_config_2_3(self, model):
         # Big M linearisation
+        bigM = params.p_cp_rated_max
         def charging_power_limit_config_2_3_upper_bound1(model, i, t):
             return model.p_ev[i, t] <= model.p_cp_rated
 
@@ -415,7 +387,7 @@ class ElectricVehicle:
         )
 
         def charging_power_limit_config_2_3_upper_bound2(model, i, t):
-            return model.p_ev[i, t] <= params.p_cp_rated_max * sum(
+            return model.p_ev[i, t] <= bigM * sum(
                 model.ev_is_connected_to_cp_j[i, j, t] for j in model.CP_ID
             )
 
