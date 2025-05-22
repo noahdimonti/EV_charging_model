@@ -75,7 +75,7 @@ max_charged_evs_daily_margin = 0
 # --------------------------
 num_cp_min = 1
 num_cp_max = num_of_evs - 1
-ev_distribution_imbalance_threshold = 2
+ev_distribution_imbalance_threshold = 1
 
 # CP charging settings for configuration 2 and 3
 max_charging_duration = pd.Timedelta(hours=3)
@@ -104,8 +104,8 @@ p_cp_rated_options = [1.3, 2.4, 3.7, 7.2]
 p_cp_rated_options_scaled = [
     i / charging_power_resolution_factor for i in p_cp_rated_options  # values: [0.325, 0.6, 0.925, 1.8]
 ]
-p_cp_rated_min = min(p_cp_rated_options_scaled)
-p_cp_rated_max = max(p_cp_rated_options_scaled)
+p_cp_rated_min = min(p_cp_rated_options_scaled)  # value: 0.325
+p_cp_rated_max = max(p_cp_rated_options_scaled)  # value: 1.8
 
 
 # --------------------------

@@ -4,13 +4,11 @@ from src.models.configs import (
     CPConfig,
     ChargingStrategy
 )
-from src.models.optimisation_models.assets import (
-    Grid,
-    HouseholdLoad,
-    CommonConnectionPoint,
-    ChargingPoint,
-    ElectricVehicle
-)
+from src.models.optimisation_models.assets.grid import Grid
+from src.models.optimisation_models.assets.household_load import HouseholdLoad
+from src.models.optimisation_models.assets.common_connection_point import CommonConnectionPoint
+from src.models.optimisation_models.assets.charging_point import ChargingPoint
+from src.models.optimisation_models.assets.electric_vehicle import ElectricVehicle
 from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
 
 
