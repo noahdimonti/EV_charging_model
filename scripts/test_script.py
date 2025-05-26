@@ -51,6 +51,8 @@ if run:
 # Model has 67200 quadratic constraints
 # Variable types: 74594 continuous, 60595 integer (60583 binary)
 
+# Variable types: 86456 continuous, 41014 integer (40999 binary)
+
 
 version = 'test_conf3_bug_maybe_worked_refactored'
 num_ev = params.num_of_evs
@@ -348,5 +350,5 @@ cbar.ax.set_yticklabels(['None'] + [str(i) for i in installed_cps])
 
 plt.title("EV–CP Assignments (First Day Only)")
 plt.tight_layout()
-plt.savefig('ev_cp one day.png')
-plt.show()
+# plt.savefig('ev_cp one day.png')
+# plt.show()
