@@ -27,7 +27,7 @@ def main():
     num_cp = params.num_of_evs
 
     # Actions in pipeline
-    version = 'test_conf3_bug'
+    version = 'test_conf3_bug_maybe_worked_refactored'
     run_model = True
     analyse = False
     plot = False
