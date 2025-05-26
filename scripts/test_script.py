@@ -20,9 +20,39 @@ test = True
 if run:
     run_pipeline.main()
 
+# before refactor
+# Model fingerprint: 0x58c222a1
+# Model has 4 quadratic objective terms
+# Model has 67872 quadratic constraints
+# Variable types: 74594 continuous, 60595 integer (60583 binary)
+
+# Presolved model has 1 bilinear constraint(s)
+#
+# Solving non-convex MIQCP
+#
+# Variable types: 86457 continuous, 41014 integer (40999 binary)
 
 
-version = 'test_conf3_bug_maybe_worked'
+# Installed CPs: [0, 5]
+# Num of EVs per CP
+# CP 0: 5 EVs
+# CP 5: 5 EVs
+# EV Assignment to CP
+# {0: [0, 1, 3, 5, 6], 5: [2, 4, 7, 8, 9]}
+# CP 0: EV [0, 1, 3, 5, 6]
+# CP 5: EV [2, 4, 7, 8, 9]
+
+
+
+# refactored
+# Model fingerprint: 0x4e87be29
+# Model has 4 quadratic objective terms
+# Model has 67200 quadratic constraints
+# Variable types: 74594 continuous, 60595 integer (60583 binary)
+
+
+
+version = 'test_conf3_bug'
 num_ev = params.num_of_evs
 file = f'config_3_opportunistic_{num_ev}EVs_7days_{version}.pkl'
 file_path = os.path.join(params.model_results_folder_path, file)
@@ -318,5 +348,5 @@ cbar.ax.set_yticklabels(['None'] + [str(i) for i in installed_cps])
 
 plt.title("EV–CP Assignments (First Day Only)")
 plt.tight_layout()
-plt.savefig('ev_cp one day.png')
-plt.show()
+# plt.savefig('ev_cp one day.png')
+# plt.show()

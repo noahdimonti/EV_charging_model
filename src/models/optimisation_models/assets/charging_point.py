@@ -38,11 +38,11 @@ class ChargingPoint:
             within=pyo.NonNegativeReals
         )
 
-    def _ev_cp_permanent_assignment_variables(self):
+    def _config3_variables(self):
         self.model.num_ev_per_cp = pyo.Var(self.model.CP_ID, within=pyo.NonNegativeIntegers)
-        self.model.is_ev_permanently_assigned_to_cp = pyo.Var(
-            self.model.EV_ID, self.model.CP_ID, within=pyo.Binary
-        )
+        # self.model.is_ev_permanently_assigned_to_cp = pyo.Var(
+        #     self.model.EV_ID, self.model.CP_ID, within=pyo.Binary
+        # )
 
         self.model.max_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
         self.model.min_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
@@ -55,7 +55,7 @@ class ChargingPoint:
 
         elif self.config == CPConfig.CONFIG_3:
             self._num_cp_decision_variables()
-            self._ev_cp_permanent_assignment_variables()
+            self._config3_variables()
 
     # --------------------------
     # CONSTRAINTS
@@ -77,7 +77,6 @@ class ChargingPoint:
             rule=mutual_exclusivity_rated_power_selection
         )
 
-    # CONFIG 2 AND 3 Constraint
     def _num_cp_decision_constraints(self):
         # Constraint: decision for the number of CPs installed
         def cp_count(model):
@@ -85,79 +84,48 @@ class ChargingPoint:
 
         self.model.cp_count_constraint = pyo.Constraint(rule=cp_count)
 
-    # CONFIG 2 AND 3 Constraint
-    def _total_charging_demand(self):
-        # Constraint: ensuring total EV charging demand can be met by the number of installed CPs
-        def p_cp_total(model, t):
-            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.num_cp * model.p_cp_rated
+        def ev_to_cp_mutual_exclusivity(model, i, t):
+            return sum(model.is_ev_cp_connected[i, j, t] for j in model.CP_ID) <= 1
 
-        self.model.p_cp_total_constraint = pyo.Constraint(
-            self.model.TIME, rule=p_cp_total
-        )
-        '''
-        # McCormick relaxation
-        def p_cp_total(model, t):
-            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.p_cp_total
-
-        self.model.p_cp_total_constraint = pyo.Constraint(
-            self.model.TIME, rule=p_cp_total
+        self.model.ev_to_cp_mutual_exclusivity_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.TIME, rule=ev_to_cp_mutual_exclusivity
         )
 
-        # The constraint is non-linear, and is linearised below using McCormick relaxation
-        def p_cp_total_lb(model):
-            return model.p_cp_total >= (params.num_cp_min * model.p_cp_rated) + (
-                    params.p_cp_rated_min * model.num_cp) - (
-                    params.p_cp_rated_min * params.num_cp_min)
+        def cp_to_ev_mutual_exclusivity(model, j, t):
+            return sum(model.is_ev_cp_connected[i, j, t] for i in model.EV_ID) <= 1
 
-        self.model.p_cp_total_lb_constraint = pyo.Constraint(rule=p_cp_total_lb)
-
-        def p_cp_total_ub1(model):
-            return model.p_cp_total <= params.num_cp_max * model.p_cp_rated
-
-        self.model.p_cp_total_ub1_constraint = pyo.Constraint(rule=p_cp_total_ub1)
-
-        def p_cp_total_ub2(model):
-            return model.p_cp_total <= params.p_cp_rated_max * model.num_cp
-
-        self.model.p_cp_total_ub2_constraint = pyo.Constraint(rule=p_cp_total_ub2)
-        '''
-
-    # CONFIG 3 Constraint
-    def _ev_cp_permanent_assignment_constraints(self):
-        # Constraint: number of EVs sharing one CP
-        def num_ev_sharing_cp(model, j):
-            return sum(model.is_ev_permanently_assigned_to_cp[i, j] for i in model.EV_ID) <= model.num_ev_per_cp[j]
-
-        self.model.num_ev_sharing_cp_constraint = pyo.Constraint(
-            self.model.CP_ID, rule=num_ev_sharing_cp
+        self.model.cp_to_ev_mutual_exclusivity_constraint = pyo.Constraint(
+            self.model.CP_ID, self.model.TIME, rule=cp_to_ev_mutual_exclusivity
         )
 
-        # Constraint: each EV can only be assigned to one CP
-        def ev_to_cp_mutual_excl_permanent_assignment(model, i):
-            return sum(model.is_ev_permanently_assigned_to_cp[i, j] for j in model.CP_ID) == 1
+    # Moved to ElectricVehicle class
+    # def _ev_cp_permanent_assignment_constraints(self):
+    #     # Constraint: number of EVs sharing one CP
+    #     def num_ev_sharing_cp(model, j):
+    #         return sum(model.is_ev_permanently_assigned_to_cp[i, j] for i in model.EV_ID) <= model.num_ev_per_cp[j]
+    #
+    #     self.model.num_ev_sharing_cp_constraint = pyo.Constraint(
+    #         self.model.CP_ID, rule=num_ev_sharing_cp
+    #     )
+    #
+    #     # Constraint: each EV can only be assigned to one CP
+    #     def ev_to_cp_mutual_excl_permanent_assignment(model, i):
+    #         return sum(model.is_ev_permanently_assigned_to_cp[i, j] for j in model.CP_ID) == 1
+    #
+    #     self.model.ev_to_cp_mutual_excl_permanent_assignment_constraint = pyo.Constraint(
+    #         self.model.EV_ID, rule=ev_to_cp_mutual_excl_permanent_assignment
+    #     )
 
-        self.model.ev_to_cp_mutual_excl_permanent_assignment_constraint = pyo.Constraint(
-            self.model.EV_ID, rule=ev_to_cp_mutual_excl_permanent_assignment
-        )
+        # # Constraint: EVs can only be connected to its assigned CP
+        # def ev_cp_connection(model, i, j, t):
+        #     return (model.is_ev_cp_connected[i, j, t] <=
+        #             model.is_ev_permanently_assigned_to_cp[i, j] * model.ev_at_home_status[i, t])
+        #
+        # self.ev_cp_connection_constraint = pyo.Constraint(
+        #     self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=ev_cp_connection
+        # )
 
-    # CONFIG 3 Constraint
-    def _evs_share_installed_cp_constraints(self):
-        # Big M linearisation
-        bigM = params.num_of_evs
-
-        def evs_share_installed_cp_upper_bound(model, j):
-            return model.num_ev_per_cp[j] <= bigM * model.is_cp_installed[j]
-
-        self.model.evs_share_installed_cp_upper_bound_constraint = pyo.Constraint(
-            self.model.CP_ID, rule=evs_share_installed_cp_upper_bound
-        )
-
-        def total_num_ev_share(model):
-            return sum(model.num_ev_per_cp[j] for j in model.CP_ID) == bigM
-
-        self.model.total_num_ev_share_constraint = pyo.Constraint(rule=total_num_ev_share)
-
-    def _even_distribution_ev_per_cp(self):
+    def _num_ev_per_cp_limit_constraints(self):
         bigM = params.num_of_evs
 
         # Constraint: Each CP's EV count must be <= max_ev_per_cp
@@ -192,6 +160,20 @@ class ChargingPoint:
             rule=even_distribution_rule
         )
 
+    def _evs_share_installed_cp_constraints(self):
+        # Big M linearisation
+        def evs_share_installed_cp_upper_bound(model, j):
+            return model.num_ev_per_cp[j] <= params.num_of_evs * model.is_cp_installed[j]
+
+        self.model.evs_share_installed_cp_upper_bound_constraint = pyo.Constraint(
+            self.model.CP_ID, rule=evs_share_installed_cp_upper_bound
+        )
+
+        def total_num_ev_share(model):
+            return sum(model.num_ev_per_cp[j] for j in model.CP_ID) == params.num_of_evs
+
+        self.model.total_num_ev_share_constraint = pyo.Constraint(rule=total_num_ev_share)
+
     def initialise_constraints(self):
         self._cp_rated_power_selection_constraints()
 
@@ -200,7 +182,6 @@ class ChargingPoint:
 
         elif self.config == CPConfig.CONFIG_3:
             self._num_cp_decision_constraints()
-            self._ev_cp_permanent_assignment_constraints()
+            # self._ev_cp_permanent_assignment_constraints()
+            self._num_ev_per_cp_limit_constraints()
             self._evs_share_installed_cp_constraints()
-            self._even_distribution_ev_per_cp()
-
