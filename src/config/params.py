@@ -42,6 +42,7 @@ periods_in_a_day = int((60 / time_resolution) * 24)
 timestamps = pd.date_range(start=start_date_time,
                            periods=periods_in_a_day * num_of_days,
                            freq=f'{time_resolution}min')
+
 # Define subset of set T for day d
 T_d = timestamps.groupby(timestamps.date)
 

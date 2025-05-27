@@ -37,7 +37,6 @@ class UncoordinatedModelConfig3:
                 self._initialise_soc(t)
 
             else:
-                print(f'before: idle {self.idle}, queue: {self.charging_queue}')
                 for cp in self.cp_ids:
                     self._update_charging_queue(cp, t)
                     self._sort_charging_queue(cp, t)
@@ -45,9 +44,11 @@ class UncoordinatedModelConfig3:
                     self._handle_ev_disconnections(cp, t)
                     self._update_soc_and_power(cp, t)
 
-                print(f'after: idle {self.idle}, queue: {self.charging_queue}')
-
             self.print_debug(t)
+
+        # self.quick_plot()
+
+        return self.ev_data
 
 
 
@@ -123,6 +124,9 @@ class UncoordinatedModelConfig3:
             # Get next departure time
             next_t_dep = self._next_departure(ev, (t - self.delta_t))
 
+            if next_t_dep == params.timestamps[-1]:
+                next_t_dep = None
+
             # Define previous soc and soc_max
             prev_soc, soc_max = self._get_soc_and_max(ev, t)
 
@@ -145,6 +149,7 @@ class UncoordinatedModelConfig3:
     def _update_soc_and_power(self, cp_id, t):
         # Calculate maximum charging power per CP
         available_power_at_cp = (params.P_grid_max - self.household_load.loc[t].values.item()) / self.num_cp
+
         # Calculate p_ev and soc_ev for each EV
         for ev in self.ev_to_cp_assignment[cp_id]:
             # Define previous soc and soc_max
@@ -231,6 +236,11 @@ class UncoordinatedModelConfig3:
             print('\n', end='')
 
         print('\n')
+
+    def quick_plot(self):
+        for ev in range(self.num_ev):
+            plt.plot(self.ev_data[ev].soc)
+            plt.show()
 
 
 

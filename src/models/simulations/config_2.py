@@ -131,6 +131,9 @@ class UncoordinatedModelConfig2:
             # Get next departure time
             next_t_dep = self._next_departure(ev, (t - self.delta_t))
 
+            if next_t_dep == params.timestamps[-1]:
+                next_t_dep = None
+
             # Define previous soc and soc_max
             prev_soc, soc_max = self._get_soc_and_max(ev, t)
 
