@@ -89,7 +89,7 @@ class ChargingPoint:
     def _total_charging_demand(self):
         # Constraint: ensuring total EV charging demand can be met by the number of installed CPs
         def p_cp_total(model, t):
-            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.num_cp * model.p_cp_rated
+            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.num_cp * model.p_cp_rated  # THIS IS THE BILINEAR CONSTRAINT!!!!
 
         self.model.p_cp_total_constraint = pyo.Constraint(
             self.model.TIME, rule=p_cp_total
@@ -200,6 +200,7 @@ class ChargingPoint:
 
         elif self.config == CPConfig.CONFIG_3:
             self._num_cp_decision_constraints()
+            self._total_charging_demand()
             self._ev_cp_permanent_assignment_constraints()
             self._evs_share_installed_cp_constraints()
             self._even_distribution_ev_per_cp()

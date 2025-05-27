@@ -43,7 +43,7 @@ def main():
         'config_2_flexible': [0.9, 30, True],
 
         'config_3_uncoordinated': [],
-        'config_3_opportunistic': [10, 25, True],
+        'config_3_opportunistic': [0.9, 25, True],
         'config_3_flexible': [0.9, 30, True],
     }
 
