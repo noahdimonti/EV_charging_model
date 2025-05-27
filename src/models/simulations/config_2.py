@@ -30,6 +30,7 @@ class UncoordinatedModelConfig2:
         self.household_load = household_load
         self.p_cp_rated_scaled = p_cp_rated_scaled
         self.num_cp = num_cp
+
         self.num_ev = params.num_of_evs
         self.charging_points = [ChargingPointSlot(i) for i in range(num_cp)]
         self.num_available_cp = num_cp
@@ -145,8 +146,8 @@ class UncoordinatedModelConfig2:
                 if self.charging_queue:
                     next_ev_in_queue = self.charging_queue.popleft()
                     cp.connect_ev(next_ev_in_queue, t)
-                    self.ev_to_cp[next_ev_in_queue] = cp.cp_id
                     self.is_charging.append(next_ev_in_queue)
+                    self.ev_to_cp[next_ev_in_queue] = cp.cp_id
 
                 else:
                     self.num_available_cp += 1
