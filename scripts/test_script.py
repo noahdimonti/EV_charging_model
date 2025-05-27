@@ -21,40 +21,9 @@ if run:
     run_pipeline.main()
 
 
-# before refactor
-# Model fingerprint: 0x58c222a1
-# Model has 4 quadratic objective terms
-# Model has 67872 quadratic constraints
-# Variable types: 74594 continuous, 60595 integer (60583 binary)
-
-# Presolved model has 1 bilinear constraint(s)
-#
-# Solving non-convex MIQCP
-#
-# Variable types: 86457 continuous, 41014 integer (40999 binary)
 
 
-# Installed CPs: [0, 5]
-# Num of EVs per CP
-# CP 0: 5 EVs
-# CP 5: 5 EVs
-# EV Assignment to CP
-# {0: [0, 1, 3, 5, 6], 5: [2, 4, 7, 8, 9]}
-# CP 0: EV [0, 1, 3, 5, 6]
-# CP 5: EV [2, 4, 7, 8, 9]
-
-
-
-# refactored
-# Model fingerprint: 0x4e87be29
-# Model has 4 quadratic objective terms
-# Model has 67200 quadratic constraints
-# Variable types: 74594 continuous, 60595 integer (60583 binary)
-
-# Variable types: 86456 continuous, 41014 integer (40999 binary)
-
-
-version = 'test_conf3_bug_maybe_worked_refactored'
+version = 'test_conf3_bug_solved'
 num_ev = params.num_of_evs
 file = f'config_3_opportunistic_{num_ev}EVs_7days_{version}.pkl'
 file_path = os.path.join(params.model_results_folder_path, file)
@@ -169,8 +138,10 @@ if test:
 
     evs_connected = [i for i in data.sets['EV_ID'] if pyo.value(ev_is_connected_to_cp_j[i, j, t]) > 0.5]
 
-
-
+    for (i, j, t), connected in ev_is_connected_to_cp_j.items():
+        if connected > 0.5:
+            if ev_is_permanently_assigned_to_cp.get((i, j), 0.0) < 0.5:
+                print(f"❌ EV {i} connected to CP {j} at time {t}, but it is not assigned to that CP!")
 
 
 def print_log(cp_id, timestamp):
@@ -228,78 +199,78 @@ for i in range(num_evs):
             print(f"⚠️ EV {i} is charging from multiple CPs at time {timestamps[t]}: {cp_charging}")
 
 
-# import matplotlib.colors as mcolors
-#
-# # Use only installed CPs
-# installed_cps = sorted({cp for (_, cp, _) in p_ev_cp if data.variables['is_cp_installed'][cp] == 1})
-# cp_index_map = {cp: i for i, cp in enumerate(installed_cps)}
-# num_cps_installed = len(installed_cps)
-#
-# # Build the assignment array (EVs x Time)
-# assigned_cp = np.full((num_evs, len(timestamps)), -1)  # -1 = not connected
-#
-# # Create a mapping from timestamp -> index
-# timestamp_to_index = {ts: i for i, ts in enumerate(timestamps)}
-#
-# for (ev, cp, t), p in p_ev_cp.items():
-#     if isinstance(t, pd.Timestamp):
-#         t_index = timestamp_to_index[t]
-#     else:
-#         t_index = t  # assume it's already an int if not a timestamp
-#
-#     if data.variables['is_cp_installed'][cp] == 1 and p > 0:
-#         assigned_cp[int(ev), t_index] = cp_index_map[cp]
-#
-#
-# # Create a colormap that handles -1 as background
-# cmap = plt.cm.get_cmap('tab20', num_cps_installed)
-# colors = cmap(np.arange(num_cps_installed))
-# colors = np.vstack(([0.9, 0.9, 0.9, 1.0], colors))  # Add gray for -1
-# new_cmap = mcolors.ListedColormap(colors)
-# bounds = np.arange(-1.5, num_cps_installed + 0.5, 1)
-# norm = mcolors.BoundaryNorm(bounds, new_cmap.N)
-#
-# # Plotting
-# plt.figure(figsize=(15, 6))
-# im = plt.imshow(
-#     assigned_cp,
-#     aspect='auto',
-#     cmap=new_cmap,
-#     norm=norm,
-#     interpolation='nearest'
-# )
-# cbar = plt.colorbar(im, ticks=np.arange(0, num_cps_installed))
-# cbar.set_label('CP index (installed only)')
-# cbar.set_ticklabels([f'CP {cp}' for cp in installed_cps])
-#
-# # X-axis: every 6 hours
-# six_hour_indices = [i for i, ts in enumerate(timestamps) if ts.hour % 6 == 0 and ts.minute == 0]
-# plt.xticks(
-#     ticks=six_hour_indices,
-#     labels=[timestamps[i].strftime('%Y-%m-%d %H:%M') for i in six_hour_indices],
-#     rotation=45
-# )
-#
-# # Y-axis: one tick per EV
-# plt.yticks(
-#     ticks=np.arange(num_evs),
-#     labels=[f'EV {i}' for i in range(num_evs)]
-# )
-#
-# # Add grid lines
-# for y in range(num_evs):
-#     plt.axhline(y - 0.5, color='lightgray', linewidth=0.5)
-# for x in six_hour_indices:
-#     plt.axvline(x - 0.5, color='lightgray', linewidth=0.5)
-#
-# plt.xlabel("Time")
-# plt.ylabel("EV index")
-# plt.title("EV–CP assignment over time (installed CPs only)")
-# plt.tight_layout()
-#
-#
-# plt.savefig('ev_cp.png')
-# plt.show()
+import matplotlib.colors as mcolors
+
+# Use only installed CPs
+installed_cps = sorted({cp for (_, cp, _) in p_ev_cp if data.variables['is_cp_installed'][cp] == 1})
+cp_index_map = {cp: i for i, cp in enumerate(installed_cps)}
+num_cps_installed = len(installed_cps)
+
+# Build the assignment array (EVs x Time)
+assigned_cp = np.full((num_evs, len(timestamps)), -1)  # -1 = not connected
+
+# Create a mapping from timestamp -> index
+timestamp_to_index = {ts: i for i, ts in enumerate(timestamps)}
+
+for (ev, cp, t), p in p_ev_cp.items():
+    if isinstance(t, pd.Timestamp):
+        t_index = timestamp_to_index[t]
+    else:
+        t_index = t  # assume it's already an int if not a timestamp
+
+    if data.variables['is_cp_installed'][cp] == 1 and p > 0:
+        assigned_cp[int(ev), t_index] = cp_index_map[cp]
+
+
+# Create a colormap that handles -1 as background
+cmap = plt.cm.get_cmap('tab20', num_cps_installed)
+colors = cmap(np.arange(num_cps_installed))
+colors = np.vstack(([0.9, 0.9, 0.9, 1.0], colors))  # Add gray for -1
+new_cmap = mcolors.ListedColormap(colors)
+bounds = np.arange(-1.5, num_cps_installed + 0.5, 1)
+norm = mcolors.BoundaryNorm(bounds, new_cmap.N)
+
+# Plotting
+plt.figure(figsize=(15, 6))
+im = plt.imshow(
+    assigned_cp,
+    aspect='auto',
+    cmap=new_cmap,
+    norm=norm,
+    interpolation='nearest'
+)
+cbar = plt.colorbar(im, ticks=np.arange(0, num_cps_installed))
+cbar.set_label('CP index (installed only)')
+cbar.set_ticklabels([f'CP {cp}' for cp in installed_cps])
+
+# X-axis: every 6 hours
+six_hour_indices = [i for i, ts in enumerate(timestamps) if ts.hour % 6 == 0 and ts.minute == 0]
+plt.xticks(
+    ticks=six_hour_indices,
+    labels=[timestamps[i].strftime('%Y-%m-%d %H:%M') for i in six_hour_indices],
+    rotation=45
+)
+
+# Y-axis: one tick per EV
+plt.yticks(
+    ticks=np.arange(num_evs),
+    labels=[f'EV {i}' for i in range(num_evs)]
+)
+
+# Add grid lines
+for y in range(num_evs):
+    plt.axhline(y - 0.5, color='lightgray', linewidth=0.5)
+for x in six_hour_indices:
+    plt.axvline(x - 0.5, color='lightgray', linewidth=0.5)
+
+plt.xlabel("Time")
+plt.ylabel("EV index")
+plt.title("EV–CP assignment over time (installed CPs only)")
+plt.tight_layout()
+
+
+plt.savefig('ev_cp.png')
+plt.show()
 
 
 # First timestamp's date
@@ -350,5 +321,5 @@ cbar.ax.set_yticklabels(['None'] + [str(i) for i in installed_cps])
 
 plt.title("EV–CP Assignments (First Day Only)")
 plt.tight_layout()
-# plt.savefig('ev_cp one day.png')
-# plt.show()
+plt.savefig('ev_cp one day.png')
+plt.show()

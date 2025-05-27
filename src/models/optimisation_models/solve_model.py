@@ -1,4 +1,5 @@
 import time
+import os
 import pyomo.environ as pyo
 from src.config import params
 
@@ -22,9 +23,13 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
         decimal_mip_gap = mip_gap / 100
         solver.options['MIPGap'] = decimal_mip_gap
 
+    # Solver logs filepath
+    file_name = f'solver_output_{model.name}.log'
+    file_path = os.path.join(params.model_results_folder_path, 'solver_logs', file_name)
+
     # Solve the model_data
     start_time = time.time()
-    results = solver.solve(model, tee=verbose)
+    results = solver.solve(model, tee=verbose, logfile=file_path)
     end_time = time.time()
 
     # Solving time

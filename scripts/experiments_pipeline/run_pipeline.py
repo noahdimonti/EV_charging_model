@@ -18,16 +18,16 @@ def main():
 
     # Objective weights
     obj_weights = {
-        'economic': 1,
-        'technical': 0,
-        'social': 0
+        'economic': 0.3,
+        'technical': 0.4,
+        'social': 0.4
     }
 
     # Number of CP for uncoordinated strategy
     num_cp = params.num_of_evs
 
     # Actions in pipeline
-    version = 'test_conf3_bug_maybe_worked_refactored'
+    version = 'test_conf3_bug_solved'
     run_model = True
     analyse = False
     plot = False
