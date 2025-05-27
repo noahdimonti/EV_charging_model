@@ -38,6 +38,7 @@ def execute_model(config: str,
         # Solve model
         solved_model, calc_mip_gap = solve_model.solve_optimisation_model(
             opt_model,
+            version,
             verbose=verbose,
             time_limit=time_limit,
             mip_gap=mip_gap

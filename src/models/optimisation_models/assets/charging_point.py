@@ -159,18 +159,15 @@ class ChargingPoint:
 
     # CONFIG 3 Constraint
     def _evs_share_installed_cp_constraints(self):
-        # Big M linearisation
-        bigM = params.num_of_evs
-
         def evs_share_installed_cp_upper_bound(model, j):
-            return model.num_ev_per_cp[j] <= bigM * model.is_cp_installed[j]
+            return model.num_ev_per_cp[j] <= params.num_of_evs * model.is_cp_installed[j]
 
         self.model.evs_share_installed_cp_upper_bound_constraint = pyo.Constraint(
             self.model.CP_ID, rule=evs_share_installed_cp_upper_bound
         )
 
         def total_num_ev_share(model):
-            return sum(model.num_ev_per_cp[j] for j in model.CP_ID) == bigM
+            return sum(model.num_ev_per_cp[j] for j in model.CP_ID) == params.num_of_evs
 
         self.model.total_num_ev_share_constraint = pyo.Constraint(rule=total_num_ev_share)
 
