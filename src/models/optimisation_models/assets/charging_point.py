@@ -20,6 +20,32 @@ class ChargingPoint:
         if self.config == CPConfig.CONFIG_1:
             self.model.num_cp = pyo.Param(initialize=len(self.model.EV_ID))
 
+    def initialise_variables(self):
+        # Variables for selecting CP rated power (for all configs)
+        self._cp_rated_power_selection_variables()
+
+        if self.config == CPConfig.CONFIG_2:
+            self._num_cp_decision_variables()
+
+        elif self.config == CPConfig.CONFIG_3:
+            self._num_cp_decision_variables()
+            self._ev_cp_permanent_assignment_variables()
+
+    def initialise_constraints(self):
+        # Constraints for selecting CP rated power (for all configs)
+        self._cp_rated_power_selection_constraints()
+
+        if self.config == CPConfig.CONFIG_2:
+            self._num_cp_decision_constraints()
+            self._total_charging_demand()
+
+        elif self.config == CPConfig.CONFIG_3:
+            self._num_cp_decision_constraints()
+            self._total_charging_demand()
+            self._ev_cp_permanent_assignment_constraints()
+            self._evs_share_installed_cp_constraints()
+            self._even_distribution_ev_per_cp()
+
     # --------------------------
     # VARIABLES
     # --------------------------
@@ -46,16 +72,6 @@ class ChargingPoint:
 
         self.model.max_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
         self.model.min_ev_per_cp = pyo.Var(within=pyo.NonNegativeIntegers)
-
-    def initialise_variables(self):
-        self._cp_rated_power_selection_variables()
-
-        if self.config == CPConfig.CONFIG_2:
-            self._num_cp_decision_variables()
-
-        elif self.config == CPConfig.CONFIG_3:
-            self._num_cp_decision_variables()
-            self._ev_cp_permanent_assignment_variables()
 
     # --------------------------
     # CONSTRAINTS
@@ -191,18 +207,3 @@ class ChargingPoint:
         self.model.even_distribution_constraint = pyo.Constraint(
             rule=even_distribution_rule
         )
-
-    def initialise_constraints(self):
-        self._cp_rated_power_selection_constraints()
-
-        if self.config == CPConfig.CONFIG_2:
-            self._num_cp_decision_constraints()
-            self._total_charging_demand()
-
-        elif self.config == CPConfig.CONFIG_3:
-            self._num_cp_decision_constraints()
-            self._total_charging_demand()
-            self._ev_cp_permanent_assignment_constraints()
-            self._evs_share_installed_cp_constraints()
-            self._even_distribution_ev_per_cp()
-

@@ -24,7 +24,7 @@ def solve_optimisation_model(model, solver='gurobi', verbose=False, time_limit=N
         solver.options['MIPGap'] = decimal_mip_gap
 
     # Solver logs filepath
-    file_name = f'solver_output_{model.name}.log'
+    file_name = f'solver_log_{model.name}.log'
     file_path = os.path.join(params.model_results_folder_path, 'solver_logs', file_name)
 
     # Solve the model_data

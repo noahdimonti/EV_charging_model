@@ -23,6 +23,51 @@ class ElectricVehicle:
                                                  ev_params.at_home_status_dict[i].loc[t, f'EV_ID{i}'],
                                                  within=pyo.Binary)
 
+    def initialise_variables(self):
+        self.model.p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, None))
+        self.model.soc_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals,
+                                    bounds=lambda model, i, t: (0, model.soc_max[i]))
+
+        if self.charging_strategy == ChargingStrategy.FLEXIBLE:
+            self._scheduling_variables()
+
+        if self.config == CPConfig.CONFIG_2:
+            self._ev_connection_variables()
+
+        elif self.config == CPConfig.CONFIG_3:
+            self._ev_connection_variables()
+            self._ev_cp_permanent_allocation_variables()
+
+    def initialise_constraints(self):
+        # SOC constraints (for all configs)
+        self._soc_constraints()
+
+        # Scheduling constraints for flexible charging strategy
+        if self.charging_strategy == ChargingStrategy.FLEXIBLE:
+            self._scheduling_constraints()
+
+        # Constraints specific to each configuration
+        if self.config == CPConfig.CONFIG_1:
+            if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC:
+                self._charging_power_limit_config1_opp(self.model)
+            elif self.charging_strategy == ChargingStrategy.FLEXIBLE:
+                self._charging_power_limit_config1_flex(self.model)
+
+        elif self.config == CPConfig.CONFIG_2:
+            self._ev_connection_to_installed_cps()
+            self._ev_connection_when_at_home()
+            self._charging_power_limit()
+            self._ev_cp_connection_mutual_exclusivity_constraints()
+
+        elif self.config == CPConfig.CONFIG_3:
+            self._ev_connection_to_installed_cps()
+            self._ev_connection_to_allocated_cps_when_at_home()
+            self._charging_power_limit()
+            self._ev_cp_connection_mutual_exclusivity_constraints()
+
+            # New constraints
+            self._ev_cp_power_link()
+
     # --------------------------
     # VARIABLES
     # --------------------------
@@ -35,10 +80,6 @@ class ElectricVehicle:
         self.model.p_ev_cp = pyo.Var(
             self.model.EV_ID, self.model.CP_ID, self.model.TIME, within=pyo.NonNegativeReals
         )
-
-        # self.model.is_ev_permanently_assigned_to_cp = pyo.Var(
-        #     self.model.EV_ID, self.model.CP_ID, within=pyo.Binary
-        # )
 
     def _scheduling_variables(self):
         self.model.num_charging_days = pyo.Var(
@@ -54,20 +95,6 @@ class ElectricVehicle:
             self.model.is_ev_charging = pyo.Var(
                 self.model.EV_ID, self.model.TIME, within=pyo.Binary
             )
-
-    def initialise_variables(self):
-        self.model.p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, bounds=(0, None))
-        self.model.soc_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals,
-                                    bounds=lambda model, i, t: (0, model.soc_max[i]))
-
-        if self.charging_strategy == ChargingStrategy.FLEXIBLE:
-            self._scheduling_variables()
-
-        if self.config == CPConfig.CONFIG_2:
-            self._ev_connection_variables()
-        elif self.config == CPConfig.CONFIG_3:
-            self._ev_connection_variables()
-            self._ev_cp_permanent_allocation_variables()
 
     # --------------------------
     # CONSTRAINTS
@@ -290,33 +317,4 @@ class ElectricVehicle:
             self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_power_limit_rule
         )
 
-    def initialise_constraints(self):
-        # SOC constraints
-        self._soc_constraints()
-
-        # Scheduling constraints
-        if self.charging_strategy == ChargingStrategy.FLEXIBLE:
-            self._scheduling_constraints()
-
-        # Charging power limit constraints
-        if self.config == CPConfig.CONFIG_1:
-            if self.charging_strategy == ChargingStrategy.OPPORTUNISTIC:
-                self._charging_power_limit_config1_opp(self.model)
-            elif self.charging_strategy == ChargingStrategy.FLEXIBLE:
-                self._charging_power_limit_config1_flex(self.model)
-
-        elif self.config == CPConfig.CONFIG_2:
-            self._ev_connection_to_installed_cps()
-            self._ev_connection_when_at_home()
-            self._charging_power_limit()
-            self._ev_cp_connection_mutual_exclusivity_constraints()
-
-        elif self.config == CPConfig.CONFIG_3:
-            self._ev_connection_to_installed_cps()
-            self._ev_connection_to_allocated_cps_when_at_home()
-            self._charging_power_limit()
-            self._ev_cp_connection_mutual_exclusivity_constraints()
-
-            # New constraints
-            self._ev_cp_power_link()
 
