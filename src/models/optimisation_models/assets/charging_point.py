@@ -197,6 +197,7 @@ class ChargingPoint:
 
         if self.config == CPConfig.CONFIG_2:
             self._num_cp_decision_constraints()
+            self._total_charging_demand()
 
         elif self.config == CPConfig.CONFIG_3:
             self._num_cp_decision_constraints()

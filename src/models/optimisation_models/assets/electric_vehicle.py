@@ -309,6 +309,7 @@ class ElectricVehicle:
             self._ev_connection_to_installed_cps()
             self._ev_connection_when_at_home()
             self._charging_power_limit()
+            self._ev_cp_connection_mutual_exclusivity_constraints()
 
         elif self.config == CPConfig.CONFIG_3:
             self._ev_connection_to_installed_cps()
