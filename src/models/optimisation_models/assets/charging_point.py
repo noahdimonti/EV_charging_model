@@ -110,6 +110,7 @@ class ChargingPoint:
         self.model.p_cp_total_constraint = pyo.Constraint(
             self.model.TIME, rule=p_cp_total
         )
+
         '''
         # McCormick relaxation
         def p_cp_total(model, t):

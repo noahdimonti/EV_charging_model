@@ -65,7 +65,6 @@ class ElectricVehicle:
             self._charging_power_limit()
             self._ev_cp_connection_mutual_exclusivity_constraints()
 
-            # New constraints
             self._ev_cp_power_link()
 
     # --------------------------
@@ -254,32 +253,31 @@ class ElectricVehicle:
 
     # CONFIG 2 AND 3 Constraint: upper bound of EV charging power, depending on whether EV is connected to CP
     def _charging_power_limit(self):
-        def charging_power_limit_rule(model, i, t):
+        def charging_power_limit_rule(model, i, t):  # this constraint is supposed to be bilinear?
             return model.p_ev[i, t] <= sum(model.is_ev_cp_connected[i, j, t] for j in model.CP_ID) * model.p_cp_rated
 
         self.model.charging_power_limit_constraint = pyo.Constraint(
             self.model.EV_ID, self.model.TIME, rule=charging_power_limit_rule
         )
 
-    def _charging_power_limit_config_2_3(self, model):
         '''
-        # Big M linearisation
-        bigM = params.p_cp_rated_max
-        def charging_power_limit_config_2_3_upper_bound1(model, i, t):
-            return model.p_ev[i, t] <= model.p_cp_rated
+            # Big M linearisation
+            bigM = params.p_cp_rated_max
+            def charging_power_limit_config_2_3_upper_bound1(model, i, t):
+                return model.p_ev[i, t] <= model.p_cp_rated
 
-        model.charging_power_limit_config_2_3_upper_bound1_constraint = pyo.Constraint(
-            model.EV_ID, model.TIME, rule=charging_power_limit_config_2_3_upper_bound1
-        )
-
-        def charging_power_limit_config_2_3_upper_bound2(model, i, t):
-            return model.p_ev[i, t] <= bigM * sum(
-                model.is_ev_cp_connected[i, j, t] for j in model.CP_ID
+            model.charging_power_limit_config_2_3_upper_bound1_constraint = pyo.Constraint(
+                model.EV_ID, model.TIME, rule=charging_power_limit_config_2_3_upper_bound1
             )
 
-        model.charging_power_limit_config_2_3_upper_bound2_constraint = pyo.Constraint(
-            model.EV_ID, model.TIME, rule=charging_power_limit_config_2_3_upper_bound2
-        )
+            def charging_power_limit_config_2_3_upper_bound2(model, i, t):
+                return model.p_ev[i, t] <= bigM * sum(
+                    model.is_ev_cp_connected[i, j, t] for j in model.CP_ID
+                )
+
+            model.charging_power_limit_config_2_3_upper_bound2_constraint = pyo.Constraint(
+                model.EV_ID, model.TIME, rule=charging_power_limit_config_2_3_upper_bound2
+            )
         '''
 
     # CONFIG 3 MAYBE Constraint
@@ -300,7 +298,6 @@ class ElectricVehicle:
 
     # CONFIG 3 Constraint
     def _ev_cp_power_link(self):
-        # New constraints
         # Link EV total power to CP-specific power
         def ev_power_sum_rule(model, i, t):
             return model.p_ev[i, t] == sum(model.p_ev_cp[i, j, t] for j in model.CP_ID)
@@ -309,9 +306,9 @@ class ElectricVehicle:
             self.model.EV_ID, self.model.TIME, rule=ev_power_sum_rule
         )
 
-        # Power is only nonzero if connected AND permanently assigned
-        def cp_power_limit_rule(model, i, j, t):
-            return model.p_ev_cp[i, j, t] <= model.p_cp_rated * model.is_ev_cp_connected[i, j, t]
+        # Power is only nonzero if EV and CP are connected
+        def cp_power_limit_rule(model, i, j, t):  # this constraint is supposed to be bilinear?
+            return model.p_ev_cp[i, j, t] <= model.is_ev_cp_connected[i, j, t] * model.p_cp_rated
 
         self.model.cp_power_limit = pyo.Constraint(
             self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_power_limit_rule
