@@ -244,9 +244,14 @@ results/
 reports/
 
 # Data
-/data/
+data/
 
-/.old_files
+.old_files
 
 
 .DS_Store
+
+
+# Dynamic files
+/scripts/experiments_pipeline/run_pipeline.py
+/scripts/test_script.py
