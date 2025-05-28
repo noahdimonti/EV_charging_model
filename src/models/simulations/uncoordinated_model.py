@@ -3,12 +3,13 @@ from typing import Optional, Dict
 from src.config import params, ev_params
 from src.models.simulations import config_1, config_2, config_3
 from src.data_processing.electric_vehicle import ElectricVehicle
+from src.models.model_results import ModelResults
 
 
 def simulate_uncoordinated_model(
         p_cp_rated: float,
         config: str,
-        config_attribute: int | dict) -> list[ElectricVehicle]:
+        config_attribute: int | dict[int, list[int]]) -> list[ElectricVehicle]:
     # Household load
     household_load = params.household_load
 
@@ -45,7 +46,7 @@ def simulate_uncoordinated_model(
         return config_1_simulator.run()
 
     elif config == 'config_2':
-        if type(config_attribute) == int:
+        if isinstance(config_attribute, int):
             config_2_simulator = config_2.UncoordinatedModelConfig2(
                 ev_data,
                 household_load,
@@ -58,7 +59,7 @@ def simulate_uncoordinated_model(
             raise ValueError('Provide number of CP for configuration 2 simulation.')
 
     elif config == 'config_3':
-        if type(config_attribute) == dict:
+        if isinstance(config_attribute, dict):
             config_3_simulator = config_3.UncoordinatedModelConfig3(
                 ev_data,
                 household_load,
@@ -108,6 +109,8 @@ def process_model_results(model: list[ElectricVehicle], p_cp_rated: float) -> di
     return all_results
 
 
+def extract_config_attribute(results: ModelResults, config: str):
+    pass
 
 
 
