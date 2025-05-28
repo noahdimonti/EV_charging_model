@@ -3,11 +3,11 @@ from src.models.mapping import config_map, strategy_map
 from src.models.model_results import ModelResults
 from src.config import independent_variables
 from src.models.simulations import run_simulation
+import pyomo.environ as pyo
 
 
 def execute_model(config: str,
                   charging_strategy: str,
-                  num_cp: int,
                   version: str,
                   obj_weights: dict[str, float],
                   verbose=False,
@@ -18,14 +18,14 @@ def execute_model(config: str,
         raise ValueError("Invalid config or charging strategy.")
 
     if charging_strategy == 'uncoordinated':
-        model = run_simulation.run_simulation_model(
+        simulation_results = run_simulation.run_simulation_model(
             config,
             charging_strategy,
             independent_variables.p_cp_rated_uncoordinated_strategy,
-            num_cp
+
         )
 
-        results = ModelResults(model, config_map[config], strategy_map[charging_strategy], obj_weights)
+        results = ModelResults(simulation_results, config_map[config], strategy_map[charging_strategy], obj_weights)
 
     else:
         model = build_model.BuildModel(

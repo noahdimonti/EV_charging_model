@@ -1,11 +1,9 @@
 import time
 from src.config import params
-from src.models.mapping import config_map, strategy_map
-from src.models.configs import CPConfig, ChargingStrategy
 from src.models.simulations.uncoordinated_model import simulate_uncoordinated_model, process_model_results
 
 
-def run_simulation_model(config: str, charging_strategy: str, p_cp_rated: float, num_cp: int):
+def run_simulation_model(config: str, charging_strategy: str, p_cp_rated: float, config_attribute: int | dict):
     print(f'\n=============================================================\n'
           f'Running simulation for {config}_{charging_strategy}_{params.num_of_evs}EVs model ...'
           f'\n=============================================================')
@@ -14,7 +12,7 @@ def run_simulation_model(config: str, charging_strategy: str, p_cp_rated: float,
         # Simulate model and calculate simulation time
         start_time = time.time()
 
-        model = simulate_uncoordinated_model(p_cp_rated, config, num_cp)
+        model = simulate_uncoordinated_model(p_cp_rated, config, config_attribute)
         results = process_model_results(model, p_cp_rated)
 
         end_time = time.time()

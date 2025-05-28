@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import deque
 from src.config import params, ev_params
+from src.data_processing.electric_vehicle import ElectricVehicle
 from pprint import pprint
 
 
@@ -40,7 +41,7 @@ class UncoordinatedModelConfig2:
         self.ev_to_cp = {}
         self.delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-    def run(self):
+    def run(self) -> list[ElectricVehicle]:
         for t in params.timestamps:
             if t == params.start_date_time:
                 self._initialise_soc(t)

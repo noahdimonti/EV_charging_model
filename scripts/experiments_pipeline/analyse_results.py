@@ -5,7 +5,7 @@ from src.config import params
 from src.models.model_results import compile_multiple_models_metrics
 
 
-def analyse_results(configurations: list, charging_strategies: list, version: str, num_ev: int):
+def analyse_results(configurations: list, charging_strategies: list, version: str):
     pd.set_option('display.max_columns', None)
 
     formatted_models_metrics = {}
@@ -13,7 +13,7 @@ def analyse_results(configurations: list, charging_strategies: list, version: st
 
     for config in configurations:
         for strategy in charging_strategies:
-            folder_path = f'data/outputs/models/{config}_{strategy}_{num_ev}EVs_7days_{version}.pkl'
+            folder_path = f'data/outputs/models/{config}_{strategy}_{params.num_of_evs}EVs_7days_{version}.pkl'
             filename = os.path.join(params.project_root, folder_path)
 
             with open(filename, 'rb') as f:

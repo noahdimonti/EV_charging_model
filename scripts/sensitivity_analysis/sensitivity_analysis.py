@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import itertools
-from scripts.experiments_pipeline.execute_models import execute_model
+from scripts.experiments_pipeline.execute_model import execute_model
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 

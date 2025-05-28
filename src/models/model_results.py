@@ -9,7 +9,7 @@ from src.models.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
-    def __init__(self, model, config: CPConfig, charging_strategy: ChargingStrategy, obj_weights: dict, mip_gap=None):
+    def __init__(self, model: pyo.ConcreteModel | dict, config: CPConfig, charging_strategy: ChargingStrategy, obj_weights: dict, mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.obj_weights = obj_weights

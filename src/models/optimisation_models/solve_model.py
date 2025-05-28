@@ -18,7 +18,6 @@ def solve_optimisation_model(model, version, solver='gurobi', verbose=False, tim
         solver.options['TimeLimit'] = time_limit_seconds
 
     # Set MIP gap
-    decimal_mip_gap = None
     if mip_gap is not None:
         decimal_mip_gap = mip_gap / 100
         solver.options['MIPGap'] = decimal_mip_gap

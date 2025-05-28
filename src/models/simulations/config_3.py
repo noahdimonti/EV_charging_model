@@ -4,6 +4,7 @@ import copy
 from collections import deque, defaultdict
 from src.config import params, ev_params
 from src.models.simulations.config_2 import ChargingPointSlot
+from src.data_processing.electric_vehicle import ElectricVehicle
 from pprint import pprint
 
 
@@ -29,9 +30,7 @@ class UncoordinatedModelConfig3:
         self.charging_queue: defaultdict[int, deque[int]] = defaultdict(deque)
         self.delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-        print(f'EV to CP assignment: {self.ev_to_cp_assignment}')
-
-    def run(self):
+    def run(self) -> list[ElectricVehicle]:
         for t in params.timestamps:
             if t == params.start_date_time:
                 self._initialise_soc(t)
@@ -44,13 +43,11 @@ class UncoordinatedModelConfig3:
                     self._handle_ev_disconnections(cp, t)
                     self._update_soc_and_power(cp, t)
 
-            self.print_debug(t)
+            # self.print_debug(t)
 
         # self.quick_plot()
 
         return self.ev_data
-
-
 
     def _initialise_soc(self, t):
         for ev in range(self.num_ev):
@@ -108,7 +105,6 @@ class UncoordinatedModelConfig3:
         if (len(self.charging_queue[cp_id]) > 0) and (self.is_cp_available[cp_id]) and (t.time() not in params.no_charging_range_time):
             # Connect EV to CP and add it to is_charging list
             ev_queue_id = self.charging_queue[cp_id].popleft()
-            print(self.charging_points)
             self.charging_points[cp_id].connect_ev(ev_queue_id, t)
             self.is_charging[cp_id].append(ev_queue_id)
             self.is_cp_available[cp_id] = False
@@ -228,9 +224,7 @@ class UncoordinatedModelConfig3:
                 else:
                     continue
 
-            if ev in self.is_charging[cp]:
-                pass
-            else:
+            if ev not in self.is_charging[cp]:
                 _print_stats(ev)
 
             print('\n', end='')
