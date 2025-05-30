@@ -1,15 +1,13 @@
 import pandas as pd
-from typing import Optional, Dict
 from src.config import params, ev_params
 from src.models.simulations import config_1, config_2, config_3
 from src.data_processing.electric_vehicle import ElectricVehicle
-from src.models.model_results import ModelResults
+from src.models.results.model_results import ModelResults
 
 
 def simulate_uncoordinated_model(
-        p_cp_rated: float,
         config: str,
-        config_attribute: int | dict[int, list[int]]) -> list[ElectricVehicle]:
+        config_attribute: dict[str, int | float | dict[int, list]]) -> list[ElectricVehicle]:
     # Household load
     household_load = params.household_load
 
@@ -17,11 +15,11 @@ def simulate_uncoordinated_model(
     ev_data = ev_params.ev_instance_list
 
     # Set rated power of CP
-    p_cp_rated_scaled = p_cp_rated / params.charging_power_resolution_factor
+    p_cp_rated_scaled = config_attribute['p_cp_rated'] / params.charging_power_resolution_factor
 
     # Precompute grid capacity constraints to avoid repeated checks
     if (household_load > params.P_grid_max).any().any():
-        raise ValueError("Demand is higher than the maximum grid capacity.")
+        raise ValueError('Demand is higher than the maximum grid capacity.')
 
     # Calculate the total number of EVs at time t
     num_ev_at_home_list = []
@@ -43,51 +41,58 @@ def simulate_uncoordinated_model(
             num_ev_at_home_df,
             p_cp_rated_scaled
         )
-        return config_1_simulator.run()
+        return config_1_simulator.simulate()
 
     elif config == 'config_2':
-        if isinstance(config_attribute, int):
+        if isinstance(config_attribute['num_cp'], int):
             config_2_simulator = config_2.UncoordinatedModelConfig2(
                 ev_data,
                 household_load,
                 p_cp_rated_scaled,
-                config_attribute
+                config_attribute['num_cp']
             )
-            return config_2_simulator.run()
+            return config_2_simulator.simulate()
 
         else:
             raise ValueError('Provide number of CP for configuration 2 simulation.')
 
     elif config == 'config_3':
-        if isinstance(config_attribute, dict):
+        if isinstance(config_attribute['ev_to_cp_assignment'], dict):
             config_3_simulator = config_3.UncoordinatedModelConfig3(
                 ev_data,
                 household_load,
                 p_cp_rated_scaled,
-                config_attribute
+                config_attribute['ev_to_cp_assignment']
             )
-            return config_3_simulator.run()
+            return config_3_simulator.simulate()
 
         else:
             raise ValueError('Provide a dictionary of EV to CP assignment for configuration 3 simulation.')
 
 
-assignment = {
-    0: [0, 4, 5, 7, 9],
-    2: [1, 2, 3, 6, 8]
+config_attr = {
+    'p_cp_rated': 2.4,
+    'num_cp': 2,
+    'ev_to_cp_assignment': {
+        0: [0, 4, 5, 7, 9],
+        2: [1, 2, 3, 6, 8]
+    }
 }
-data = simulate_uncoordinated_model(2.4, 'config_3', config_attribute=assignment)
+
+data = simulate_uncoordinated_model('config_3', config_attribute=config_attr)
 print(data)
 
 
-def process_model_results(model: list[ElectricVehicle], p_cp_rated: float) -> dict[str, float | dict]:
+def process_model_results(
+        model: list[ElectricVehicle],
+        config_attribute: dict[str, int | float | dict[int, list]]) -> dict[str, float | dict]:
     household_load = params.household_load
-    p_cp_rated_scaled = p_cp_rated / params.charging_power_resolution_factor
+    p_cp_rated_scaled = config_attribute['p_cp_rated'] / params.charging_power_resolution_factor
 
     all_results = {
         'p_grid': {},
         'p_cp_rated': p_cp_rated_scaled,
-        'num_cp': None,
+        'num_cp': config_attribute['num_cp'],
         'p_ev': {},
         'soc_ev': {},
     }
@@ -96,9 +101,6 @@ def process_model_results(model: list[ElectricVehicle], p_cp_rated: float) -> di
         for t in params.timestamps:
             # Extract p_grid
             all_results['p_grid'][t] = household_load.loc[t].values.item() + sum(e.charging_power.loc[t].values.item() for e in model)
-
-            # Number of CP
-            all_results['num_cp'] = ...
 
             # Extract charging power
             all_results['p_ev'][(i, t)] = ev.charging_power.loc[t].values.item()
@@ -109,11 +111,9 @@ def process_model_results(model: list[ElectricVehicle], p_cp_rated: float) -> di
     return all_results
 
 
-def extract_config_attribute(results: ModelResults, config: str):
-    pass
-
-
-
-
+def simulate_and_process(config, config_attribute):
+    model = simulate_uncoordinated_model(config, config_attribute)
+    results = process_model_results(model, config_attribute)
+    return results
 
 

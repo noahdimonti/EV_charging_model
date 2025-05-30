@@ -2,6 +2,62 @@ import time
 import os
 import pyomo.environ as pyo
 from src.config import params
+from src.models.utils.log_model_info import log_with_runtime
+
+
+def solve_optimisation_model(model, version, solver='gurobi', verbose=False, time_limit=None, mip_gap=None):
+    label = f"Solving {model.name} model"
+
+    try:
+        # Time the solving process
+        (results, calc_mip_gap, solver_status, termination_condition), solving_time = log_with_runtime(
+            label,
+            solve_model,
+            model, version,
+            solver_name=solver,
+            verbose=verbose,
+            time_limit=time_limit,
+            mip_gap=mip_gap
+        )
+
+        # Log status
+        print(f"Solver Status: {solver_status}")
+        print(f"Termination Condition: {termination_condition}")
+
+        if solver_status == pyo.SolverStatus.ok and termination_condition == pyo.TerminationCondition.optimal:
+            print(f"{params.GREEN}Solver found an optimal solution.{params.RESET}")
+        elif solver_status != pyo.SolverStatus.ok or termination_condition == pyo.TerminationCondition.infeasible:
+            print(f"{params.RED}Solver did not find an optimal solution.{params.RESET}")
+
+        # Print time nicely
+        if (solving_time % 60) < 1:
+            print(f'\nModel solved in {solving_time:.3f} seconds')
+        else:
+            minutes = int(solving_time // 60)
+            remaining_seconds = solving_time % 60
+            print(f'\nModel solved in {minutes} minutes {remaining_seconds:.3f} seconds')
+
+        # MIP gap
+        if calc_mip_gap is not None:
+            print(f"Calculated MIP Gap: {calc_mip_gap:.4f}%")
+
+            # Info if solver terminated early
+            if time_limit is not None and mip_gap is not None:
+                if solving_time >= time_limit * 60:
+                    print("Solver terminated due to time limit.")
+                elif calc_mip_gap > mip_gap:
+                    print("MIP gap condition not met.")
+        else:
+            print("Bounds not available for MIP gap calculation.")
+
+        print("-------------------------------------------------------------\n")
+
+        return model, calc_mip_gap
+
+    except Exception as e:
+        print(f"{params.RED}An error occurred during optimisation: {e}.{params.RESET}")
+
+
 
 
 def solve_optimisation_model(model, version, solver='gurobi', verbose=False, time_limit=None, mip_gap=None):

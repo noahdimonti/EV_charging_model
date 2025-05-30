@@ -7,5 +7,3 @@ obj_weights = {
     'technical': 0.2,
     'social': 0.1
 }
-
-p_cp_rated_uncoordinated_strategy = 2.4

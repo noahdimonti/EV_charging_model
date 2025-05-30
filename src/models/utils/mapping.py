@@ -1,4 +1,4 @@
-from src.models.configs import CPConfig, ChargingStrategy
+from src.models.utils.configs import CPConfig, ChargingStrategy
 
 config_map = {
     'config_1': CPConfig.CONFIG_1,
@@ -11,3 +11,8 @@ strategy_map = {
     'opportunistic': ChargingStrategy.OPPORTUNISTIC,
     'flexible': ChargingStrategy.FLEXIBLE
 }
+
+
+def validate_config_strategy(config: str, charging_strategy: str):
+    if config not in config_map or charging_strategy not in strategy_map:
+        raise ValueError("Invalid configuration or charging strategy.")

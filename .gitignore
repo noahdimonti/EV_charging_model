@@ -154,6 +154,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# VS Code
+.vscode/
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
@@ -240,7 +243,6 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # Model results and reports
-results/
 reports/
 
 # Data
