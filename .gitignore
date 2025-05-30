@@ -256,5 +256,4 @@ data/
 
 # Dynamic scripts
 /scripts/run_pipeline.py
-/scripts/unit_test_draft.py
 /scripts/test_script.py

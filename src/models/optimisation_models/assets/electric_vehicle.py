@@ -190,7 +190,7 @@ class ElectricVehicle:
                 rule=lambda model, i, d: charge_only_on_charging_days(model, i, d)
             )
 
-    # @staticmethod
+    # CONFIG 1 Constraint: charging power limit for opportunistic and flexible charging strategies
     def _charging_power_limit_config1_opp(self):
         def charging_power_limit_config1_opp_upper_bound(model, i, t):
             return model.p_ev[i, t] <= model.ev_at_home_status[i, t] * model.p_cp_rated
@@ -199,7 +199,6 @@ class ElectricVehicle:
             self.model.EV_ID, self.model.TIME, rule=charging_power_limit_config1_opp_upper_bound
         )
 
-    # @staticmethod
     def _charging_power_limit_config1_flex(self):
         def charging_power_limit_config1_flex_upper_bound1(model, i, t):
             return model.p_ev[i, t] <= model.p_cp_rated
@@ -208,6 +207,7 @@ class ElectricVehicle:
             self.model.EV_ID, self.model.TIME, rule=charging_power_limit_config1_flex_upper_bound1
         )
 
+        # Constraint linearisation
         def charging_power_limit_config1_flex_upper_bound2(model, i, t):
             return model.p_ev[i, t] <= model.is_ev_charging[i, t] * params.p_cp_rated_max
 
