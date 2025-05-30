@@ -115,6 +115,7 @@ def simulate_and_process(config, config_attribute):
     try:
         model = simulate_uncoordinated_model(config, config_attribute)
         results = process_model_results(model, config_attribute)
+
         print(f'Simulation status: ok\n')
 
         return results

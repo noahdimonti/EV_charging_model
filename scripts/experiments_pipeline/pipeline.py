@@ -1,3 +1,5 @@
+import os
+import pickle
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
@@ -42,8 +44,24 @@ def run_model_pipeline(configurations: list,
                 opt_results_per_config[strategy] = opt_result
 
             # Run simulation model after getting optimisation model results
-            if 'opportunistic' in opt_results_per_config:
-                config_attr = opt_results_per_config['opportunistic'].get_config_attributes_for_simulation()
+            if 'uncoordinated' in charging_strategies:
+                # Check if opportunistic model result exists
+                root_path = params.model_results_folder_path
+                filename = f'{config}_opportunistic_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
+                file_path = os.path.join(root_path, filename)
+
+                if 'opportunistic' in opt_results_per_config:
+                    config_attr = opt_results_per_config['opportunistic'].get_config_attributes_for_simulation()
+
+                elif os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        opportunistic_model = pickle.load(f)
+
+                    config_attr = opportunistic_model.get_config_attributes_for_simulation()
+
+                else:
+                    raise ValueError(f'{params.RED}Missing opportunistic model result for {config}.{params.RESET}')
+
                 simulation_result = run_simulation_model(
                     config=config,
                     charging_strategy='uncoordinated',
@@ -52,9 +70,6 @@ def run_model_pipeline(configurations: list,
                     config_attribute=config_attr
                 )
                 opt_results_per_config['uncoordinated'] = simulation_result
-
-            else:
-                raise ValueError(f'{params.RED}Missing opportunistic model result for {config}.{params.RESET}')
 
     if analyse:
         raw_metrics, formatted_metrics = analyse_results(

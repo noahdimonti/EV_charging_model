@@ -51,9 +51,9 @@ class UncoordinatedModelConfig2:
                 self._connect_evs_to_available_cps(t)
                 self._handle_ev_disconnections(t)
                 self._update_soc_and_power(t)
-            self.print_debug(t)
+            # self.print_debug(t)
 
-        self.quick_plot()
+        # self.quick_plot()
 
         return self.ev_data
 

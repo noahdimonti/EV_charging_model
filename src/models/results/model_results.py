@@ -229,13 +229,13 @@ class ModelResults:
         }
 
         if self.config.value == 'config_1':
-            config_attributes['num_cp'] = params.num_of_evs
+            config_attributes['num_cp'] = int(params.num_of_evs)
 
         elif self.config.value == 'config_2':
-            config_attributes['num_cp'] = self.variables['num_cp']
+            config_attributes['num_cp'] = int(self.variables['num_cp'])
 
         elif self.config.value == 'config_3':
-            config_attributes['num_cp'] = self.variables['num_cp']
+            config_attributes['num_cp'] = int(self.variables['num_cp'])
 
             # Get EV to CP assignment
             ev_to_cp_assignment = defaultdict(list)
