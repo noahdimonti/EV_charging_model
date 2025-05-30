@@ -41,7 +41,7 @@ class UncoordinatedModelConfig2:
         self.ev_to_cp = {}
         self.delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-    def run(self) -> list[ElectricVehicle]:
+    def simulate(self) -> list[ElectricVehicle]:
         for t in params.timestamps:
             if t == params.start_date_time:
                 self._initialise_soc(t)

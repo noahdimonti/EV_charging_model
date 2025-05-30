@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 import os
 from src.config import params
-from src.models.model_results import compile_multiple_models_metrics
+from src.models.results.model_results import compile_multiple_models_metrics
 
 
 def analyse_results(configurations: list, charging_strategies: list, version: str):

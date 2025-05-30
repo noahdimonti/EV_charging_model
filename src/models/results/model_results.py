@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import os
 import pyomo.environ as pyo
+from collections import defaultdict
 from pprint import pprint
 from src.config import params, ev_params, independent_variables
 from src.models.utils.configs import CPConfig, ChargingStrategy
@@ -213,12 +214,42 @@ class ModelResults:
 
     def pprint_metrics(self):
         print(f'\n---------------------------------------------------------')
-        print(
-            f'{self.config.value.capitalize()} - {self.charging_strategy.value.capitalize()} Charging Evaluation Metrics Summary')
+        print(f'{self.config.value.capitalize()} - {self.charging_strategy.value.capitalize()}'
+              f' Charging Evaluation Metrics Summary')
         print(f'\n---------------------------------------------------------')
 
         pprint(self.format_metrics(), sort_dicts=False)
         print(f'\n---------------------------------------------------------')
+
+    def get_config_attributes_for_simulation(self) -> dict[str, int | float | dict[int, list]]:
+        config_attributes = {
+            'p_cp_rated': self.variables['p_cp_rated'] * params.charging_power_resolution_factor,
+            'num_cp': None,
+            'ev_to_cp_assignment': None
+        }
+
+        if self.config.value == 'config_1':
+            config_attributes['num_cp'] = params.num_of_evs
+
+        elif self.config.value == 'config_2':
+            config_attributes['num_cp'] = self.variables['num_cp']
+
+        elif self.config.value == 'config_3':
+            config_attributes['num_cp'] = self.variables['num_cp']
+
+            # Get EV to CP assignment
+            ev_to_cp_assignment = defaultdict(list)
+            is_ev_permanently_assigned_to_cp = self.variables['is_ev_permanently_assigned_to_cp']
+            for (ev_id, cp_id), assigned in is_ev_permanently_assigned_to_cp.items():
+                if assigned == 1:
+                    ev_to_cp_assignment[cp_id].append(ev_id)
+
+            # Sort dictionary
+            ev_to_cp_assignment = dict(sorted(ev_to_cp_assignment.items()))
+
+            config_attributes['ev_to_cp_assignment'] = ev_to_cp_assignment
+
+        return config_attributes
 
     # Save model as pickle
     def save_model_to_pickle(self, version: str):
@@ -227,7 +258,8 @@ class ModelResults:
         try:
             with open(file_path, 'wb') as f:
                 pickle.dump(self, f)
-            print(f'Model saved to {file_path}')
+
+            print(f'Model was successfully saved to: \n{file_path}')
 
         except Exception as e:
             print(f'Error saving results: {e}')

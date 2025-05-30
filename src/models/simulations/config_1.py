@@ -14,7 +14,7 @@ class UncoordinatedModelConfig1:
         self.num_ev_at_home = num_ev_at_home
         self.p_cp_rated_scaled = p_cp_rated_scaled
 
-    def run(self) -> list[ElectricVehicle]:
+    def simulate(self) -> list[ElectricVehicle]:
         for i, ev in enumerate(self.ev_data):
             # Initialise charging power and soc empty list
             p_ev = []

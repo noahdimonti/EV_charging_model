@@ -236,5 +236,6 @@ annual_maintenance_cost = 400
 
 # Define colours for printing
 RESET = "\033[0m"  # Reset to default
-RED = '\033[31m'  # Red color (e.g., for warning or error)
-GREEN = '\033[32m'  # Green color (e.g., for success)
+RED = '\033[31m'  # Red colour (e.g., for warning or error)
+GREEN = '\033[32m'  # Green colour (e.g., for success)
+YELLOW = '\033[33m'  # Yellow colour for printing simulation/solving time

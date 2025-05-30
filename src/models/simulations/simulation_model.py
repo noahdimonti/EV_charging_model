@@ -70,17 +70,17 @@ def simulate_uncoordinated_model(
             raise ValueError('Provide a dictionary of EV to CP assignment for configuration 3 simulation.')
 
 
-config_attr = {
-    'p_cp_rated': 2.4,
-    'num_cp': 2,
-    'ev_to_cp_assignment': {
-        0: [0, 4, 5, 7, 9],
-        2: [1, 2, 3, 6, 8]
-    }
-}
-
-data = simulate_uncoordinated_model('config_3', config_attribute=config_attr)
-print(data)
+# config_attr = {
+#     'p_cp_rated': 2.4,
+#     'num_cp': 2,
+#     'ev_to_cp_assignment': {
+#         0: [0, 4, 5, 7, 9],
+#         2: [1, 2, 3, 6, 8]
+#     }
+# }
+#
+# data = simulate_uncoordinated_model('config_3', config_attribute=config_attr)
+# print(data)
 
 
 def process_model_results(
@@ -112,8 +112,14 @@ def process_model_results(
 
 
 def simulate_and_process(config, config_attribute):
-    model = simulate_uncoordinated_model(config, config_attribute)
-    results = process_model_results(model, config_attribute)
-    return results
+    try:
+        model = simulate_uncoordinated_model(config, config_attribute)
+        results = process_model_results(model, config_attribute)
+        print(f'Simulation status: ok\n')
+
+        return results
+
+    except Exception as e:
+        print(f'An error occurred: {e}')
 
 

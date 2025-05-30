@@ -30,7 +30,7 @@ class UncoordinatedModelConfig3:
         self.charging_queue: defaultdict[int, deque[int]] = defaultdict(deque)
         self.delta_t = pd.Timedelta(minutes=params.time_resolution)
 
-    def run(self) -> list[ElectricVehicle]:
+    def simulate(self) -> list[ElectricVehicle]:
         for t in params.timestamps:
             if t == params.start_date_time:
                 self._initialise_soc(t)
