@@ -45,7 +45,6 @@ def log_solver_results(solver_status, termination_condition, solving_time, calc_
     elif solver_status != pyo.SolverStatus.ok or termination_condition == pyo.TerminationCondition.infeasible:
         print(f'{params.RED}Solver did not find an optimal solution.{params.RESET}')
 
-
     # MIP gap
     if calc_mip_gap is not None:
         print(f'\nCalculated MIP Gap: {calc_mip_gap:.4f}%\n')

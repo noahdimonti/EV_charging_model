@@ -2,7 +2,6 @@ import pandas as pd
 from src.config import params, ev_params
 from src.models.simulations import config_1, config_2, config_3
 from src.data_processing.electric_vehicle import ElectricVehicle
-from src.models.results.model_results import ModelResults
 
 
 def simulate_uncoordinated_model(
@@ -68,19 +67,6 @@ def simulate_uncoordinated_model(
 
         else:
             raise ValueError('Provide a dictionary of EV to CP assignment for configuration 3 simulation.')
-
-
-# config_attr = {
-#     'p_cp_rated': 2.4,
-#     'num_cp': 2,
-#     'ev_to_cp_assignment': {
-#         0: [0, 4, 5, 7, 9],
-#         2: [1, 2, 3, 6, 8]
-#     }
-# }
-#
-# data = simulate_uncoordinated_model('config_3', config_attribute=config_attr)
-# print(data)
 
 
 def process_model_results(

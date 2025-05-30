@@ -4,18 +4,7 @@ from typing import Callable, Any, Tuple
 
 
 def log_with_runtime(label: str, finished_label: str, func: Callable, *args, **kwargs) -> Tuple[Any, float]:
-    """
-    Executes a function with timing and logs its runtime.
-
-    Parameters:
-        label (str): Descriptive text to print before running the function.
-        finished_label (str): Text to print at the end to specify that optimisation or simulation finished running.
-        func (Callable): Function to execute.
-        *args, **kwargs: Arguments to pass to the function.
-
-    Returns:
-        Tuple: (result of the function, runtime in seconds)
-    """
+    """ Executes a function with timing and logs its runtime. """
     print(f'\n=============================================================\n'
           f'{label} ...'
           f'\n=============================================================\n')
