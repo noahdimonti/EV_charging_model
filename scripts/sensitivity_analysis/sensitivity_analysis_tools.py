@@ -7,7 +7,7 @@ from src.models.optimisation_models.run_optimisation import run_optimisation_mod
 
 
 # Generate weights that sum to 1
-step = 0.1
+step = 0.5
 w_vals = np.arange(0, 1 + step, step)
 
 weight_dicts = []
@@ -15,9 +15,9 @@ for w1, w2 in itertools.product(w_vals, repeat=2):
     w3 = 1 - w1 - w2
     if 0 <= w3 <= 1:
         weight_dicts.append({
-            'economic': w1,
-            'technical': w2,
-            'social': round(w3, 10)
+            'economic_weight': w1,
+            'technical_weight': w2,
+            'social_weight': round(w3, 10)
         })
 
 # Run optimisation for each weight
@@ -26,16 +26,20 @@ strategy = 'opportunistic'
 version = 'sensitivity_analysis'
 
 num_ev = params.num_of_evs
-verbose = False
-time_limit = 10
-mip_gap = 0.9
-analyse = False
+
+analyse = True
 filename = f'{params.project_root}/data/outputs/metrics/sensitivity_analysis_{step}step.csv'
 
 if analyse:
+    verbose = False
+    time_limit = 10
+    mip_gap = 0.9
+
+    # Initialise a dataframe to store results
     df = pd.DataFrame()
 
     for weights in weight_dicts:
+        print(f'-------------------------------------------------------------')
         print(f'\nObjective weights: {weights}')
 
         # Run model and analyse results
@@ -43,14 +47,19 @@ if analyse:
             config=config,
             charging_strategy=strategy,
             version=version,
-            obj_weights=weights
+            obj_weights=weights,
+            verbose=verbose,
+            time_limit=time_limit,
+            mip_gap=mip_gap
         )
         raw, formatted = analyse_results([config], [strategy], version)
 
         # Store results in a dataframe
         df = pd.concat([raw, df], axis=1)
+        print(df)
 
     df = df.T  # Transpose so each row is one config
+    # print(df)
     df.to_csv(filename)
 
 
@@ -75,12 +84,12 @@ normalised = normalise_metrics(df)
 
 # Create holistic score dataframe
 holistic_metrics = pd.DataFrame(columns=['investor_score', 'dso_score', 'user_score'])
-holistic_metrics = pd.concat([holistic_metrics, normalised[['economic', 'technical', 'social']]], axis=1)
-holistic_metrics.rename(columns={
-    'economic': 'economic_weight',
-    'technical': 'technical_weight',
-    'social': 'social_weight'
-}, inplace=True)
+holistic_metrics = pd.concat([holistic_metrics, normalised[['economic_weight', 'technical_weight', 'social_weight']]], axis=1)
+# holistic_metrics.rename(columns={
+#     'economic': 'economic_weight',
+#     'technical': 'technical_weight',
+#     'social': 'social_weight'
+# }, inplace=True)
 
 # Economic score
 holistic_metrics['investor_score'] = 1 - normalised['investment_cost']
