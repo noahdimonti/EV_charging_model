@@ -270,7 +270,10 @@ class ModelResults:
             print(f'Error saving results: {e}')
 
 
-def compile_multiple_models_metrics(models_metrics: dict, filename: str, save_df: bool = True):
+def compile_multiple_models_metrics(
+        models_metrics: dict,
+        filename: str,
+        save_df: bool = True) -> pd.DataFrame:
     # Create a list of DataFrames, one for each results
     dfs = [pd.DataFrame(data.values(), index=data.keys(), columns=[model_name])
            for model_name, data in models_metrics.items()]

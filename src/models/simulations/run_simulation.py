@@ -21,7 +21,6 @@ def run_simulation_model(
     try:
         simulation_results, simulation_time = log_with_runtime(
             label,
-            finished_label,
             simulate_and_process,
             config,
             config_attribute

@@ -5,10 +5,11 @@ import os
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
+from pprint import pprint
 
 
 def run_sensitivity_analysis(step: float, config: str, strategy: str, version: str,
-                             verbose: bool, time_limit: int, mip_gap: float):
+                             verbose: bool, time_limit: int, mip_gap: float) -> pd.DataFrame:
     # Generate weights that sum to 1
     step = step
     w_vals = np.arange(0, 1 + step, step)
@@ -29,10 +30,11 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     # Run optimisation for each weight
     for weights in weight_dicts:
         print(f'-------------------------------------------------------------')
-        print(f'\nObjective weights: {weights}')
+        print(f'\nObjective weights:')
+        pprint(weights, sort_dicts=False)
 
         # Run model and analyse results
-        run_optimisation_model(
+        results = run_optimisation_model(
             config=config,
             charging_strategy=strategy,
             version=version,
@@ -42,7 +44,13 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
             mip_gap=mip_gap,
             save_model=False
         )
-        raw, formatted = analyse_results([config], [strategy], version, save_df=False)
+        raw, formatted = analyse_results(
+            configurations=[config],
+            charging_strategies=[strategy],
+            version=version,
+            save_df=False,
+            model_results=results
+        )
 
         # Store results in a dataframe
         df = pd.concat([raw, df], axis=1)
@@ -51,7 +59,7 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     df = df.T
 
     # Save compiled df to csv
-    filename = f'sensitivity_analysis_{step}step.csv'
+    filename = f'sensitivity_analysis_{config}_{strategy}_{params.num_of_evs}EVs_{step}step.csv'
     file_path = os.path.join(params.sensitivity_analysis_res_path, filename)
     df.to_csv(file_path)
 
@@ -60,8 +68,8 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     return df
 
 
-def normalise_metrics(df):
-    # df = df.drop('Unnamed: 0', axis=1)
+def normalise_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.drop('Unnamed: 0', axis=1)
     normalised = pd.DataFrame(index=df.index)
     for col in df.columns:
         min_val = df[col].min()
@@ -71,27 +79,25 @@ def normalise_metrics(df):
     return normalised
 
 
-def get_holistic_metrics(df):
+def get_holistic_metrics(df: pd.DataFrame) -> pd.DataFrame:
     normalised = normalise_metrics(df)
 
     # Create holistic score dataframe
     holistic_metrics = pd.DataFrame(columns=['investor_score', 'dso_score', 'user_score'])
-    holistic_metrics = pd.concat([holistic_metrics, normalised[['economic_weight', 'technical_weight', 'social_weight']]], axis=1)
+    holistic_metrics = pd.concat(
+        [holistic_metrics, normalised[['economic_weight', 'technical_weight', 'social_weight']]], axis=1)
 
     # Economic score
     holistic_metrics['investor_score'] = 1 - normalised['investment_cost']
 
     # Technical score
     holistic_metrics['dso_score'] = ((1 - normalised['avg_p_peak']) *
-                                           (1 - normalised['avg_papr']) *
-                                           (1 - normalised['avg_daily_peak_increase']))
+                                     (1 - normalised['avg_papr']) *
+                                     (1 - normalised['avg_daily_peak_increase']))
 
     # Social score - NOT FINALISED
     holistic_metrics['user_score'] = ((1 - normalised['total_cost_per_user']) *  # cost component
-                                        (normalised['avg_soc_t_dep_percent']) *  # how much SOC
-                                        (1 - normalised['soc_range']))  # fairness
+                                      (normalised['avg_soc_t_dep_percent']) *  # average SOC
+                                      (1 - normalised['soc_range']))  # fairness
 
     return holistic_metrics
-
-
-

@@ -34,7 +34,6 @@ def run_optimisation_model(
     try:
         (solved_model, calc_mip_gap, solver_status, termination_condition), solving_time = log_with_runtime(
             label,
-            finished_label,
             solve_model,
             model,
             version,

@@ -3,7 +3,7 @@ from src.config import params
 from typing import Callable, Any, Tuple
 
 
-def log_with_runtime(label: str, finished_label: str, func: Callable, *args, **kwargs) -> Tuple[Any, float]:
+def log_with_runtime(label: str, func: Callable, *args, **kwargs) -> Tuple[Any, float]:
     """ Executes a function with timing and logs its runtime. """
     print(f'\n=============================================================\n'
           f'{label} ...'
