@@ -279,8 +279,8 @@ def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     df.to_csv(file_path)
 
     if 'raw' in filename:
-        print(f'\nRaw compiled metrics saved to {file_path}\n')
+        print(f'\nRaw compiled metrics saved to {file_path}')
     else:
-        print(f'\nFormatted compiled metrics saved to {file_path}\n')
+        print(f'\nFormatted compiled metrics saved to {file_path}')
 
     return df

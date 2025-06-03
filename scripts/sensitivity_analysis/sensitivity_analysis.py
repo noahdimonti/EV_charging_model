@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import itertools
-from scripts.experiments_pipeline.execute_model import execute_model
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
+from src.models.optimisation_models.run_optimisation import run_optimisation_model
+
 
 # Generate weights that sum to 1
 step = 0.1
@@ -23,6 +24,7 @@ for w1, w2 in itertools.product(w_vals, repeat=2):
 config = 'config_1'
 strategy = 'opportunistic'
 version = 'sensitivity_analysis'
+
 num_ev = params.num_of_evs
 verbose = False
 time_limit = 10
@@ -37,8 +39,13 @@ if analyse:
         print(f'\nObjective weights: {weights}')
 
         # Run model and analyse results
-        execute_model(config, strategy, version, weights)
-        raw, formatted = analyse_results([config], [strategy], version, num_ev)
+        run_optimisation_model(
+            config=config,
+            charging_strategy=strategy,
+            version=version,
+            obj_weights=weights
+        )
+        raw, formatted = analyse_results([config], [strategy], version)
 
         # Store results in a dataframe
         df = pd.concat([raw, df], axis=1)
@@ -88,7 +95,7 @@ holistic_metrics['user_score'] = ((1 - normalised['total_cost_per_user']) *  # c
                                     (normalised['avg_soc_t_dep_percent']) *  # how much SOC
                                     (1 - normalised['soc_range']))  # fairness
 
-# print(holistic_metrics)
+print(holistic_metrics)
 
 
 
