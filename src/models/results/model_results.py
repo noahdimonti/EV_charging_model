@@ -10,7 +10,11 @@ from src.models.utils.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
-    def __init__(self, model: pyo.ConcreteModel | dict, config: CPConfig, charging_strategy: ChargingStrategy, obj_weights: dict, mip_gap=None):
+    def __init__(self, model: pyo.ConcreteModel | dict,
+                 config: CPConfig,
+                 charging_strategy: ChargingStrategy,
+                 obj_weights: dict[str, float],
+                 mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.obj_weights = obj_weights
@@ -185,9 +189,9 @@ class ModelResults:
     # Format metrics
     def format_metrics(self):
         formatted_metrics = {
-            'Economic weight': self.obj_weights['economic'],
-            'Technical weight': self.obj_weights['technical'],
-            'Social weight': self.obj_weights['social'],
+            'Economic weight': self.obj_weights['economic_weight'],
+            'Technical weight': self.obj_weights['technical_weight'],
+            'Social weight': self.obj_weights['social_weight'],
 
             'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
 
@@ -266,7 +270,7 @@ class ModelResults:
             print(f'Error saving results: {e}')
 
 
-def compile_multiple_models_metrics(models_metrics: dict, filename: str):
+def compile_multiple_models_metrics(models_metrics: dict, filename: str, save_df: bool = True):
     # Create a list of DataFrames, one for each results
     dfs = [pd.DataFrame(data.values(), index=data.keys(), columns=[model_name])
            for model_name, data in models_metrics.items()]
@@ -275,12 +279,13 @@ def compile_multiple_models_metrics(models_metrics: dict, filename: str):
     df = pd.concat(dfs, axis=1)
 
     # Save compiled dataframe
-    file_path = os.path.join(params.compiled_metrics_folder_path, filename)
-    df.to_csv(file_path)
+    if save_df:
+        file_path = os.path.join(params.compiled_metrics_folder_path, filename)
+        df.to_csv(file_path)
 
-    if 'raw' in filename:
-        print(f'\nRaw compiled metrics saved to {file_path}')
-    else:
-        print(f'\nFormatted compiled metrics saved to {file_path}')
+        if 'raw' in filename:
+            print(f'\nRaw compiled metrics saved to:\n{file_path}')
+        else:
+            print(f'\nFormatted compiled metrics saved to:\n{file_path}')
 
     return df

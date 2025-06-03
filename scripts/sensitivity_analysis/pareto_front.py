@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
-from scripts.sensitivity_analysis.sensitivity_analysis import holistic_metrics, step
+from scripts.sensitivity_analysis.sensitivity_analysis_tools import holistic_metrics, step
 from src.config import params
 
 

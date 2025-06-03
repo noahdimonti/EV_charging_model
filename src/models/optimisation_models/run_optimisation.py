@@ -14,7 +14,8 @@ def run_optimisation_model(
         solver='gurobi',
         verbose=False,
         time_limit=None,
-        mip_gap=None) -> ModelResults:
+        mip_gap=None,
+        save_model: bool = True) -> ModelResults:
     # Validate config and charging strategy
     validate_config_strategy(config, charging_strategy)
 
@@ -57,7 +58,10 @@ def run_optimisation_model(
         # Save results
         results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], obj_weights,
                                calc_mip_gap)
-        results.save_model_to_pickle(version=version)
+
+        # Save results to pickle
+        if save_model:
+            results.save_model_to_pickle(version=version)
 
         return results
 

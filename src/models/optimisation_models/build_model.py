@@ -55,29 +55,29 @@ class BuildModel:
         # Define objective function
         def obj_function(model):
             # Economic objective
-            if self.obj_weights['economic'] > 0:
+            if self.obj_weights['economic_weight'] > 0:
                 economic_obj = EconomicObjective(model)
                 economic_cost = economic_obj.investment_cost() + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
             else:
                 economic_cost = 0
 
             # Technical objective
-            if self.obj_weights['technical'] > 0:
+            if self.obj_weights['technical_weight'] > 0:
                 technical_obj = TechnicalObjective(model)
                 technical_cost = technical_obj.f_disc() + technical_obj.f_peak() + technical_obj.f_papr()
             else:
                 technical_cost = 0
 
             # Social objective
-            if self.obj_weights['social'] > 0:
+            if self.obj_weights['social_weight'] > 0:
                 social_obj = SocialObjective(model)
                 social_cost = social_obj.f_soc() + social_obj.f_fair()
             else:
                 social_cost = 0
 
-            return (self.obj_weights['economic'] * economic_cost) + (
-                    self.obj_weights['technical'] * technical_cost) + (
-                    self.obj_weights['social'] * social_cost)
+            return (self.obj_weights['economic_weight'] * economic_cost) + (
+                    self.obj_weights['technical_weight'] * technical_cost) + (
+                    self.obj_weights['social_weight'] * social_cost)
 
         self.model.obj_function = pyo.Objective(rule=obj_function, sense=pyo.minimize)
 
