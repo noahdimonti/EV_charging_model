@@ -215,6 +215,7 @@ class ElectricVehicle:
             self.model.EV_ID, self.model.TIME, rule=charging_power_limit_config1_flex_upper_bound2
         )
 
+        # EV can only be connected to CP when it is at home
         def ev_charges_only_at_home(model, i, t):
             return model.is_ev_charging[i, t] <= model.ev_at_home_status[i, t]
 
