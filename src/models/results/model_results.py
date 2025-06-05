@@ -33,6 +33,9 @@ class ModelResults:
                 else:
                     self.variables[var.name] = var.value
 
+            # Get objective value
+            self.objective_value = pyo.value(model.obj_function)
+
         self.sets = {}
         if charging_strategy.value == 'uncoordinated':
             self.sets = {
@@ -181,6 +184,9 @@ class ModelResults:
         self.metrics.update(self._general_metrics())
         self.metrics.update(self.obj_weights)
 
+        if self.objective_value:
+            self.metrics.update({'objective_value': self.objective_value})
+
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
 
@@ -212,6 +218,7 @@ class ModelResults:
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
+                'Objective value': f'{self.objective_value:,.2f}'
             })
 
         return formatted_metrics
