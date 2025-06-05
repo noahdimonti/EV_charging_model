@@ -83,7 +83,25 @@ def get_pareto_ranks(df: pd.DataFrame) -> pd.Series:
     return pd.Series(ranks, index=df.index, name="pareto_rank")
 
 
-def parallel_plot_pareto(df: pd.DataFrame):
+def get_balanced_solution(df: pd.DataFrame):
+    # Subset Pareto front with rank 1
+    pareto_front = df[df['pareto_rank'] == 1].copy()
+
+    # Compute Euclidean distance to the ideal point (1, 1, 1)
+    pareto_front['distance_to_ideal'] = np.sqrt(
+        ((1 - pareto_front['investor_score']) ** 2) +
+        ((1 - pareto_front['dso_score']) ** 2) +
+        ((1 - pareto_front['user_score']) ** 2)
+    )
+
+    # Find the index of the most balanced solution (smallest distance)
+    best_index = pareto_front['distance_to_ideal'].idxmin()
+    best_solution = pareto_front.loc[best_index]
+
+    return best_solution
+
+
+def parallel_plot_pareto(df: pd.DataFrame, config: str, strategy: str):
     # Rename labels
     rename_dict = {
         'investor_score': 'Investor Score',
@@ -96,24 +114,26 @@ def parallel_plot_pareto(df: pd.DataFrame):
 
     metrics = ['Investor Score', 'DSO Score', 'User Score']
 
+    # Get solutions and pareto rank columns
     parallel_df = df[metrics + ['pareto_rank']].copy()
-    parallel_df['pareto_rank'] = parallel_df['pareto_rank'].astype(int)  # Convert for color mapping
 
     # Flip rank values manually for correct colouring
     parallel_df['pareto_rank_flipped'] = parallel_df['pareto_rank'].max() - parallel_df['pareto_rank'] + 1
+
+    conf, num = config.split('_')
 
     fig_parallel = px.parallel_coordinates(
         parallel_df,
         color='pareto_rank_flipped',  # Use flipped rank for colour mapping
         dimensions=metrics,
         color_continuous_scale=px.colors.diverging.Tealrose[::-1],
-        title="Parallel Coordinates Plot (Pareto Ranks) - Config 1 Opportunistic"
+        title=f'Parallel Coordinates Plot (Pareto Ranks) - {conf.capitalize()} {num} {strategy.capitalize()}'
     )
 
     # Correct colorbar labels back to original pareto_rank
     fig_parallel.update_layout(
         coloraxis_colorbar=dict(
-            title="Pareto Rank",
+            title='Pareto Rank',
             tickvals=parallel_df['pareto_rank_flipped'],
             ticktext=parallel_df['pareto_rank'],  # Show the real rank values
         )

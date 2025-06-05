@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 from scripts.sensitivity_analysis.sensitivity_analysis_tools import run_sensitivity_analysis, get_holistic_metrics
-from scripts.sensitivity_analysis.pareto_front import get_pareto_front_indices, get_pareto_ranks, parallel_plot_pareto
+from scripts.sensitivity_analysis.pareto_front import get_pareto_ranks, parallel_plot_pareto, get_balanced_solution
 from src.config import params
 from src.models.utils.log_model_info import log_with_runtime, print_runtime
 
@@ -10,18 +10,18 @@ from src.models.utils.log_model_info import log_with_runtime, print_runtime
 def main():
     pd.set_option('display.max_columns', None)
 
-    step = 0.5
+    step = 0.1
     config = 'config_1'
     strategy = 'opportunistic'
     version = 'sensitivity_analysis'
     verbose = False
-    time_limit = 10
+    time_limit = 10  # for each run of a model
     mip_gap = 0
 
     # Pipeline actions
     run = False
-    get_metrics = True
     get_pareto = True
+    plot = False
 
     if run:
         label = f'Running sensitivity analysis with {step} step'
@@ -41,34 +41,35 @@ def main():
 
         print_runtime(finished_label, runtime)
 
-    if get_metrics:
-        file_path = os.path.join(params.sensitivity_analysis_res_path,
-                                 f'sensitivity_analysis_{config}_{strategy}_{params.num_of_evs}EVs_{step}step.csv')
+    if get_pareto:
+        # Get raw data from sensitivity analysis file
+        sens_filename = f'sensitivity_analysis_{config}_{strategy}_{params.num_of_evs}EVs_{step}step.csv'
+        file_path = os.path.join(params.sensitivity_analysis_res_path, sens_filename)
         df = pd.read_csv(file_path)
+
+        # Convert raw data into holistic metrics
         holistic_metrics = get_holistic_metrics(df)
 
-        print(f'\nHolistic metrics:\n{holistic_metrics}')
+        # Get solution columns and pareto ranks
+        solutions = holistic_metrics[['investor_score', 'dso_score', 'user_score']]
+        ranks = get_pareto_ranks(solutions)
 
-        if get_pareto:
-            solutions = holistic_metrics[['investor_score', 'dso_score', 'user_score']]
+        # Append pareto ranks to holistic metrics dataframe
+        holistic_with_pareto_ranks = holistic_metrics.assign(pareto_rank=ranks).sort_values('pareto_rank')
+        print(f'Holistic metrics\n{holistic_with_pareto_ranks}')
 
-            pareto_idxs = get_pareto_front_indices(solutions)
+        # Save pareto front rank data to csv
+        holistic_pareto_filename = f'holistic_metrics_pareto_front_{config}_{strategy}_{params.num_of_evs}EVs_{step}step.csv'
+        holistic_pareto_filepath = os.path.join(params.sensitivity_analysis_res_path, holistic_pareto_filename)
 
-            print("Pareto front indices:", pareto_idxs)
-            print("Pareto-optimal rows:\n", holistic_metrics.loc[pareto_idxs])
+        holistic_with_pareto_ranks.to_csv(holistic_pareto_filepath)
+        print(f'\nHolistic metrics with pareto rank saved to:\n{holistic_pareto_filepath}')
 
-            ranks = get_pareto_ranks(solutions)
+        best_solution = get_balanced_solution(holistic_with_pareto_ranks)
+        print(f'Best solution:\n{best_solution}')
 
-            final_df = holistic_metrics.assign(pareto_rank=ranks).sort_values('pareto_rank')
-            print('final_df')
-            print(final_df)
-
-            pareto_front_filename = f'{params.project_root}/data/outputs/metrics/pareto_front_{step}step.csv'
-
-            final_df.to_csv(pareto_front_filename)
-            print(f'Saved pareto front file to:\n{pareto_front_filename}')
-
-            parallel_plot_pareto(final_df)
+        if plot:
+            parallel_plot_pareto(holistic_with_pareto_ranks, config, strategy)
 
 
 if __name__ == '__main__':

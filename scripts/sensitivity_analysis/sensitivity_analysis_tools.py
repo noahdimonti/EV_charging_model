@@ -28,9 +28,10 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     df = pd.DataFrame()
 
     # Run optimisation for each weight
-    for weights in weight_dicts:
+    for i, weights in enumerate(weight_dicts):
         print(f'-------------------------------------------------------------')
-        print(f'\nObjective weights:')
+        print(f'\nIteration no: {i}')
+        print(f'Objective weights:')
         pprint(weights, sort_dicts=False)
 
         # Run model and analyse results

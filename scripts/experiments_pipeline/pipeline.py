@@ -40,6 +40,7 @@ def run_model_pipeline(configurations: list,
                     time_limit=time_limit,
                     mip_gap=mip_gap
                 )
+                print(f'obj value: {opt_result.objective_value}')
 
                 opt_results_per_config[strategy] = opt_result
 
@@ -77,7 +78,7 @@ def run_model_pipeline(configurations: list,
             charging_strategies,
             version
         )
-        print(formatted_metrics)
+        print(f'\nFormatted Metrics\n{formatted_metrics}')
 
     if plot:
         plot_models_comparison.demand_profiles(
