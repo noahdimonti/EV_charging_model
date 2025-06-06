@@ -60,8 +60,11 @@ class ChargingPoint:
         self.model.is_cp_installed = pyo.Var(
             self.model.CP_ID, within=pyo.Binary
         )
-        self.model.p_cp_total = pyo.Var(
-            within=pyo.NonNegativeReals
+        # self.model.p_cp_total = pyo.Var(
+        #     within=pyo.NonNegativeReals
+        # )
+        self.model.num_cp_per_type = pyo.Var(
+            params.p_cp_rated_options_scaled, within=pyo.NonNegativeIntegers
         )
 
     def _ev_cp_permanent_assignment_variables(self):
@@ -104,11 +107,20 @@ class ChargingPoint:
     # CONFIG 2 AND 3 Constraint
     def _total_charging_demand(self):
         # Constraint: ensuring total EV charging demand can be met by the number of installed CPs
-        def p_cp_total(model, t):
-            return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.num_cp * model.p_cp_rated  # THIS IS THE BILINEAR CONSTRAINT!!!!
+        # def p_cp_total(model, t):
+        #     return sum(model.p_ev[i, t] for i in model.EV_ID) <= model.num_cp * model.p_cp_rated  # THIS IS THE BILINEAR CONSTRAINT!!!!
+        #
+        # self.model.p_cp_total_constraint = pyo.Constraint(
+        #     self.model.TIME, rule=p_cp_total
+        # )
 
-        self.model.p_cp_total_constraint = pyo.Constraint(
-            self.model.TIME, rule=p_cp_total
+        def total_charging_demand(model, t):
+            return sum(model.p_ev[i, t] for i in model.EV_ID) <= sum(
+                model.num_cp_per_type[m] * m for m in params.p_cp_rated_options_scaled
+            )
+
+        self.model.total_charging_demand_constraints = pyo.Constraint(
+            self.model.TIME, rule=total_charging_demand
         )
 
         '''

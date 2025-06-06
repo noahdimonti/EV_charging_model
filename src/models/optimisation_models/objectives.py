@@ -11,9 +11,6 @@ class EconomicObjective:
                                        for m in params.p_cp_rated_options_scaled)
 
     def investment_cost_linearised(self):  # Objective term for config 2 and 3
-        # Initialise variable
-        self.model.num_cp_per_type = pyo.Var(params.p_cp_rated_options_scaled, within=pyo.NonNegativeIntegers)
-
         # Initialise constraints
         self._investment_cost_linearisation_constraints()
 

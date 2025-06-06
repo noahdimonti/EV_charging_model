@@ -184,7 +184,7 @@ class ModelResults:
         self.metrics.update(self._general_metrics())
         self.metrics.update(self.obj_weights)
 
-        if self.objective_value:
+        if self.charging_strategy.value != 'uncoordinated':
             self.metrics.update({'objective_value': self.objective_value})
 
         if self.mip_gap is not None:
