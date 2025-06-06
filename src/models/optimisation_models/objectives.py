@@ -6,9 +6,41 @@ class EconomicObjective:
     def __init__(self, model):
         self.model = model
 
-    def investment_cost(self):
+    def investment_cost(self):  # Objective term for config 1
         return self.model.num_cp * sum(params.investment_cost[m] * self.model.select_cp_rated_power[m]
                                        for m in params.p_cp_rated_options_scaled)
+
+    def investment_cost_linearised(self):  # Objective term for config 2 and 3
+        # Initialise variable
+        self.model.num_cp_per_type = pyo.Var(params.p_cp_rated_options_scaled, within=pyo.NonNegativeIntegers)
+
+        # Initialise constraints
+        self._investment_cost_linearisation_constraints()
+
+        return sum(self.model.num_cp_per_type[m] * params.investment_cost[m]
+                   for m in params.p_cp_rated_options_scaled)
+
+    def _investment_cost_linearisation_constraints(self):
+        def num_cp_per_type_upper_bound1(model, m):
+            return model.num_cp_per_type[m] <= model.num_cp
+
+        self.model.num_cp_per_type_upper1_constraint = pyo.Constraint(
+            params.p_cp_rated_options_scaled, rule=num_cp_per_type_upper_bound1
+        )
+
+        def num_cp_per_type_upper_bound2(model, m):
+            return model.num_cp_per_type[m] <= model.select_cp_rated_power[m] * params.num_cp_max
+
+        self.model.num_cp_per_type_upper2_constraint = pyo.Constraint(
+            params.p_cp_rated_options_scaled, rule=num_cp_per_type_upper_bound2
+        )
+
+        def num_cp_per_type_lower_bound(model, m):
+            return model.num_cp_per_type[m] >= model.num_cp - (1 - model.select_cp_rated_power[m]) * params.num_cp_max
+
+        self.model.num_cp_per_type_lower_constraint = pyo.Constraint(
+            params.p_cp_rated_options_scaled, rule=num_cp_per_type_lower_bound
+        )
 
     def maintenance_cost(self):
         return (params.annual_maintenance_cost / 365) * params.num_of_days * self.model.num_cp

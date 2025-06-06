@@ -57,7 +57,13 @@ class BuildModel:
             # Economic objective
             if self.obj_weights['economic_weight'] > 0:
                 economic_obj = EconomicObjective(model)
-                economic_cost = economic_obj.investment_cost() + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
+
+                if self.config == CPConfig.CONFIG_1:
+                    investment_cost = economic_obj.investment_cost()
+                else:
+                    investment_cost = economic_obj.investment_cost_linearised()
+
+                economic_cost = investment_cost + economic_obj.maintenance_cost() + economic_obj.energy_purchase_cost()
             else:
                 economic_cost = 0
 
