@@ -296,11 +296,20 @@ class ElectricVehicle:
         )
 
         # Power is only nonzero if EV and CP are connected
-        def cp_power_limit_rule(model, i, j, t):  # this constraint is supposed to be bilinear?
-            return model.p_ev_cp[i, j, t] <= model.is_ev_cp_connected[i, j, t] * model.p_cp_rated
+        # Big M Linearisation
+        def cp_power_limit_upper_bound(model, i, j, t):
+            return model.p_ev_cp[i, j, t] <= model.p_cp_rated
 
-        self.model.cp_power_limit = pyo.Constraint(
-            self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_power_limit_rule
+        self.model.cp_power_limit_upper_bound_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_power_limit_upper_bound
         )
+
+        def cp_power_limit_bigm(model, i, j, t):
+            return model.p_ev_cp[i, j, t] <= model.is_ev_cp_connected[i, j, t] * params.p_cp_rated_max
+
+        self.model.cp_power_limit_bigm_constraint = pyo.Constraint(
+            self.model.EV_ID, self.model.CP_ID, self.model.TIME, rule=cp_power_limit_bigm
+        )
+
 
 
