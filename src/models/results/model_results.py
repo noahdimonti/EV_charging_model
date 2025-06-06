@@ -218,7 +218,7 @@ class ModelResults:
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-                'Objective value': f'{self.objective_value:,.2f}'
+                'Objective value': f'{self.objective_value:,.4f}'
             })
 
         return formatted_metrics

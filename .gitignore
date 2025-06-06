@@ -256,7 +256,7 @@ data/
 
 # Dynamic scripts
 /scripts/run_pipeline.py
-/scripts/test_script.py
+/scripts/sketchbook.py
 
 # Temporary
 /src/unit_tests

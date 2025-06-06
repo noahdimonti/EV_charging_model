@@ -23,6 +23,7 @@ def run_optimisation_model(
     model_builder = BuildModel(
         config=config_map[config],
         charging_strategy=strategy_map[charging_strategy],
+        version=version,
         obj_weights=obj_weights
     )
     model = model_builder.get_optimisation_model()
