@@ -6,6 +6,16 @@ from src.models.results.model_results import compile_multiple_models_metrics, Mo
 from pprint import pprint
 
 
+def load_model(
+        config: str,
+        strategy: str,
+        version: str) -> ModelResults:
+    filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
+    filepath = os.path.join(params.model_results_folder_path, filename)
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
+
+
 def analyse_results(configurations: list,
                     charging_strategies: list,
                     version: str,
