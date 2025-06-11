@@ -22,8 +22,6 @@ class BuildModel:
         self.charging_strategy = charging_strategy
         self.obj_weights = obj_weights
 
-        self.f_star_values = {}
-
         self.model = pyo.ConcreteModel(
             name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs_{version}'
         )
