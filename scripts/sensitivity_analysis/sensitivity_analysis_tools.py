@@ -60,7 +60,8 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     df = df.T
 
     # Save compiled df to csv
-    filename = f'sensitivity_analysis_{config}_{strategy}_{params.num_of_evs}EVs_{step}step.csv'
+    filename = (f'sensitivity_analysis_'
+                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
     file_path = os.path.join(params.sensitivity_analysis_res_path, filename)
     df.to_csv(file_path)
 
