@@ -256,6 +256,7 @@ data/
 
 # Dynamic scripts
 /scripts/run_pipeline.py
+/scripts/sensitivity_analysis_pipeline.py
 /scripts/sketchbook.py
 
 # Temporary
