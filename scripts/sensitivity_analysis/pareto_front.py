@@ -1,8 +1,12 @@
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+
+from scripts.sensitivity_analysis.sensitivity_analysis_tools import get_holistic_metrics
 from src.config import params
 
 
@@ -94,11 +98,51 @@ def get_balanced_solution(df: pd.DataFrame):
         ((1 - pareto_front['user_score']) ** 2)
     )
 
-    # Find the index of the most balanced solution (smallest distance)
-    best_index = pareto_front['distance_to_ideal'].idxmin()
-    best_solution = pareto_front.loc[best_index]
+    # Get the minimum distance
+    min_distance = pareto_front['distance_to_ideal'].min()
 
-    return best_solution
+    # Find all rows with that minimum distance
+    best_solutions = pareto_front[np.isclose(pareto_front['distance_to_ideal'], min_distance, atol=1e-8)]
+
+    return best_solutions
+
+
+def get_pareto_results(
+        config: str,
+        strategy: str,
+        step: float,
+        sens_analysis_res: pd.DataFrame = None) -> pd.DataFrame:
+    # Get raw data from sensitivity analysis file
+    if sens_analysis_res is None:
+        sens_filename = (f'sensitivity_analysis_'
+                         f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
+        file_path = os.path.join(params.sensitivity_analysis_res_path, sens_filename)
+        df = pd.read_csv(file_path)
+    else:
+        df = sens_analysis_res
+
+    # Convert raw data into holistic metrics
+    holistic_metrics = get_holistic_metrics(df)
+
+    # Get solution columns and pareto ranks
+    solutions = holistic_metrics[['investor_score', 'dso_score', 'user_score']]
+    ranks = get_pareto_ranks(solutions)
+
+    # Append pareto ranks to holistic metrics dataframe
+    holistic_with_pareto_ranks = holistic_metrics.assign(pareto_rank=ranks).sort_values('pareto_rank')
+
+    # Save pareto front rank data to csv
+    holistic_pareto_filename = (f'holistic_metrics_pareto_front_'
+                                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
+    holistic_pareto_filepath = os.path.join(params.sensitivity_analysis_res_path, holistic_pareto_filename)
+
+    holistic_with_pareto_ranks.to_csv(holistic_pareto_filepath)
+    print(f'\nHolistic metrics with pareto rank saved to:\n{holistic_pareto_filepath}')
+
+    best_solution = get_balanced_solution(holistic_with_pareto_ranks)
+    print(f'\nBest solution(s):\n{best_solution}')
+
+    return holistic_with_pareto_ranks
 
 
 def parallel_plot_pareto(df: pd.DataFrame, config: str, strategy: str):
@@ -139,6 +183,8 @@ def parallel_plot_pareto(df: pd.DataFrame, config: str, strategy: str):
         )
     )
 
-    fig_parallel.write_image(f'{params.project_root}/data/outputs/plots/sensitivity_analysis/pareto_parallel.png', scale=2)
+    filename = f'pareto_parallel_{config}_{strategy}_{params.num_of_evs}EVs.png'
+    filepath = os.path.join(params.plots_folder_path, 'sensitivity_analysis', filename)
+    fig_parallel.write_image(filepath, scale=2)
     fig_parallel.show()
 
