@@ -10,8 +10,8 @@ obj_weights = {
 
 obj_weights_from_sensitivity_analysis = {
     'config_1_opportunistic': {
-        'economic_weight': 0.8,
-        'technical_weight': 0.1,
+        'economic_weight': 0.7,
+        'technical_weight': 0.2,
         'social_weight': 0.1
     },
     'config_1_flexible': {
