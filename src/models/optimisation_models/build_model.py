@@ -1,5 +1,3 @@
-import pandas as pd
-import os
 import pyomo.environ as pyo
 from src.config import params
 from src.models.utils.configs import (
@@ -37,7 +35,6 @@ class BuildModel:
 
         # Run methods
         self.initialise_sets()
-        self.get_f_star()
         self.assemble_components()
 
     def initialise_sets(self):
