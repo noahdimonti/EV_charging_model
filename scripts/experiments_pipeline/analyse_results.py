@@ -53,11 +53,15 @@ def analyse_results(configurations: list,
         formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
     # Compile formatted models metrics
-    formatted_filename = f'{params.formatted_metrics_filename_format}_{params.num_of_evs}EVs_{version}.csv'
-    formatted_results = compile_multiple_models_metrics(formatted_models_metrics, filename=formatted_filename, save_df=save_df)
+    formatted_filename = (f'{params.formatted_metrics_filename_format}_'
+                          f'{params.num_of_evs}EVs_{params.num_of_days}days_{version}.csv')
+    formatted_results = compile_multiple_models_metrics(formatted_models_metrics, filename=formatted_filename,
+                                                        save_df=save_df)
 
     # Compile raw values models metrics
-    raw_metrics_filename = f'{params.raw_val_metrics_filename_format}_{params.num_of_evs}EVs_{version}.csv'
-    raw_metrics_results = compile_multiple_models_metrics(raw_val_metrics, filename=raw_metrics_filename, save_df=save_df)
+    raw_metrics_filename = (f'{params.raw_val_metrics_filename_format}_'
+                            f'{params.num_of_evs}EVs_{params.num_of_days}days_{version}.csv')
+    raw_metrics_results = compile_multiple_models_metrics(raw_val_metrics, filename=raw_metrics_filename,
+                                                          save_df=save_df)
 
     return raw_metrics_results, formatted_results
