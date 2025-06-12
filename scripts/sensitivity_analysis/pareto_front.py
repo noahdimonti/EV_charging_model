@@ -82,7 +82,7 @@ def get_pareto_ranks(df: pd.DataFrame) -> pd.Series:
     return pd.Series(ranks, index=df.index, name="pareto_rank")
 
 
-def get_balanced_solution(df: pd.DataFrame):
+def get_balanced_solution(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
     # Subset Pareto front with rank 1
     pareto_front = df[df['pareto_rank'] == 1].copy()
 
@@ -92,6 +92,7 @@ def get_balanced_solution(df: pd.DataFrame):
         ((1 - pareto_front['dso_score']) ** 2) +
         ((1 - pareto_front['user_score']) ** 2)
     )
+    pareto_front = pareto_front.sort_values('distance_to_ideal')
 
     # Get the minimum distance
     min_distance = pareto_front['distance_to_ideal'].min()
@@ -99,7 +100,7 @@ def get_balanced_solution(df: pd.DataFrame):
     # Find all rows with that minimum distance
     best_solutions = pareto_front[np.isclose(pareto_front['distance_to_ideal'], min_distance, atol=1e-8)]
 
-    return best_solutions
+    return pareto_front, best_solutions
 
 
 def get_pareto_results(
@@ -134,7 +135,19 @@ def get_pareto_results(
     holistic_with_pareto_ranks.to_csv(holistic_pareto_filepath)
     print(f'\nHolistic metrics with pareto rank saved to:\n{holistic_pareto_filepath}')
 
-    best_solution = get_balanced_solution(holistic_with_pareto_ranks)
+    # Get pareto front dataframe and best solution
+    pareto_front, best_solution = get_balanced_solution(holistic_with_pareto_ranks)
+
+    # Save pareto front
+    pareto_front_filename = (f'pareto_front_'
+                             f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
+    pareto_front_filepath = os.path.join(params.sensitivity_analysis_res_path, pareto_front_filename)
+
+    pareto_front.to_csv(pareto_front_filepath)
+    print(f'\nPareto front dataframe saved to:\n{pareto_front_filepath}')
+
+    # Print pareto front and best solution
+    print(f'\nPareto front: \n{pareto_front}')
     print(f'\nBest solution(s):\n{best_solution}')
 
     return holistic_with_pareto_ranks
