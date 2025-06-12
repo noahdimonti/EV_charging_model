@@ -13,12 +13,20 @@ class ModelResults:
     def __init__(self, model: pyo.ConcreteModel | dict,
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
-                 obj_weights: dict[str, float],
+                 obj_weights: dict[str, float] = None,
                  mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
-        self.obj_weights = obj_weights
         self.mip_gap = mip_gap
+
+        if obj_weights is not None:
+            self.obj_weights = obj_weights
+        else:
+            self.obj_weights = {
+                'economic_weight': None,
+                'technical_weight': None,
+                'social_weight': None
+            }
 
         # Solved model results extraction
         self.variables = {}

@@ -4,17 +4,17 @@ from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
-from src.visualisation import technical_comparison
+from src.visualisation import economic_comparison, technical_comparison, social_comparison
 
 
 def run_model_pipeline(configurations: list,
                        charging_strategies: list,
-                       obj_weights: dict,
                        version: str,
                        run_model: bool,
                        solver_settings: dict,
                        analyse: bool,
-                       plot: bool):
+                       plot: bool,
+                       obj_weights: dict = None):
 
     if run_model:
         for config in configurations:
@@ -31,18 +31,20 @@ def run_model_pipeline(configurations: list,
                 time_limit = solver_settings[f'{config}_{strategy}'][1]
                 verbose = solver_settings[f'{config}_{strategy}'][2]
 
-                opt_result = run_optimisation_model(
-                    config=config,
-                    charging_strategy=strategy,
-                    version=version,
-                    obj_weights=obj_weights,
-                    verbose=verbose,
-                    time_limit=time_limit,
-                    mip_gap=mip_gap
-                )
-                print(f'obj value: {opt_result.objective_value}')
+                if obj_weights is not None:
+                    opt_result = run_optimisation_model(
+                        config=config,
+                        charging_strategy=strategy,
+                        version=version,
+                        obj_weights=obj_weights,
+                        verbose=verbose,
+                        time_limit=time_limit,
+                        mip_gap=mip_gap
+                    )
 
-                opt_results_per_config[strategy] = opt_result
+                    opt_results_per_config[strategy] = opt_result
+                else:
+                    raise ValueError(f'Provide objective weights for {config}_{strategy} model')
 
             # Run simulation model after getting optimisation model results
             if 'uncoordinated' in charging_strategies:
@@ -67,7 +69,6 @@ def run_model_pipeline(configurations: list,
                     config=config,
                     charging_strategy='uncoordinated',
                     version=version,
-                    obj_weights=obj_weights,
                     config_attribute=config_attr
                 )
                 opt_results_per_config['uncoordinated'] = simulation_result
@@ -81,19 +82,19 @@ def run_model_pipeline(configurations: list,
         print(f'\nFormatted Metrics\n{formatted_metrics}')
 
     if plot:
-        plot_models_comparison.demand_profiles(
+        technical_comparison.demand_profiles_by_config(
             configurations,
             charging_strategies,
             version,
             save_img=True
         )
-        plot_models_comparison.soc_distribution(
+        social_comparison.soc_distribution(
             configurations,
             charging_strategies,
             version,
             save_img=True
         )
-        plot_models_comparison.users_cost_distribution(
+        social_comparison.users_cost_distribution(
             configurations,
             charging_strategies,
             version,

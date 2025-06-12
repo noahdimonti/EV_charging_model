@@ -258,6 +258,8 @@ data/
 /scripts/run_pipeline.py
 /scripts/sensitivity_analysis_pipeline.py
 /scripts/sketchbook.py
+/src/visualisation/plot_tst.py
+/src/config/independent_variables.py
 
 # Temporary
 /src/unit_tests

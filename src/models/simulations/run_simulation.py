@@ -9,7 +9,6 @@ def run_simulation_model(
         config: str,
         charging_strategy: str,
         version: str,
-        obj_weights: dict[str, float],
         config_attribute: dict[str, int | float | dict[int, list]]) -> ModelResults:
     # Validate config and charging strategy
     validate_config_strategy(config, charging_strategy)
@@ -29,7 +28,7 @@ def run_simulation_model(
         print_runtime(finished_label, simulation_time)
 
         # Save results
-        results = ModelResults(simulation_results, config_map[config], strategy_map[charging_strategy], obj_weights)
+        results = ModelResults(simulation_results, config_map[config], strategy_map[charging_strategy])
         results.save_model_to_pickle(version=version)
 
         return results
