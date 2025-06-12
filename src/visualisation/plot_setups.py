@@ -10,9 +10,8 @@ fig_size = (12, 8)
 
 
 def get_model_results_data(config: str, strategy: str, version: str):
-    folder_path = os.path.join(params.model_results_folder_path)
     filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
-    file_path = os.path.join(folder_path, filename)
+    file_path = os.path.join(params.model_results_folder_path, filename)
 
     with open(file_path, 'rb') as f:
         results = pickle.load(f)

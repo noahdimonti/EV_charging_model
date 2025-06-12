@@ -17,17 +17,17 @@ models_colour_dict = {
 }
 
 # Font size settings
-# title_fontsize = 18
-# label_fontsize = 16
-# tick_fontsize = 10
-# value_fontsize = 12
-# legend_fontsize = 12
-# violin_values_fontsize = 12
-# box_linewidth = 3
+title_fontsize = 18
+label_fontsize = 16
+tick_fontsize = 10
+value_fontsize = 12
+legend_fontsize = 12
+violin_values_fontsize = 12
+box_linewidth = 3
 
 
-
-# conference paper size settings
+'''
+# Conference paper size settings
 title_fontsize = 18
 label_fontsize = 16
 tick_fontsize = 14
@@ -35,3 +35,5 @@ value_fontsize = 12
 legend_fontsize = 14
 violin_values_fontsize = 12
 box_linewidth = 3
+'''
+

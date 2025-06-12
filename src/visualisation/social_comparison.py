@@ -9,44 +9,6 @@ from src.visualisation import plot_configs
 from pprint import pprint
 
 
-def demand_profiles(configurations: list, charging_strategies: list, version: str, save_img=False):
-    # Create the plot
-    fig, ax = plt.subplots(figsize=plot_setups.fig_size)
-
-    # Plot household load
-    house_load = [load for load in params.household_load['household_load']]
-    ax.fill_between(params.timestamps, house_load, color=plot_configs.household_baseline_load, linewidth=1, alpha=0.6, label='Household Load')
-
-    # Plot total demand
-    for config in configurations:
-        for strategy in charging_strategies:
-            results = plot_setups.get_model_results_data(config, strategy, version)
-            ev_load = [sum(results.variables['p_ev'][i, t] for i in results.sets['EV_ID']) for t in results.sets['TIME']]
-            total_demand = [h_l + ev_l for h_l, ev_l in zip(house_load, ev_load)]
-            ax.plot(
-                params.timestamps,
-                total_demand,
-                color=plot_configs.models_colour_dict[f'{config}_{strategy}'],
-                linewidth=1.5,
-                label=f'{config.capitalize()} - {strategy.capitalize()} Charging Load')
-
-    # setup_plot.setup('Comparison of Charging Strategies Load Profiles', 'Load (kW)')
-
-    plot_setups.setup(
-        title='Comparison of Charging Strategies Load Profiles',
-        ylabel='Load (kW)',
-        xlabel='Day',
-        legend=True,
-        ax=ax
-    )
-
-    plot_setups.timeseries_setup(ax=ax)
-
-    if save_img:
-        plot_setups.save_plot(f'demand_profiles_{params.num_of_evs}EVs_{version}')
-    plt.show()
-
-
 def soc_distribution(configurations: list, charging_strategies: list, version: str, save_img=False):
     all_results = []
     for config in configurations:
@@ -167,47 +129,3 @@ def users_cost_distribution(configurations: list, charging_strategies: list, ver
     if save_img:
         plot_setups.save_plot(f'users_cost_distribution_{params.num_of_evs}EVs_{version}')
     plt.show()
-
-
-
-# SPIDER CHART
-# Data
-labels = ['Fairness', 'Grid Impact', 'Cost']
-values = [80, 65, 90]  # Example values (0-100 scale)
-
-# Radar setup
-num_vars = len(labels)
-angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-values += values[:1]  # Repeat the first value to close the circle
-angles += angles[:1]  # Repeat the first angle too
-
-# Plot
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.set_theta_offset(np.pi / 2)      # Start from top
-ax.set_theta_direction(-1)          # Clockwise
-
-# Draw the outline
-ax.plot(angles, values, color='tab:blue', linewidth=2)
-ax.fill(angles, values, color='tab:blue', alpha=0.25)
-
-# Style axes
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels, fontsize=12, weight='bold')
-
-# Set r-labels inside the circle
-ax.set_rlabel_position(180 / num_vars)
-ax.set_yticks([20, 40, 60, 80])
-ax.set_yticklabels(['20', '40', '60', '80'], fontsize=10)
-ax.set_ylim(0, 100)
-
-# Optional: circular grid style
-ax.grid(True, linestyle='dotted', linewidth=1, alpha=0.7)
-
-# Remove frame
-ax.spines['polar'].set_visible(False)
-
-plt.title('Performance Metrics Radar', fontsize=14, weight='bold', y=1.1)
-plt.tight_layout()
-
-plot_setups.save_plot('test.png')
-# plt.show()
