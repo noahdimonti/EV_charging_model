@@ -30,6 +30,7 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
     # Run optimisation for each weight
     for i, weights in enumerate(weight_dicts):
         print(f'-------------------------------------------------------------')
+        print(f'-------------------------------------------------------------')
         print(f'\nIteration no: {i}')
         print(f'Objective weights:')
         pprint(weights, sort_dicts=False)
