@@ -5,11 +5,12 @@ import os
 import pickle
 from src.config import params
 from src.visualisation import plot_configs
+from src.models.results.model_results import ModelResults
 
 fig_size = (12, 8)
 
 
-def get_model_results_data(config: str, strategy: str, version: str):
+def get_model_results_data(config: str, strategy: str, version: str) -> ModelResults:
     filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
     file_path = os.path.join(params.model_results_folder_path, filename)
 
@@ -54,7 +55,7 @@ def get_metrics(version: str):
 #     plt.tight_layout()
 
 
-def setup(title: str, ylabel: str, xlabel: str = None, legend=True, ax=None):
+def setup(title: str, ylabel: str, xlabel: str = None, legend=True, legend_col: int = 2, ax=None):
     """Helper function to set up plot aesthetics."""
     if ax is None:
         ax = plt.gca()
@@ -74,7 +75,7 @@ def setup(title: str, ylabel: str, xlabel: str = None, legend=True, ax=None):
     # ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Grid
-    ax.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.3)
+    ax.grid(visible=True, which='major', linestyle='--', linewidth=1, alpha=0.6)
 
     # Spines (top and right)
     ax.spines['top'].set_visible(True)
@@ -90,7 +91,7 @@ def setup(title: str, ylabel: str, xlabel: str = None, legend=True, ax=None):
             loc='upper center',
             bbox_to_anchor=(0.5, -0.1),
             frameon=False,
-            ncol=2,
+            ncol=legend_col,
             prop={
                 'weight': 'bold',
                 'size': plot_configs.legend_fontsize
