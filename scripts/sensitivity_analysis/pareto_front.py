@@ -1,8 +1,6 @@
 import os
 import pandas as pd
 import numpy as np
-from scripts.sensitivity_analysis.sensitivity_analysis_tools import get_holistic_metrics
-from src.config import params
 
 
 def is_dominated(row, others):
@@ -79,75 +77,6 @@ def get_pareto_ranks(df: pd.DataFrame) -> pd.Series:
         current_rank += 1
 
     # Return the ranks as a Series with the same index as the original DataFrame
-    return pd.Series(ranks, index=df.index, name="pareto_rank")
+    return pd.Series(ranks, index=df.index, name='pareto_rank')
 
 
-def get_balanced_solution(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-    # Subset Pareto front with rank 1
-    pareto_front = df[df['pareto_rank'] == 1].copy()
-
-    # Compute Euclidean distance to the ideal point (1, 1, 1)
-    pareto_front['distance_to_ideal'] = np.sqrt(
-        ((1 - pareto_front['investor_score']) ** 2) +
-        ((1 - pareto_front['dso_score']) ** 2) +
-        ((1 - pareto_front['user_score']) ** 2)
-    )
-    pareto_front = pareto_front.sort_values('distance_to_ideal')
-
-    # Get the minimum distance
-    min_distance = pareto_front['distance_to_ideal'].min()
-
-    # Find all rows with that minimum distance
-    best_solutions = pareto_front[np.isclose(pareto_front['distance_to_ideal'], min_distance, atol=1e-8)]
-
-    return pareto_front, best_solutions
-
-
-def get_pareto_results(
-        config: str,
-        strategy: str,
-        step: float,
-        sens_analysis_res: pd.DataFrame = None) -> pd.DataFrame:
-    # Get raw data from sensitivity analysis file
-    if sens_analysis_res is None:
-        sens_filename = (f'sensitivity_analysis_'
-                         f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
-        file_path = os.path.join(params.sensitivity_analysis_res_path, sens_filename)
-        df = pd.read_csv(file_path)
-    else:
-        df = sens_analysis_res
-
-    # Convert raw data into holistic metrics
-    holistic_metrics = get_holistic_metrics(df)
-
-    # Get solution columns and pareto ranks
-    solutions = holistic_metrics[['investor_score', 'dso_score', 'user_score']]
-    ranks = get_pareto_ranks(solutions)
-
-    # Append pareto ranks to holistic metrics dataframe
-    holistic_with_pareto_ranks = holistic_metrics.assign(pareto_rank=ranks).sort_values('pareto_rank')
-
-    # Save pareto front rank data to csv
-    holistic_pareto_filename = (f'holistic_metrics_pareto_front_'
-                                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
-    holistic_pareto_filepath = os.path.join(params.sensitivity_analysis_res_path, holistic_pareto_filename)
-
-    holistic_with_pareto_ranks.to_csv(holistic_pareto_filepath)
-    print(f'\nHolistic metrics with pareto rank saved to:\n{holistic_pareto_filepath}')
-
-    # Get pareto front dataframe and best solution
-    pareto_front, best_solution = get_balanced_solution(holistic_with_pareto_ranks)
-
-    # Save pareto front
-    pareto_front_filename = (f'pareto_front_'
-                             f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
-    pareto_front_filepath = os.path.join(params.sensitivity_analysis_res_path, pareto_front_filename)
-
-    pareto_front.to_csv(pareto_front_filepath)
-    print(f'\nPareto front dataframe saved to:\n{pareto_front_filepath}')
-
-    # Print pareto front and best solution
-    print(f'\nPareto front: \n{pareto_front}')
-    print(f'\nBest solution(s):\n{best_solution}')
-
-    return holistic_with_pareto_ranks

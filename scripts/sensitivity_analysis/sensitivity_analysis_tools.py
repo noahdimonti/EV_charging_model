@@ -62,45 +62,10 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
 
     # Save compiled df to csv
     filename = (f'sensitivity_analysis_'
-                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
+                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step_{version}.csv')
     file_path = os.path.join(params.sensitivity_analysis_res_path, filename)
     df.to_csv(file_path)
 
     print(f'Compiled sensitivity analysis results saved to:\n{file_path}\n')
 
     return df
-
-
-def normalise_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.drop('Unnamed: 0', axis=1)
-    normalised = pd.DataFrame(index=df.index)
-    for col in df.columns:
-        min_val = df[col].min()
-        max_val = df[col].max()
-        normalised[col] = (df[col] - min_val) / (max_val - min_val) if max_val != min_val else 0
-
-    return normalised
-
-
-def get_holistic_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    normalised = normalise_metrics(df)
-
-    # Create holistic score dataframe
-    holistic_metrics = pd.DataFrame(columns=['investor_score', 'dso_score', 'user_score'])
-    holistic_metrics = pd.concat(
-        [holistic_metrics, normalised[['economic_weight', 'technical_weight', 'social_weight']]], axis=1)
-
-    # Economic score
-    holistic_metrics['investor_score'] = 1 - normalised['investment_cost']
-
-    # Technical score
-    holistic_metrics['dso_score'] = ((1 - normalised['avg_p_peak']) *
-                                     (1 - normalised['avg_papr']) *
-                                     (1 - normalised['avg_daily_peak_increase']))
-
-    # Social score - NOT FINALISED
-    holistic_metrics['user_score'] = ((1 - normalised['total_cost_per_user']) *  # cost component
-                                      (normalised['avg_soc_t_dep_percent']) *  # average SOC
-                                      (1 - normalised['soc_range']))  # fairness
-
-    return holistic_metrics
