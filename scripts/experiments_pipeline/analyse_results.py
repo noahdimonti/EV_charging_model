@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 import os
 from src.config import params
-from src.models.results.model_results import compile_multiple_models_metrics, ModelResults
+from src.models.results.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
 from pprint import pprint
 
 
@@ -34,10 +34,13 @@ def analyse_results(configurations: list,
                 with open(filename, 'rb') as f:
                     results = pickle.load(f)
 
-                # Format and collect metrics
-                formatted_metrics = results.format_metrics()
+                # Get evaluation metrics from results
+                evaluation_metrics = EvaluationMetrics(results)
 
-                raw_val_metrics[f'{config}_{strategy}'] = results.metrics
+                # Format and collect metrics
+                formatted_metrics = evaluation_metrics.format_metrics()
+
+                raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
                 formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
     # If model_results object is provided
@@ -46,10 +49,13 @@ def analyse_results(configurations: list,
         config = model_results.config.value
         strategy = model_results.charging_strategy.value
 
-        # Format and collect metrics
-        formatted_metrics = model_results.format_metrics()
+        # Get evaluation metrics from results
+        evaluation_metrics = EvaluationMetrics(model_results)
 
-        raw_val_metrics[f'{config}_{strategy}'] = model_results.metrics
+        # Format and collect metrics
+        formatted_metrics = evaluation_metrics.format_metrics()
+
+        raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
         formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
     # Compile formatted models metrics

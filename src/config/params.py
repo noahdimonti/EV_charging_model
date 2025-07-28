@@ -82,7 +82,7 @@ ev_distribution_imbalance_threshold = 1
 
 # CP charging settings for configuration 2 and 3
 max_charging_duration = pd.Timedelta(hours=3)
-no_charging_range_time = pd.date_range('00:00', '05:59', freq='15min').time
+no_charging_time = pd.date_range('00:00', '05:59', freq='15min').time
 
 
 # --------------------------
