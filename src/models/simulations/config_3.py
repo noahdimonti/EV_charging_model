@@ -102,7 +102,7 @@ class UncoordinatedModelConfig3:
         ))
 
     def _connect_ev(self, cp_id, t):
-        if (len(self.charging_queue[cp_id]) > 0) and (self.is_cp_available[cp_id]) and (t.time() not in params.no_charging_range_time):
+        if (len(self.charging_queue[cp_id]) > 0) and (self.is_cp_available[cp_id]) and (t.time() not in params.no_charging_time):
             # Connect EV to CP and add it to is_charging list
             ev_queue_id = self.charging_queue[cp_id].popleft()
             self.charging_points[cp_id].connect_ev(ev_queue_id, t)

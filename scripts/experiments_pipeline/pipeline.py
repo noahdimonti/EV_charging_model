@@ -1,7 +1,7 @@
 import os
 import pickle
 from scripts.experiments_pipeline.analyse_results import analyse_results
-from src.config import params
+from src.config import params, independent_variables
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
 from src.visualisation import economic_comparison, technical_comparison, social_comparison
@@ -13,8 +13,7 @@ def run_model_pipeline(configurations: list,
                        run_model: bool,
                        solver_settings: dict,
                        analyse: bool,
-                       plot: bool,
-                       obj_weights: dict = None):
+                       plot: bool):
 
     if run_model:
         for config in configurations:
@@ -22,6 +21,9 @@ def run_model_pipeline(configurations: list,
 
             # Run optimisation models first
             for strategy in charging_strategies:
+                # Get objective weights
+                obj_weights = independent_variables.obj_weights_dict.get(f'{config}_{strategy}', None)
+
                 # Skip uncoordinated model
                 if strategy == 'uncoordinated':
                     continue
