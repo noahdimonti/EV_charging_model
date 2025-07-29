@@ -4,16 +4,17 @@ from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.config import params, independent_variables
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
-from src.visualisation import economic_comparison, technical_comparison, social_comparison
+from src.visualisation import plotting_pipeline
 
 
 def run_model_pipeline(configurations: list,
                        charging_strategies: list,
                        version: str,
                        run_model: bool,
-                       solver_settings: dict,
                        analyse: bool,
-                       plot: bool):
+                       plot: bool,
+                       solver_settings: dict,
+                       obj_w: dict[str, float] = None):
 
     if run_model:
         for config in configurations:
@@ -21,8 +22,11 @@ def run_model_pipeline(configurations: list,
 
             # Run optimisation models first
             for strategy in charging_strategies:
-                # Get objective weights
-                obj_weights = independent_variables.obj_weights_dict.get(f'{config}_{strategy}', None)
+                # Check if obj weights are passed in as an argument
+                if obj_w is None:
+                    obj_weights = independent_variables.obj_weights_dict.get(f'{config}_{strategy}', None)
+                else:
+                    obj_weights = obj_w
 
                 # Skip uncoordinated model
                 if strategy == 'uncoordinated':
@@ -84,19 +88,7 @@ def run_model_pipeline(configurations: list,
         print(f'\nFormatted Metrics\n{formatted_metrics}')
 
     if plot:
-        technical_comparison.demand_profiles_by_config(
-            configurations,
-            charging_strategies,
-            version,
-            save_img=True
-        )
-        social_comparison.soc_distribution(
-            configurations,
-            charging_strategies,
-            version,
-            save_img=True
-        )
-        social_comparison.users_cost_distribution(
+        plot_pipeline.plot_all(
             configurations,
             charging_strategies,
             version,
