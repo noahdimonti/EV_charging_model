@@ -1,5 +1,5 @@
 import pandas as pd
-import ast  # To safely parse string to dictionary
+import ast
 import os
 from src.config import params
 from pprint import pprint
@@ -9,19 +9,19 @@ from pprint import pprint
 filename = 'data/outputs/epsilon_constraint/epsilon_bounds.csv'
 filepath = os.path.join(params.project_root, filename)
 df = pd.read_csv(filepath, index_col=0)
-df = df[['economic_active', 'technical_active', 'social_active']]
+
+
+objectives = ['economic_objective', 'technical_objective', 'social_objective']
+components = ['economic_active', 'technical_active', 'social_active']
+
+
+df = df[components]
 print(df)
 
 # Parse stringified dictionaries
 for col in df.columns:
     df[col] = df[col].apply(ast.literal_eval)
 
-print(df.loc['config_1_opportunistic', 'economic_active']['economic_objective']
-)
-
-
-objectives = ['economic_objective', 'technical_objective', 'social_objective']
-components = ['economic_active', 'technical_active', 'social_active']
 
 epsilon_bounds = {}
 
@@ -38,3 +38,10 @@ for obj in objectives:
 
 
 pprint(epsilon_bounds)
+
+
+# Epsilon sweep ranges
+eps_econ_sweep = [3000, 6000, 9000, 12000, 15000]
+eps_tech_sweep = [200, 400, 600, 800, 1000]
+eps_soc_sweep = [600, 900, 1200, 1500, 1800]
+
