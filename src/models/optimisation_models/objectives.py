@@ -136,7 +136,7 @@ class TechnicalObjective:
 
     def f_disc(self):
         # Initialise variables
-        self.model.delta_p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
+        self.model.delta_p_ev = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, initialize=0)
 
         # Initialise constraints
         self._charging_discontinuity_constraints()
@@ -181,7 +181,7 @@ class SocialObjective:
 
     def f_fair(self):
         # Initialise variables
-        self.model.soc_avg_deviation = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals)
+        self.model.soc_avg_deviation = pyo.Var(self.model.EV_ID, self.model.TIME, within=pyo.NonNegativeReals, initialize=0)
         self.model.daily_soc_avg_t_dep = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
 
         def daily_soc_avg_t_dep_rule(model, d):
