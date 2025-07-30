@@ -13,8 +13,7 @@ def run_model_pipeline(configurations: list,
                        run_model: bool,
                        analyse: bool,
                        plot: bool,
-                       solver_settings: dict,
-                       obj_w: dict[str, float] = None):
+                       solver_settings: dict):
 
     if run_model:
         for config in configurations:
