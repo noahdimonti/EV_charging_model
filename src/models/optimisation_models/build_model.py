@@ -19,9 +19,10 @@ class BuildModel:
                  version: str):
         self.config = config
         self.charging_strategy = charging_strategy
+        self.version = version
 
         self.model = pyo.ConcreteModel(
-            name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs_{version}'
+            name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs_{self.version}'
         )
         self.assets = {}
 
@@ -96,12 +97,17 @@ class BuildModel:
         self.define_objective_components()
 
         # Epsilon constraints
-        self.model.tech_epsilon_constraint = pyo.Constraint(
-            expr=self.model.technical_objective <= 400
+        epsilon_placeholder = 1e6
+        self.model.economic_epsilon_constraint = pyo.Constraint(
+            expr=self.model.economic_objective <= epsilon_placeholder
+        )
+
+        self.model.technical_epsilon_constraint = pyo.Constraint(
+            expr=self.model.technical_objective <= epsilon_placeholder
         )
 
         self.model.social_epsilon_constraint = pyo.Constraint(
-            expr=self.model.social_objective <= 800
+            expr=self.model.social_objective <= epsilon_placeholder
         )
 
         self.model.obj_function = pyo.Objective(
