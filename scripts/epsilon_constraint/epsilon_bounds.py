@@ -40,8 +40,4 @@ for obj in objectives:
 pprint(epsilon_bounds)
 
 
-# Epsilon sweep ranges
-eps_econ_sweep = [3000, 6000, 9000, 12000, 15000]
-eps_tech_sweep = [200, 400, 600, 800, 1000]
-eps_soc_sweep = [600, 900, 1200, 1500, 1800]
 
