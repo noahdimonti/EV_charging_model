@@ -22,12 +22,6 @@ def run_model_pipeline(configurations: list,
 
             # Run optimisation models first
             for strategy in charging_strategies:
-                # Check if obj weights are passed in as an argument
-                if obj_w is None:
-                    obj_weights = independent_variables.obj_weights_dict.get(f'{config}_{strategy}', None)
-                else:
-                    obj_weights = obj_w
-
                 # Skip uncoordinated model
                 if strategy == 'uncoordinated':
                     continue
@@ -37,20 +31,18 @@ def run_model_pipeline(configurations: list,
                 time_limit = solver_settings[f'{config}_{strategy}'][1]
                 verbose = solver_settings[f'{config}_{strategy}'][2]
 
-                if obj_weights is not None:
-                    opt_result = run_optimisation_model(
-                        config=config,
-                        charging_strategy=strategy,
-                        version=version,
-                        obj_weights=obj_weights,
-                        verbose=verbose,
-                        time_limit=time_limit,
-                        mip_gap=mip_gap
-                    )
+                # Run optimisation model
+                opt_result = run_optimisation_model(
+                    config=config,
+                    charging_strategy=strategy,
+                    version=version,
+                    verbose=verbose,
+                    time_limit=time_limit,
+                    mip_gap=mip_gap
+                )
 
-                    opt_results_per_config[strategy] = opt_result
-                else:
-                    raise ValueError(f'Provide objective weights for {config}_{strategy} model')
+                # Store optimisation model results
+                opt_results_per_config[strategy] = opt_result
 
             # Run simulation model after getting optimisation model results
             if 'uncoordinated' in charging_strategies:
@@ -88,7 +80,7 @@ def run_model_pipeline(configurations: list,
         print(f'\nFormatted Metrics\n{formatted_metrics}')
 
     if plot:
-        plot_pipeline.plot_all(
+        plotting_pipeline.plot_all(
             configurations,
             charging_strategies,
             version,

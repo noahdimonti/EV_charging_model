@@ -10,7 +10,6 @@ def run_optimisation_model(
         config: str,
         charging_strategy: str,
         version: str,
-        obj_weights: dict[str, float],
         solver='gurobi',
         verbose=False,
         time_limit=None,
@@ -24,7 +23,6 @@ def run_optimisation_model(
         config=config_map[config],
         charging_strategy=strategy_map[charging_strategy],
         version=version,
-        obj_weights=obj_weights
     )
     model = model_builder.get_optimisation_model()
 
@@ -56,8 +54,7 @@ def run_optimisation_model(
         print_runtime(finished_label, solving_time)
 
         # Save results
-        results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], obj_weights,
-                               calc_mip_gap)
+        results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], calc_mip_gap)
 
         # Save results to pickle
         if save_model:
