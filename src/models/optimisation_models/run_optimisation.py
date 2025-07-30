@@ -1,3 +1,4 @@
+import pyomo.environ as pyo
 from src.config import params
 from src.models.optimisation_models.build_model import BuildModel
 from src.models.utils.log_model_info import log_with_runtime, print_runtime
@@ -10,6 +11,7 @@ def run_optimisation_model(
         config: str,
         charging_strategy: str,
         version: str,
+        model: pyo.ConcreteModel = None,
         solver='gurobi',
         verbose=False,
         time_limit=None,
@@ -18,13 +20,14 @@ def run_optimisation_model(
     # Validate config and charging strategy
     validate_config_strategy(config, charging_strategy)
 
-    # Build model constraints
-    model_builder = BuildModel(
-        config=config_map[config],
-        charging_strategy=strategy_map[charging_strategy],
-        version=version,
-    )
-    model = model_builder.get_optimisation_model()
+    # Build model
+    if model is None:
+        model_builder = BuildModel(
+            config=config_map[config],
+            charging_strategy=strategy_map[charging_strategy],
+            version=version,
+        )
+        model = model_builder.get_optimisation_model()
 
     # Define labels
     label = f'Solving {model.name} model'
