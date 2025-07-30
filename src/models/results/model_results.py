@@ -13,23 +13,14 @@ class ModelResults:
     def __init__(self, model: pyo.ConcreteModel | dict,
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
-                 obj_weights: dict[str, float] = None,
                  mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
-        self.objective_value = None
+        self.total_objective_value = None
 
-        if obj_weights is not None:
-            self.obj_weights = obj_weights
-        else:
-            self.obj_weights = {
-                'economic_weight': None,
-                'technical_weight': None,
-                'social_weight': None
-            }
-
-        # Solved model results extraction
+        # Extract results from solved model
+        # Variables
         self.variables = {}
         if charging_strategy.value == 'uncoordinated':
             self.variables = model
@@ -43,8 +34,9 @@ class ModelResults:
                     self.variables[var.name] = var.value
 
             # Get objective value
-            self.objective_value = pyo.value(model.obj_function)
+            self.total_objective_value = pyo.value(model.obj_function)
 
+        # Sets
         self.sets = {}
         if charging_strategy.value == 'uncoordinated':
             self.sets = {
@@ -56,6 +48,12 @@ class ModelResults:
         else:
             for model_set in model.component_objects(pyo.Set, active=True):
                 self.sets[model_set.name] = model_set.data()
+
+        # Objective values
+        self.objective_components = {}
+        if charging_strategy.value != 'uncoordinated':
+            for obj in model.component_objects(pyo.Expression, active=True):
+                self.objective_components[obj.name] = pyo.value(obj)
 
     def get_config_attributes_for_simulation(self) -> dict[str, int | float | dict[int, list]]:
         config_attributes = {
@@ -111,8 +109,7 @@ class EvaluationMetrics:
         self.variables = self.model.variables
         self.sets = self.model.sets
         self.mip_gap = self.model.mip_gap
-        self.obj_weights = self.model.obj_weights
-        self.objective_value = self.model.objective_value
+        self.objective_value = self.model.total_objective_value
 
         # Evaluation metrics initialisation
         # Define number of cp as it varies between configurations
@@ -226,35 +223,30 @@ class EvaluationMetrics:
                     for w in self.sets['WEEK'])
             ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK']))
 
-        # return {
-        #     'num_cp': num_cp,
-        #     'p_cp_rated': p_cp_rated,
-        #     'avg_num_charging_days': avg_num_charging_days,
-        # }
+        return {
+            'num_cp': num_cp,
+            'p_cp_rated': p_cp_rated,
+            'avg_num_charging_days': avg_num_charging_days,
+        }
 
     def _collect_metrics(self):
         self.metrics.update(self._investor_metrics())
         self.metrics.update(self._dso_metrics())
         self.metrics.update(self._ev_user_metrics())
-        # self.metrics.update(self._general_metrics())
-        self.metrics.update(self.obj_weights)
+        self.metrics.update(self._general_metrics())
 
         if self.charging_strategy.value != 'uncoordinated':
-            self.metrics.update({'objective_value': self.objective_value})
+            self.metrics.update({'total_objective_value': self.objective_value})
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
-
-        print(self.metrics)
 
         return self.metrics
 
     # Format metrics
     def format_metrics(self):
         formatted_metrics = {
-            'Economic weight': self.obj_weights['economic_weight'],
-            'Technical weight': self.obj_weights['technical_weight'],
-            'Social weight': self.obj_weights['social_weight'],
+            'Charging point info': f'{self.metrics['num_cp']} CPs ({self.metrics['p_cp_rated']:,.2f} kW)',
 
             'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
 
@@ -263,13 +255,20 @@ class EvaluationMetrics:
 
             'Average SOC at dep time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
             'Average deviation of SOC at dep time to max SOC': f'{self.metrics['avg_soc_to_max_deviation']:,.2f}%',
-            'SOC min-max range': f'{self.metrics['soc_range']:,.2f}%'
+            'SOC min-max range': f'{self.metrics['soc_range']:,.2f}%',
+
+            'Average num of charging days': f'{self.metrics['avg_num_charging_days']:,.2f}',
+
         }
 
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-                'Objective value': f'{self.objective_value:,.4f}'
+                'Objective value': f'{self.objective_value:,.2f}',
+
+                'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
+                'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',
+                'Social objective': f'{self.model.objective_components['social_objective']:,.2f}',
             })
 
         return formatted_metrics
