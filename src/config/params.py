@@ -14,6 +14,7 @@ project_root = script_dir.parent.parent
 # --------------------------
 # Folder Paths
 # --------------------------
+data_output_path = os.path.join(project_root, 'data/outputs')
 model_results_folder_path = os.path.join(project_root, 'data/outputs/models/')
 metrics_folder_path = os.path.join(project_root, 'data/outputs/metrics/')
 compiled_metrics_folder_path = os.path.join(project_root, 'data/outputs/metrics/compiled_metrics/')
