@@ -24,10 +24,10 @@ def main():
         'economic': [17000, 14000, 11000, 8000, 5000],
         # 'economic': [i for i in range(17000, 2500, -1500)],
 
-        'technical': [1000, 800, 600, 400, 200],
+        'technical': [0.75, 1000, 800, 600, 400, 200],
         # 'technical': [i for i in range(1400, 150, -150)],
 
-        'social': [1800, 1500, 1200, 900, 600],
+        'social': [0.92, 1800, 1500, 1200, 900, 600],
         # 'social': [i for i in range(1900, 450, -150)],
 
     }
@@ -92,10 +92,12 @@ def run_epsilon_sweep(
 
                 # Set epsilon bounds for the secondary objectives
                 getattr(model, f'{secondary[0]}_epsilon_constraint').set_value(
-                    expr=getattr(model, f'{secondary[0]}_objective') <= eps1
+                    # expr=getattr(model, f'{secondary[0]}_objective') <= eps1
+                    expr = getattr(model, f'norm_{secondary[0]}_objective') <= eps1
                 )
                 getattr(model, f'{secondary[1]}_epsilon_constraint').set_value(
-                    expr=getattr(model, f'{secondary[1]}_objective') <= eps2
+                    # expr=getattr(model, f'{secondary[1]}_objective') <= eps2
+                    expr = getattr(model, f'norm_{secondary[1]}_objective') <= eps2
                 )
 
                 # Set model version
@@ -132,7 +134,7 @@ def run_epsilon_sweep(
                 )
                 print(formatted)
 
-        #         break
+                break
             break
         break
 
@@ -145,7 +147,10 @@ def run_epsilon_sweep(
     eps_sweep_df.to_csv(f'{eps_filepath}/epsilon_sweep_{config}_{charging_strategy}.csv')
     inf_epsilon_df.to_csv(f'{eps_filepath}/infeasible_epsilon_{config}_{charging_strategy}.csv')
 
+    print('\nSolution values')
     print(eps_sweep_df)
+
+    print('\nInfeasible epsilon')
     print(inf_epsilon_df)
 
 
