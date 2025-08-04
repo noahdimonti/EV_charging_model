@@ -33,7 +33,7 @@ def parallel_plot_pareto(df: pd.DataFrame, config: str, strategy: str):
         color='pareto_rank_flipped',  # Use flipped rank for colour mapping
         dimensions=metrics,
         color_continuous_scale=px.colors.diverging.Tealrose[::-1],
-        title=f'Parallel Coordinates Plot (Pareto Ranks) - {conf.capitalize()} {num} {strategy.capitalize()}'
+        title=f'Parallel Coordinates Plot (Pareto Ranks) - {conf.capitalize()}uration {num} {strategy.capitalize()}'
     )
 
     # Correct colorbar labels back to original pareto_rank

@@ -6,7 +6,7 @@ from src.config import params
 from pprint import pprint
 
 
-def normalise_metrics(df: pd.DataFrame) -> pd.DataFrame:
+def normalise_solution_metrics(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop('Unnamed: 0', axis=1)
     normalised = pd.DataFrame(index=df.index)
     for col in df.columns:
@@ -14,18 +14,20 @@ def normalise_metrics(df: pd.DataFrame) -> pd.DataFrame:
         max_val = df[col].max()
         normalised[col] = (df[col] - min_val) / (max_val - min_val) if max_val != min_val else 0
 
+    print(f'normalised: {normalised}')
+
     return normalised
 
 
 def get_holistic_scores(df: pd.DataFrame) -> pd.DataFrame:
-    normalised = normalise_metrics(df.copy())
+    normalised = normalise_solution_metrics(df.copy())
 
     # Create holistic score dataframe
     holistic_scores = pd.DataFrame(columns=['investor_score', 'dso_score', 'user_score'])
     holistic_scores = pd.concat(
         [holistic_scores, normalised[['economic_weight', 'technical_weight', 'social_weight']]], axis=1)
     holistic_scores = pd.concat(
-        [df['objective_value'], holistic_scores], axis=1
+        [df['total_objective_value'], holistic_scores], axis=1
     )
 
     # Economic score
@@ -33,13 +35,12 @@ def get_holistic_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     # Technical score
     holistic_scores['dso_score'] = ((1 - normalised['avg_p_peak']) *
-                                     (1 - normalised['avg_papr']) *
-                                     (1 - normalised['avg_daily_peak_increase']))
+                                    (1 - normalised['avg_papr']) *
+                                    (1 - normalised['avg_daily_peak_increase']))
 
     # Social score - NOT FINALISED
-    holistic_scores['user_score'] = (  # cost component
-                                      (normalised['avg_soc_t_dep_percent']) *  # average SOC
-                                      (1 - normalised['soc_range']))  # fairness
+    holistic_scores['user_score'] = ((normalised['avg_soc_t_dep_percent']) *  # average SOC
+                                     (1 - normalised['soc_range']))  # fairness
 
     return holistic_scores
 
@@ -69,17 +70,20 @@ def get_distance_to_ideal(df: pd.DataFrame) -> pd.DataFrame:
 def get_pareto_results(
         config: str,
         strategy: str,
+        num_ev: int,
         step: float,
         version: str,
-        sens_analysis_res: pd.DataFrame = None) -> pd.DataFrame:
+        sens_analysis_res: pd.DataFrame = None) -> (pd.DataFrame, pd.DataFrame):
     # Get raw data from sensitivity analysis file
     if sens_analysis_res is None:
         sens_filename = (f'sensitivity_analysis_'
-                         f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
+                         f'{config}_{strategy}_{num_ev}EVs_{params.num_of_days}days_{step}step.csv')
         file_path = os.path.join(params.sensitivity_analysis_res_path, sens_filename)
         df = pd.read_csv(file_path)
     else:
         df = sens_analysis_res
+
+    print(f'df: {df}')
 
     # Convert raw data into holistic scores and assign pareto ranks
     scores = get_holistic_scores(df)
@@ -89,7 +93,7 @@ def get_pareto_results(
     holistic_df = get_distance_to_ideal(pareto)
 
     # Sort solutions
-    holistic_df = holistic_df.sort_values(['pareto_rank', 'distance_to_ideal', 'objective_value'])
+    holistic_df = holistic_df.sort_values(['pareto_rank', 'distance_to_ideal', 'total_objective_value'])
 
     # Save holistic pareto front dataframe
     pareto_front_filename = (f'holistic_pareto_front_'
@@ -103,4 +107,8 @@ def get_pareto_results(
     pareto_front = holistic_df.loc[holistic_df['pareto_rank'] == 1]
     print(f'\nPareto front: \n{pareto_front}')
 
-    return df
+    # Get the best solution
+    best_solution = pareto_front.head(1)
+    print(f'\nBest solution: \n{best_solution}')
+
+    return holistic_df, best_solution

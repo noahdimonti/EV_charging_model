@@ -58,7 +58,7 @@ def demand_profiles_by_config(configurations: list[str], charging_strategies: li
             ylabel='Load (kW)',
             xlabel='Day',
             legend=True,
-            legend_col=3,
+            legend_col=2,
             ax=ax
         )
 

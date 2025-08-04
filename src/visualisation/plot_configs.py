@@ -12,8 +12,8 @@ models_colour_dict = {
     'config_2_flexible': 'teal',
 
     'config_3_uncoordinated': 'red',
-    'config_3_opportunistic': 'lightcoral',
-    'config_3_flexible': 'royalblue',
+    'config_3_opportunistic': 'gold',
+    'config_3_flexible': 'seagreen',
 }
 
 # Font size settings

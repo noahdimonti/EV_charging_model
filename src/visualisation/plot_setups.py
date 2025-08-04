@@ -5,19 +5,22 @@ import os
 import pickle
 from src.config import params
 from src.visualisation import plot_configs
-from src.models.results.model_results import ModelResults
+from src.models.results.model_results import ModelResults, EvaluationMetrics
 
 fig_size = (12, 8)
 
 
-def get_model_results_data(config: str, strategy: str, version: str) -> ModelResults:
+def get_model_results_data(config: str, strategy: str, version: str) -> EvaluationMetrics:
     filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
     file_path = os.path.join(params.model_results_folder_path, filename)
 
     with open(file_path, 'rb') as f:
         results = pickle.load(f)
 
-    return results
+    # Get evaluation metrics
+    eval_metrics = EvaluationMetrics(results)
+
+    return eval_metrics
 
 
 def get_metrics(version: str):
@@ -55,7 +58,7 @@ def get_metrics(version: str):
 #     plt.tight_layout()
 
 
-def setup(title: str, ylabel: str, xlabel: str = None, legend=True, legend_col: int = 2, ax=None):
+def setup(title: str, ylabel: str, xlabel: str = None, legend=True, legend_col: int = 3, ax=None):
     """Helper function to set up plot aesthetics."""
     if ax is None:
         ax = plt.gca()
