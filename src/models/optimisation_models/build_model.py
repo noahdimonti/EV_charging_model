@@ -79,6 +79,15 @@ class BuildModel:
 
         self.model.social_objective = pyo.Expression(expr=social_cost)
 
+        self.model.obj_function = pyo.Objective(
+            expr=(
+                    0.4 * self.model.economic_objective +
+                    0.4 * self.model.technical_objective +
+                    0.2 * self.model.social_objective
+            ),
+            sense=pyo.minimize
+        )
+
     def assemble_components(self):
         # Initialise assets parameters and variables
         self.assets['grid'] = Grid(self.model)
@@ -125,6 +134,24 @@ class BuildModel:
             ),
             sense=pyo.minimize
         )
+
+        # epsilon_placeholder = 1e6
+        # self.model.economic_epsilon_constraint = pyo.Constraint(
+        #     expr=self.model.economic_objective <= epsilon_placeholder
+        # )
+        #
+        # self.model.technical_epsilon_constraint = pyo.Constraint(
+        #     expr=self.model.technical_objective <= epsilon_placeholder
+        # )
+        #
+        # self.model.social_epsilon_constraint = pyo.Constraint(
+        #     expr=self.model.social_objective <= epsilon_placeholder
+        # )
+        #
+        # self.model.obj_function = pyo.Objective(
+        #     expr=self.model.economic_objective,
+        #     sense=pyo.minimize
+        # )
 
     def get_optimisation_model(self):
         return self.model

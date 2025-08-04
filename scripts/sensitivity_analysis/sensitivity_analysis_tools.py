@@ -40,7 +40,6 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
             config=config,
             charging_strategy=strategy,
             version=version,
-            obj_weights=weights,
             verbose=verbose,
             time_limit=time_limit,
             mip_gap=mip_gap,
@@ -62,7 +61,7 @@ def run_sensitivity_analysis(step: float, config: str, strategy: str, version: s
 
     # Save compiled df to csv
     filename = (f'sensitivity_analysis_'
-                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step_{version}.csv')
+                f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{step}step.csv')
     file_path = os.path.join(params.sensitivity_analysis_res_path, filename)
     df.to_csv(file_path)
 

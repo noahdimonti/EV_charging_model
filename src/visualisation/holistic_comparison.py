@@ -9,44 +9,46 @@ from src.visualisation import plot_configs
 from pprint import pprint
 
 
-# SPIDER CHART
-# Data
-labels = ['Fairness', 'Grid Impact', 'Cost']
-values = [80, 65, 90]  # Example values (0-100 scale)
+def holistic_plot(best_solution: pd.DataFrame, save_img=False):
+    # Data
+    labels = ['Investor', 'DSO', 'User']
+    values = best_solution.iloc[0][['investor_score', 'dso_score', 'user_score']].tolist()
 
-# Radar setup
-num_vars = len(labels)
-angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-values += values[:1]  # Repeat the first value to close the circle
-angles += angles[:1]  # Repeat the first angle too
+    print(values)
 
-# Plot
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-ax.set_theta_offset(np.pi / 2)      # Start from top
-ax.set_theta_direction(-1)          # Clockwise
+    # Radar setup
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    values += values[:1]  # Repeat the first value to close the circle
+    angles += angles[:1]  # Repeat the first angle too
 
-# Draw the outline
-ax.plot(angles, values, color='tab:blue', linewidth=2)
-ax.fill(angles, values, color='tab:blue', alpha=0.25)
+    # Plot
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.set_theta_offset(np.pi / 2)      # Start from top
+    ax.set_theta_direction(-1)          # Clockwise
 
-# Style axes
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels, fontsize=12, weight='bold')
+    # Draw the outline
+    ax.plot(angles, values, color='tab:blue', linewidth=2)
+    ax.fill(angles, values, color='tab:blue', alpha=0.25)
 
-# Set r-labels inside the circle
-ax.set_rlabel_position(180 / num_vars)
-ax.set_yticks([20, 40, 60, 80])
-ax.set_yticklabels(['20', '40', '60', '80'], fontsize=10)
-ax.set_ylim(0, 100)
+    # Style axes
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels, fontsize=12, weight='bold')
 
-# Optional: circular grid style
-ax.grid(True, linestyle='dotted', linewidth=1, alpha=0.7)
+    # Set r-labels inside the circle
+    ax.set_rlabel_position(180 / num_vars)
+    ax.set_yticks([0.2, 0.4, 0.6, 0.8])
+    ax.set_yticklabels(['0.2', '0.4', '0.6', '0.8'], fontsize=10)
+    ax.set_ylim(0, 1)
 
-# Remove frame
-ax.spines['polar'].set_visible(False)
+    # Optional: circular grid style
+    ax.grid(True, linestyle='dotted', linewidth=1, alpha=0.7)
 
-plt.title('Performance Metrics Radar', fontsize=14, weight='bold', y=1.1)
-plt.tight_layout()
+    # Remove frame
+    ax.spines['polar'].set_visible(False)
 
-plot_setups.save_plot('tests.png')
-# plt.show()
+    plt.title('Performance Metrics Radar', fontsize=14, weight='bold', y=1.1)
+    # plt.tight_layout()
+
+    plot_setups.save_plot('tests.png')
+    # plt.show()

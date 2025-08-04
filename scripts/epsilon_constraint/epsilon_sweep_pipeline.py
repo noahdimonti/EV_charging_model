@@ -40,12 +40,12 @@ def main():
     )
     model = model_builder.get_optimisation_model()
 
-    # run_epsilon_sweep(
-    #     config=config,
-    #     charging_strategy=charging_strategy,
-    #     model=model,
-    #     epsilon_ranges=epsilon_ranges,
-    # )
+    run_epsilon_sweep(
+        config=config,
+        charging_strategy=charging_strategy,
+        model=model,
+        epsilon_ranges=epsilon_ranges,
+    )
 
 
 def run_epsilon_sweep(
@@ -123,9 +123,18 @@ def run_epsilon_sweep(
                         f'{secondary[1]}': eps2
                     })
                     continue
+
+                raw, formatted = analyse_results(
+                    [config],
+                    [charging_strategy],
+                    version,
+                    save_df=False,
+                )
+                print(formatted)
+
         #         break
-        #     break
-        # break
+            break
+        break
 
     # Convert into a dataframe
     eps_sweep_df = pd.DataFrame(epsilon_sweep_results)

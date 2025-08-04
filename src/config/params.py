@@ -62,8 +62,8 @@ length_D_w = 7
 T_w = tmp.groupby('week').apply(lambda x: x.index.tolist()).to_dict()
 
 
-num_of_evs = 10
-num_of_households = 10
+num_of_evs = 25
+num_of_households = 25
 
 
 # --------------------------
