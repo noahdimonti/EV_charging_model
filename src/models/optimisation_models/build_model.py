@@ -98,9 +98,13 @@ class BuildModel:
 
         # Epsilon constraints
         epsilon_placeholder = 1e6
-        econ_obj_max = 17259.90
-        tech_obj_max = 1338.05
-        soc_obj_max = 1971.98
+        # econ_obj_max = 17259.90
+        # tech_obj_max = 1338.05
+        # soc_obj_max = 1971.98
+
+        econ_obj_max = 1
+        tech_obj_max = 1
+        soc_obj_max = 1
 
         self.model.economic_epsilon_constraint = pyo.Constraint(
             expr=(self.model.economic_objective / econ_obj_max) <= epsilon_placeholder
@@ -115,7 +119,10 @@ class BuildModel:
         )
 
         self.model.obj_function = pyo.Objective(
-            expr=self.model.economic_objective,
+            expr=(
+                    self.model.economic_objective
+                 # + self.model.technical_objective
+            ),
             sense=pyo.minimize
         )
 
