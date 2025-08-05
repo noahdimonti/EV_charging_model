@@ -230,7 +230,7 @@ household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates
 # --------------------------
 # Investment and Maintenance Costs
 # --------------------------
-investment_cost_list = [200, 200, 1350, 1500]  # per EV charger
+investment_cost_list = [180, 200, 1350, 1500]  # per EV charger
 investment_cost = {p_cp: investment_cost
                    for p_cp, investment_cost in zip(p_cp_rated_options_scaled, investment_cost_list)
                    }  # values: {0.325: 200, 0.6: 200, 0.925: 1350, 1.8: 1500}
