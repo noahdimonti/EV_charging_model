@@ -41,15 +41,6 @@ class BuildModel:
         self.model.WEEK = pyo.Set(initialize=[_ for _ in params.D_w.keys()])
 
     def define_objective_components(self):
-        # Objective value normalisation
-        econ_obj_max = 17259.90
-        tech_obj_max = 1338.05
-        soc_obj_max = 1971.98
-
-        # econ_obj_max = 1
-        # tech_obj_max = 1
-        # soc_obj_max = 1
-
         # Economic objective
         economic_obj = EconomicObjective(self.model)
 
@@ -67,8 +58,6 @@ class BuildModel:
 
         self.model.economic_objective = pyo.Expression(expr=economic_cost)
 
-        self.model.norm_economic_objective = pyo.Expression(expr=economic_cost / econ_obj_max)
-
         # Technical objective
         technical_obj = TechnicalObjective(self.model)
 
@@ -80,8 +69,6 @@ class BuildModel:
 
         self.model.technical_objective = pyo.Expression(expr=technical_cost)
 
-        self.model.norm_technical_objective = pyo.Expression(expr=technical_cost / tech_obj_max)
-
         # Social objective
         social_obj = SocialObjective(self.model)
 
@@ -92,17 +79,17 @@ class BuildModel:
 
         self.model.social_objective = pyo.Expression(expr=social_cost)
 
-        self.model.norm_social_objective = pyo.Expression(expr=social_cost / soc_obj_max)
-
-        # Weighted sum method
-        # self.model.obj_function = pyo.Objective(
-        #     expr=(
-        #             0.4 * self.model.economic_objective +
-        #             0.4 * self.model.technical_objective +
-        #             0.2 * self.model.social_objective
-        #     ),
-        #     sense=pyo.minimize
-        # )
+        '''
+        Weighted sum method
+        self.model.obj_function = pyo.Objective(
+            expr=(
+                    0.4 * self.model.economic_objective +
+                    0.4 * self.model.technical_objective +
+                    0.2 * self.model.social_objective
+            ),
+            sense=pyo.minimize
+        )
+        '''
 
     def assemble_components(self):
         # Initialise assets parameters and variables
@@ -118,32 +105,26 @@ class BuildModel:
         self.assets['cp'].initialise_constraints()
         self.assets['ev'].initialise_constraints()
 
-        # Define objective
+        # Define objective components
         self.define_objective_components()
 
         # Epsilon constraints
         epsilon_placeholder = 1e6
 
         self.model.economic_epsilon_constraint = pyo.Constraint(
-            # expr=self.model.economic_objective <= epsilon_placeholder
-            expr = self.model.norm_economic_objective <= epsilon_placeholder
+            expr=self.model.economic_objective <= epsilon_placeholder
         )
 
         self.model.technical_epsilon_constraint = pyo.Constraint(
-            # expr=self.model.technical_objective <= epsilon_placeholder
-            expr = self.model.norm_technical_objective <= epsilon_placeholder
+            expr=self.model.technical_objective <= epsilon_placeholder
         )
 
         self.model.social_epsilon_constraint = pyo.Constraint(
-            # expr=self.model.social_objective <= epsilon_placeholder
-            expr = self.model.norm_social_objective <= epsilon_placeholder
+            expr=self.model.social_objective <= epsilon_placeholder
         )
 
         self.model.obj_function = pyo.Objective(
-            expr=(
-                    self.model.economic_objective
-                 # + self.model.technical_objective
-            ),
+            expr=self.model.economic_objective,  # placeholder objective
             sense=pyo.minimize
         )
 
