@@ -19,6 +19,9 @@ class ModelResults:
         self.mip_gap = mip_gap
         self.total_objective_value = None
 
+        self.solver_status: pyo.SolverStatus
+        self.termination_condition: pyo.TerminationCondition
+
         # Extract results from solved model
         # Variables
         self.variables = {}
