@@ -18,16 +18,19 @@ class ModelResults:
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
         self.total_objective_value = None
+        self.objective_value = None
 
         self.solver_status: pyo.SolverStatus
         self.termination_condition: pyo.TerminationCondition
 
         # Extract results from solved model
-        # Variables
+        # Initialise dictionaries
         self.variables = {}
-        if charging_strategy.value == 'uncoordinated':
-            self.variables = model
-        else:
+        self.sets = {}
+        self.objective_components = {}
+
+        if charging_strategy.value != 'uncoordinated':
+            # Variables
             for var in model.component_objects(pyo.Var, active=True):
                 # Check if the variable has indexes
                 if var.is_indexed():
@@ -36,27 +39,27 @@ class ModelResults:
                 else:
                     self.variables[var.name] = var.value
 
-            # Get objective value
+            # Sets
+            for model_set in model.component_objects(pyo.Set, active=True):
+                self.sets[model_set.name] = model_set.data()
+
+            # Objective values
             self.total_objective_value = pyo.value(model.obj_function)
 
-        # Sets
-        self.sets = {}
-        if charging_strategy.value == 'uncoordinated':
+            for obj in model.component_objects(pyo.Expression, active=True):
+                self.objective_components[obj.name] = pyo.value(obj)
+
+        else:
+            # Variables
+            self.variables = model
+
+            # Sets
             self.sets = {
                 'EV_ID': [_ for _ in range(params.num_of_evs)],
                 'TIME': [_ for _ in params.timestamps],
                 'DAY': [_ for _ in params.T_d.keys()],
                 'WEEK': [_ for _ in params.D_w.keys()]
             }
-        else:
-            for model_set in model.component_objects(pyo.Set, active=True):
-                self.sets[model_set.name] = model_set.data()
-
-        # Objective values
-        self.objective_components = {}
-        if charging_strategy.value != 'uncoordinated':
-            for obj in model.component_objects(pyo.Expression, active=True):
-                self.objective_components[obj.name] = pyo.value(obj)
 
     def get_config_attributes_for_simulation(self) -> dict[str, int | float | dict[int, list]]:
         config_attributes = {
@@ -238,8 +241,8 @@ class EvaluationMetrics:
         self.metrics.update(self._ev_user_metrics())
         self.metrics.update(self._general_metrics())
 
-        if self.charging_strategy.value != 'uncoordinated':
-            self.metrics.update({'total_objective_value': self.objective_value})
+        # if self.charging_strategy.value != 'uncoordinated':
+        #     self.metrics.update({'total_objective_value': self.objective_value})
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
