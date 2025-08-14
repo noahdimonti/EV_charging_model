@@ -7,49 +7,19 @@ from src.models.optimisation_models.run_optimisation import run_optimisation_mod
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.models.utils.mapping import config_map, strategy_map
 from src.config import params
-from src.visualisation.epsilon_sweep_plot import plot_epsilon
 from pprint import pprint
 
 
-def main():
-    config = 'config_1'
-    charging_strategy = 'opportunistic'
-    version = 'augmecon_test'
-    objectives_priority = [
-        'economic',
-        'technical',
-        'social'
-    ]
-
-    # Build model constraints
-    model_builder = BuildModel(
-        config=config_map[config],
-        charging_strategy=strategy_map[charging_strategy],
-        version=version,
-    )
-    model = model_builder.get_optimisation_model()
-
-    payoff = build_payoff_table(
-        model=model,
-        objectives=objectives_priority,
-        config=config,
-        charging_strategy=charging_strategy,
-        version=version,
-    )
-
-    pprint(payoff)
-
-
-
-def get_lexicographic_optimal_solution(model, obj_priority_order, config, charging_strategy, version, epsilon=1e-4):
+def get_lexicographic_optimal_solution(obj_priority_order, config, charging_strategy, version, epsilon=1e-4):
     """
     Runs lexicographic optimisation for the given order of objectives.
-    Useful for building a Pareto-optimal payoff table row.
 
     Args:
         model: Pyomo model with attributes '<obj>_objective'
         obj_priority_order: list of objectives in lexicographic priority order (e.g. ['economic', 'technical'])
-        config, charging_strategy, version: scenario parameters for your solver
+        config: scenario parameter to build the model
+        charging_strategy: scenario parameter to build the model
+        version: scenario parameter to build the model
         epsilon: tolerance for 'keeping' previous optima (fraction of value)
 
     Returns:
@@ -59,6 +29,18 @@ def get_lexicographic_optimal_solution(model, obj_priority_order, config, chargi
 
     for i, obj in enumerate(obj_priority_order):
         print(f'\n--- Objective: {obj} ---')
+
+        # Update version
+        ver = version + f'_lex_{obj}_primary'
+
+        # Build model
+        model_builder = BuildModel(
+            config=config_map[config],
+            charging_strategy=strategy_map[charging_strategy],
+            version=ver,
+        )
+        model = model_builder.get_optimisation_model()
+
         # Set the current objective
         model.obj_function.set_value(
             expr=getattr(model, f'{obj}_objective')
@@ -66,12 +48,16 @@ def get_lexicographic_optimal_solution(model, obj_priority_order, config, chargi
 
         # Add/update constraints for all previous objectives in the order
         for j in range(i):
+            print(range(i))
+            print(j)
             print(f'\nPrevious objective: {obj_priority_order[j]}')
             prev_obj = obj_priority_order[j]
             constraint_name = f'lex_constraint_{prev_obj}'
             optimal_val = optimal_values[prev_obj]
             print(f'Optimal value: {optimal_val}')
             expr = getattr(model, f'{prev_obj}_objective') <= optimal_val * (1 + epsilon)
+
+            print(f'Optimal values: {optimal_values}')
 
             if hasattr(model, constraint_name):
                 getattr(model, constraint_name).set_value(expr)
@@ -82,27 +68,36 @@ def get_lexicographic_optimal_solution(model, obj_priority_order, config, chargi
         results = run_optimisation_model(
             config=config,
             charging_strategy=charging_strategy,
-            version=version + f'_lex_{obj}_primary',
+            version=ver,
             model=model,
-            verbose=True
+            verbose=True,
+            time_limit=20,
+            mip_gap=1
         )
 
-        raw, formatted = analyse_results(
-            [config],
-            [charging_strategy],
-            version,
-            save_df=False,
-        )
-        print(formatted)
+        if results is not None:
+            print('\nResults obj components:')
+            pprint(results.objective_components)
+            print()
 
-        # Store the optimal value for this objective
-        val = results.objective_components.get(f'{obj}_objective')
-        optimal_values[obj] = val
+            raw, formatted = analyse_results(
+                [config],
+                [charging_strategy],
+                ver,
+                save_df=False,
+            )
+            print(formatted)
+
+            # Store the optimal value for this objective
+            val = results.objective_components.get(f'{obj}_objective')
+            optimal_values[obj] = val
+        else:
+            print('\nResult is None\n')
 
     return optimal_values
 
 
-def build_payoff_table(model, objectives, config, charging_strategy, version):
+def build_payoff_table(objectives, config, charging_strategy, version):
     payoff_table = {}
 
     for primary in objectives:
@@ -111,7 +106,6 @@ def build_payoff_table(model, objectives, config, charging_strategy, version):
         obj_order = [primary] + secondary_objs
 
         payoff_table[primary] = get_lexicographic_optimal_solution(
-            model=model,
             obj_priority_order=obj_order,
             config=config,
             charging_strategy=charging_strategy,
@@ -122,18 +116,19 @@ def build_payoff_table(model, objectives, config, charging_strategy, version):
     return payoff_table
 
 
-
-import itertools
-import numpy as np
-import pyomo.environ as pyo
-
 def compute_ranges_from_payoff(payoff_table):
     """
     payoff_table: dict like {primary: {obj: value, ...}, ...}
     returns: dict mapping objective -> range (max - min)
     """
-    objectives = list(next(iter(payoff_table.values())).keys())
+    # Get objectives from first row
+    objectives = []
+    for row in payoff_table.values():
+        objectives = list(row.keys())
+        break
+
     ranges = {}
+
     for obj in objectives:
         vals = [payoff_table[row][obj] for row in payoff_table]
         r = max(vals) - min(vals)
@@ -153,20 +148,21 @@ def generate_epsilon_grid(payoff_table, primary_obj, grid_points):
     for obj in sec_objs:
         vals = [payoff_table[row][obj] for row in payoff_table]
         obj_min, obj_max = min(vals), max(vals)
+
         # generate grid_points+1 values inclusive of extremes
         if grid_points <= 0:
-            raise ValueError("grid_points must be >= 1")
+            raise ValueError('grid_points must be >= 1')
         step = (obj_max - obj_min) / grid_points
-        epsilon_values[obj] = [obj_min + step * k for k in range(grid_points + 1)]
+        epsilon_values[obj] = [obj_max - (step * k) for k in range(grid_points + 1)]
 
     # Cartesian product of epsilon values
     combos = list(itertools.product(*[epsilon_values[o] for o in sec_objs]))
     epsilons = [dict(zip(sec_objs, c)) for c in combos]
+
     return epsilons, sec_objs
 
 
-def augmecon_sweep_augmented(
-        model,
+def augmecon_sweep(
         payoff_table,
         primary_obj,
         grid_points,
@@ -179,7 +175,6 @@ def augmecon_sweep_augmented(
     """
     Augmented ε-constraint sweep.
 
-    - model: a constructed Pyomo ConcreteModel (all variables/expressions already defined)
     - payoff_table: dict from build_payoff_table (rows are primary objectives)
     - primary_obj: str name of primary objective (matches '<name>_objective' on model)
     - grid_points: int number of intervals per secondary objective
@@ -188,107 +183,156 @@ def augmecon_sweep_augmented(
     - duplicate_tol: tolerance for considering two objective vectors identical
 
     Returns:
-        list of dicts: each dict contains objective values for all objectives at a found Pareto point
+        list of dicts: each dict contains epsilon values and objective values for a found Pareto point
     """
-    # 1) compute ranges r_j
+    # 1) Compute ranges for augmentation scaling
     ranges = compute_ranges_from_payoff(payoff_table)
 
-    # 2) build epsilon grid
+    # 2) Build epsilon grid
     epsilons, sec_objs = generate_epsilon_grid(payoff_table, primary_obj, grid_points)
 
     pareto_solutions = []
+    infeasible_records = []
+    violation_records = []
     seen = set()
 
-    # ensure objective component exists on model (a Pyomo Expression per objective)
+    # List all objectives from payoff table
     all_objs = list(next(iter(payoff_table.values())).keys())
 
     for idx, eps in enumerate(epsilons):
-        # 3) set primary objective
+        # --- Rebuild the model fresh each time ---
+        ver = f"{version}_{primary_obj}_eps{idx}"
+        model_builder = BuildModel(
+            config=config_map[config],
+            charging_strategy=strategy_map[charging_strategy],
+            version=ver,
+        )
+        model = model_builder.get_optimisation_model()
+
+        # 3) Set the primary objective
         prim_expr = getattr(model, f"{primary_obj}_objective")
         model.obj_function.set_value(expr=prim_expr)
 
-        # 4) For each secondary objective, create/update slack var and equality constraint:
-        #    f_j(x) - s_j == eps_j
+        # 4) Add epsilon constraints for each secondary objective
         for sec in sec_objs:
             slack_name = f"aug_slack_{sec}"
             constr_name = f"aug_eps_eq_{sec}"
 
-            # create slack var if not existing
-            if not hasattr(model, slack_name):
-                setattr(model, slack_name, pyo.Var(domain=pyo.NonNegativeReals))
+            # Slack variable
+            setattr(model, slack_name, pyo.Var(domain=pyo.NonNegativeReals))
             slack_var = getattr(model, slack_name)
 
-            # build equality expression f_j(x) - s_j == eps_j
-            # Add tiny absolute tolerance to RHS to reduce infeasibility due to floating rounding
             eps_val = eps[sec]
-            tol = epsilon_tolerance_frac * max(1.0, abs(eps_val))
-            expr = (getattr(model, f"{sec}_objective") - slack_var == eps_val + tol*0.0)
-            # We include tol*0.0 as placeholder; we will not actually change eps in equality, using exact eps
-
-            # The correct equality (no tolerance in the equation itself) is:
-            expr = (getattr(model, f"{sec}_objective") - slack_var == eps_val)
-
-            # set or add constraint
-            if hasattr(model, constr_name):
-                getattr(model, constr_name).set_value(expr)
-            else:
-                setattr(model, constr_name, pyo.Constraint(expr=expr))
+            expr = (getattr(model, f"{sec}_objective") + slack_var == eps_val)
+            setattr(model, constr_name, pyo.Constraint(expr=expr))
 
         # 5) Build augmented objective: primary + rho * sum(s_j / r_j)
-        #    Avoid division by zero: if r_j == 0 -> use denom = 1.0 (effectively no scaling)
         aug_terms = []
         for sec in sec_objs:
             slack_var = getattr(model, f"aug_slack_{sec}")
             r = ranges.get(sec, 0.0)
             denom = r if (r and r > 0.0) else 1.0
             aug_terms.append(slack_var / denom)
-        if len(aug_terms) > 0:
+        if aug_terms:
             aug_obj_expr = prim_expr + rho * sum(aug_terms)
         else:
-            aug_obj_expr = prim_expr  # no secondaries (degenerate)
+            aug_obj_expr = prim_expr
 
-        # set the augmented objective (overwrite the existing objective expression)
         model.obj_function.set_value(expr=aug_obj_expr)
 
-        # 6) solve
+        # 6) Solve
         results = run_optimisation_model(
             config=config,
             charging_strategy=charging_strategy,
-            version=f"{version}_{primary_obj}_eps{idx}",
+            version=ver,
             model=model,
-            verbose=False
+            verbose=True,
+            time_limit=10,
+            mip_gap=1
         )
 
-        # if solver didn't return objective values, skip
-        sol = {}
-        feasible = (results.solver.termination_condition == pyo.TerminationCondition.optimal or
-                    results.solver.termination_condition == pyo.TerminationCondition.feasible)
-        if not feasible:
-            # log/skip infeasible combos
-            # optionally store infeasible record
+        if results is None:
+            # Model failed to solve or raised error — treat as infeasible
+            infeasible_records.append({
+                'version': ver,
+                'epsilon': eps.copy(),
+                'termination_condition': 'No results returned (exception or failure)'
+            })
             continue
 
-        # 7) extract objective values (actual values, not eps)
+        feasible = (
+                results.termination_condition == pyo.TerminationCondition.optimal or
+                results.termination_condition == pyo.TerminationCondition.feasible
+        )
+
+        if not feasible:
+            infeasible_records.append({
+                'version': ver,
+                'epsilon': eps.copy(),
+                'termination_condition': str(results.termination_condition)
+            })
+            continue
+
+        # 7) Extract objective values
+        sol = {}
         for obj in all_objs:
             val = results.objective_components.get(f"{obj}_objective")
             sol[obj] = val
 
-        # 8) early exit / duplicate detection
-        # Round or quantize values for robust hashing
+        # 7b) Check for violations (shouldn't happen, but log if so)
+        violations = {}
+        tol_abs = 1e-8  # absolute tolerance for numeric noise
+        for sec in sec_objs:
+            eps_val = eps[sec]
+            actual = sol[sec]
+            # For minimisation, require actual <= eps_val + tol
+            if actual > eps_val + tol_abs:
+                violations[sec] = {
+                    'eps': eps_val,
+                    'actual': actual,
+                    'excess': actual - eps_val
+                }
+
+        if violations:
+            violation_records.append({
+                'version': ver,
+                'epsilon': eps.copy(),
+                'objectives': sol.copy(),
+                'violations': violations
+            })
+            # NOTE: we *do not* automatically discard solutions with tiny violation;
+            # we log them so you can inspect and decide whether to tighten tolerances or increase rho.
+
+        # 8) Duplicate detection
         key = tuple(round(sol[o], 8) for o in all_objs)
         if key in seen:
-            # duplicate solution — skip storing
             continue
         seen.add(key)
+
         pareto_solutions.append({
+            'version': ver,
             'epsilon': eps.copy(),
             'objectives': sol
         })
 
-    return pareto_solutions
+    # Save pareto solutions and infeasible records to csv
+    pareto_df = pd.DataFrame([
+        {'version': sol['version'], **sol['objectives']}
+        for sol in pareto_solutions
+    ])
+
+    infeasible_df = pd.DataFrame([
+        {'version': inf['version'], **inf['epsilon']}
+        for inf in infeasible_records
+    ])
+
+    augmecon_path = os.path.join(params.data_output_path, 'augmecon_method')
+    pareto_filename = f'{augmecon_path}/pareto_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
+    infeasible_filename = f'{augmecon_path}/infeasible_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
+
+    pareto_df.to_csv(pareto_filename)
+    infeasible_df.to_csv(infeasible_filename)
+
+    return pareto_solutions, infeasible_records
 
 
-
-
-if __name__ == '__main__':
-    main()
