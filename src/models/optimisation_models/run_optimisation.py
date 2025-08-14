@@ -57,7 +57,15 @@ def run_optimisation_model(
         print_runtime(finished_label, solving_time)
 
         # Save results
-        results = ModelResults(solved_model, config_map[config], strategy_map[charging_strategy], calc_mip_gap)
+        results = ModelResults(
+            solved_model,
+            config_map[config],
+            strategy_map[charging_strategy],
+            calc_mip_gap
+        )
+
+        results.solver_status = solver_status
+        results.termination_condition = termination_condition
 
         # Save results to pickle
         if save_model:
@@ -67,5 +75,6 @@ def run_optimisation_model(
 
     except Exception as e:
         print(f'{params.RED}An error occurred during optimisation: {e}.{params.RESET}')
+        return None
 
 
