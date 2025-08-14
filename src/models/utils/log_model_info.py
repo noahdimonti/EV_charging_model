@@ -5,9 +5,9 @@ from typing import Callable, Any, Tuple
 
 def log_with_runtime(label: str, func: Callable, *args, **kwargs) -> Tuple[Any, float]:
     """ Executes a function with timing and logs its runtime. """
-    print(f'\n=============================================================\n'
+    print(f'\n=======================================================================\n'
           f'{label} ...'
-          f'\n=============================================================\n')
+          f'\n=======================================================================\n')
 
     start_time = time.time()
 
@@ -20,13 +20,13 @@ def log_with_runtime(label: str, func: Callable, *args, **kwargs) -> Tuple[Any, 
 
 
 def print_runtime(finished_label: str, runtime: float):
-    print(f'-------------------------------------------------------------\n')
+    print(f'-----------------------------------------------------------------------\n')
     # Format the runtime
     if (runtime // 60) < 1:
-        print(f'{params.YELLOW}{finished_label} in {runtime:.3f} seconds{params.RESET}\n')
+        print(f'{params.YELLOW}{finished_label} in {runtime:.3f} second(s){params.RESET}\n')
     else:
         minutes = int(runtime // 60)
         remaining_seconds = runtime % 60
-        print(f'{params.YELLOW}{finished_label} in {minutes} minutes {remaining_seconds:.3f} seconds{params.RESET}\n')
+        print(f'{params.YELLOW}{finished_label} in {minutes} minute(s) {remaining_seconds:.3f} second(s){params.RESET}\n')
 
 
