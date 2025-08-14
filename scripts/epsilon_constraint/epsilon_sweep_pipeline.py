@@ -6,6 +6,7 @@ from src.models.optimisation_models.run_optimisation import run_optimisation_mod
 from scripts.experiments_pipeline.analyse_results import analyse_results
 from src.models.utils.mapping import config_map, strategy_map
 from src.config import params
+from src.visualisation.epsilon_sweep_plot import plot_epsilon
 
 
 def main():
@@ -21,14 +22,20 @@ def main():
 
     # Epsilon sweep ranges
     epsilon_ranges = {
-        'economic': [17000, 14000, 11000, 8000, 5000],
-        # 'economic': [i for i in range(17000, 2500, -1500)],
+        # 'economic': [17259.90, 17000, 14000, 11000, 8000, 5000, 2553.74],
+        # 'economic': [0.9, 0.7, 0.5, 0.3, 0.1],
+        # 'economic': [0.95, 0.75, 0.55, 0.35, 0.15],
+        'economic': [i for i in range(17000, 2500, -1500)],
 
-        'technical': [0.75, 1000, 800, 600, 400, 200],
-        # 'technical': [i for i in range(1400, 150, -150)],
+        # 'technical': [1338.05, 1000, 800, 600, 400, 200, 163.38],
+        # 'technical': [0.9, 0.7, 0.5, 0.3, 0.1],
+        # 'technical': [0.75, 0.6, 0.45, 0.3, 0.15],
+        'technical': [i for i in range(1400, 150, -150)],
 
-        'social': [0.92, 1800, 1500, 1200, 900, 600],
-        # 'social': [i for i in range(1900, 450, -150)],
+        # 'social': [1971.98, 1800, 1500, 1200, 900, 600, 494.31],
+        # 'social': [0.9, 0.7, 0.5, 0.3, 0.1],
+        # 'social': [0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
+        'social': [i for i in range(1900, 450, -150)],
 
     }
 
@@ -40,31 +47,35 @@ def main():
     )
     model = model_builder.get_optimisation_model()
 
-    run_epsilon_sweep(
-        config=config,
-        charging_strategy=charging_strategy,
-        model=model,
-        epsilon_ranges=epsilon_ranges,
-    )
+    # Pipeline controls
+    run = False
+    plot = True
+
+    if run:
+        run_epsilon_sweep_single_primary(
+            config=config,
+            charging_strategy=charging_strategy,
+            model=model,
+            epsilon_ranges=epsilon_ranges,
+        )
+
+    if plot:
+
+        plot_epsilon(config, charging_strategy)
 
 
-def run_epsilon_sweep(
+def run_epsilon_sweep_single_primary(
         config: str,
         charging_strategy: str,
         model: pyo.ConcreteModel,
         epsilon_ranges: dict[str, list[int | float]]):
 
     objectives = [
-        'economic',
+        'social',
         'technical',
-        'social'
+        'economic',
     ]
 
-    obj_max_value = {
-        'economic': 17259.90,
-        'technical': 1338.05,
-        'social': 1971.98,
-    }
 
     # Initialise results list
     epsilon_sweep_results = []
@@ -73,31 +84,28 @@ def run_epsilon_sweep(
     infeasible_epsilon = []
 
     for primary in objectives:
-        print(f'\n--- Primary objective: {primary.capitalize()} ---')
-
         # Get secondary objective names
         secondary = [o for o in objectives if o != primary]
 
         for eps1 in epsilon_ranges[secondary[0]]:
             for eps2 in epsilon_ranges[secondary[1]]:
                 sweep_count += 1
-                print(f'\n--- Sweep count: {sweep_count} ---')
+                print(f'\n------ Sweep count: {sweep_count} ------')
+                print(f'Primary objective: {primary.capitalize()}')
                 print(f'{secondary[0].capitalize()} epsilon: {eps1}')
                 print(f'{secondary[1].capitalize()} epsilon: {eps2}')
 
                 # Set the objective function to primary objective
                 model.obj_function.set_value(
-                    expr=(getattr(model, f'{primary}_objective') / obj_max_value[primary])
+                    expr=getattr(model, f'{primary}_objective')
                 )
 
                 # Set epsilon bounds for the secondary objectives
                 getattr(model, f'{secondary[0]}_epsilon_constraint').set_value(
-                    # expr=getattr(model, f'{secondary[0]}_objective') <= eps1
-                    expr = getattr(model, f'norm_{secondary[0]}_objective') <= eps1
+                    expr=getattr(model, f'{secondary[0]}_objective') <= eps1
                 )
                 getattr(model, f'{secondary[1]}_epsilon_constraint').set_value(
-                    # expr=getattr(model, f'{secondary[1]}_objective') <= eps2
-                    expr = getattr(model, f'norm_{secondary[1]}_objective') <= eps2
+                    expr=getattr(model, f'{secondary[1]}_objective') <= eps2
                 )
 
                 # Set model version
@@ -134,19 +142,22 @@ def run_epsilon_sweep(
                 )
                 print(formatted)
 
-                break
-            break
-        break
+        #         break
+        #     break
+        # break
 
     # Convert into a dataframe
+    print(epsilon_sweep_results)
     eps_sweep_df = pd.DataFrame(epsilon_sweep_results)
     inf_epsilon_df = pd.DataFrame(infeasible_epsilon)
+    print(eps_sweep_df)
 
     # Save dataframe
     eps_filepath = os.path.join(params.data_output_path, 'epsilon_constraint')
     eps_sweep_df.to_csv(f'{eps_filepath}/epsilon_sweep_{config}_{charging_strategy}.csv')
     inf_epsilon_df.to_csv(f'{eps_filepath}/infeasible_epsilon_{config}_{charging_strategy}.csv')
 
+    pd.set_option('display.max_rows', None)
     print('\nSolution values')
     print(eps_sweep_df)
 
@@ -156,5 +167,3 @@ def run_epsilon_sweep(
 
 if __name__ == '__main__':
     main()
-
-
