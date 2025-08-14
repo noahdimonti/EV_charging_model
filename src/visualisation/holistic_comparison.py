@@ -28,7 +28,7 @@ def holistic_plot(best_solution: pd.DataFrame, save_img=False):
     ax.set_theta_direction(-1)          # Clockwise
 
     # Draw the outline
-    ax.plot(angles, values, color='tab:blue', linewidth=2)
+    ax.plot_epsilon(angles, values, color='tab:blue', linewidth=2)
     ax.fill(angles, values, color='tab:blue', alpha=0.25)
 
     # Style axes

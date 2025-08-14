@@ -87,7 +87,7 @@ def demand_profiles_overlay(configurations: list[str], charging_strategies: list
             results = plot_setups.get_model_results_data(config, strategy, version)
             ev_load = [sum(results.variables['p_ev'][i, t] for i in results.sets['EV_ID']) for t in results.sets['TIME']]
             total_demand = [h_l + ev_l for h_l, ev_l in zip(house_load, ev_load)]
-            ax.plot(
+            ax.plot_epsilon(
                 params.timestamps,
                 total_demand,
                 color=plot_configs.models_colour_dict[f'{config}_{strategy}'],
