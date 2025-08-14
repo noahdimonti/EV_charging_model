@@ -18,7 +18,6 @@ class ModelResults:
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
         self.total_objective_value = None
-        self.objective_value = None
 
         self.solver_status: pyo.SolverStatus
         self.termination_condition: pyo.TerminationCondition
@@ -241,8 +240,8 @@ class EvaluationMetrics:
         self.metrics.update(self._ev_user_metrics())
         self.metrics.update(self._general_metrics())
 
-        # if self.charging_strategy.value != 'uncoordinated':
-        #     self.metrics.update({'total_objective_value': self.objective_value})
+        if self.charging_strategy.value != 'uncoordinated':
+            self.metrics.update({'total_objective_value': self.objective_value})
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
