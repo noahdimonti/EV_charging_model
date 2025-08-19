@@ -3,7 +3,7 @@ import os
 from src.config import params
 
 
-def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=None, mip_gap=None):
+def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=None, mip_gap=None, thread_count=None):
     """Returns: (results, mip_gap, solver_status, termination_condition)"""
     solver = pyo.SolverFactory(solver_name)
 
@@ -16,6 +16,10 @@ def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=
     # Log path
     file_name = f'solver_log_{model.name}_{version}.log'
     file_path = os.path.join(params.model_results_folder_path, 'solver_logs', file_name)
+
+    # Set thread count
+    if thread_count is not None:
+        solver.options['Threads'] = thread_count
 
     # Solve model
     results = solver.solve(model, tee=verbose, logfile=file_path)

@@ -16,6 +16,7 @@ def run_optimisation_model(
         verbose=False,
         time_limit=None,
         mip_gap=None,
+        thread_count=None,
         save_model: bool = True) -> ModelResults:
     # Validate config and charging strategy
     validate_config_strategy(config, charging_strategy)
@@ -42,7 +43,8 @@ def run_optimisation_model(
             solver_name=solver,
             verbose=verbose,
             time_limit=time_limit,
-            mip_gap=mip_gap
+            mip_gap=mip_gap,
+            thread_count=thread_count
         )
 
         log_solver_results(
