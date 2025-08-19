@@ -258,8 +258,11 @@ data/
 /scripts/run_pipeline.py
 /scripts/sensitivity_analysis_pipeline.py
 /scripts/sketchbook.py
+/scripts/augmecon/run_augmecon.py
+/scripts/augmecon/get_payoff_tables.py
 /src/visualisation/plot_tst.py
 /src/config/independent_variables.py
+
 
 # Temporary
 /src/unit_tests
