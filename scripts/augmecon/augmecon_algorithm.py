@@ -10,7 +10,14 @@ from src.config import params
 from pprint import pprint
 
 
-def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, charging_strategy: str, version: str, tolerance=1e-4) -> dict:
+def get_lexicographic_optimal_solution(
+        obj_priority_order: list,
+        config: str,
+        charging_strategy: str,
+        version: str,
+        time_limit: int,
+        mip_gap: float,
+        eps_tolerance=1e-4) -> dict:
     """
     Runs lexicographic optimisation for the given order of objectives.
 
@@ -20,7 +27,9 @@ def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, ch
         config: scenario parameter to build the model
         charging_strategy: scenario parameter to build the model
         version: scenario parameter to build the model
-        tolerance: tolerance for 'keeping' previous optima (fraction of value)
+        time_limit: time limit for each model run (in minutes)
+        mip_gap: MIP gap for each model run (in percentage)
+        eps_tolerance: tolerance for 'keeping' previous optima (fraction of value)
 
     Returns:
         dict: optimal values for the given objective priority order
@@ -51,7 +60,7 @@ def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, ch
             prev_obj = obj_priority_order[j]
             constraint_name = f'lex_constraint_{prev_obj}'
             optimal_val = optimal_values[prev_obj]
-            expr = getattr(model, f'{prev_obj}_objective') <= optimal_val * (1 + tolerance)
+            expr = getattr(model, f'{prev_obj}_objective') <= optimal_val * (1 + eps_tolerance)
 
 
             if hasattr(model, constraint_name):
@@ -66,8 +75,8 @@ def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, ch
             version=ver,
             model=model,
             verbose=True,
-            time_limit=20,
-            mip_gap=1,
+            time_limit=time_limit,
+            mip_gap=mip_gap,
             save_model=True
         )
 
@@ -89,7 +98,13 @@ def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, ch
     return optimal_values
 
 
-def build_payoff_table(objectives: list, config: str, charging_strategy: str, version: str) -> dict:
+def build_payoff_table(
+        objectives: list,
+        config: str,
+        charging_strategy: str,
+        version: str,
+        time_limit=20,
+        mip_gap=1) -> dict:
     payoff_table = {}
 
     for primary in objectives:
@@ -105,7 +120,9 @@ def build_payoff_table(objectives: list, config: str, charging_strategy: str, ve
             config=config,
             charging_strategy=charging_strategy,
             version=ver,
-            tolerance=1e-4
+            time_limit=time_limit,
+            mip_gap=mip_gap,
+            eps_tolerance=1e-4
         )
 
     return payoff_table
@@ -165,6 +182,8 @@ def augmecon_sweep(
         config,
         charging_strategy,
         version,
+        time_limit=10,
+        mip_gap=1,
         rho=1e-5,
         epsilon_tolerance_frac=1e-8,
         duplicate_tol=1e-6):
@@ -179,12 +198,12 @@ def augmecon_sweep(
     - duplicate_tol: tolerance for considering two objective vectors identical
 
     Returns:
-        list of dicts: each dict contains epsilon values and objective values for a found Pareto point
+        tuple of dicts: each dict contains epsilon values, objective values, and version for a found Pareto point
     """
-    # 1) Compute ranges for augmentation scaling
+    # Compute ranges for augmentation scaling
     ranges = compute_ranges_from_payoff(payoff_table)
 
-    # 2) Build epsilon grid
+    # Build epsilon grid
     epsilons, sec_objs = generate_epsilon_grid(payoff_table, primary_obj, grid_points)
 
     pareto_solutions = []
@@ -205,25 +224,25 @@ def augmecon_sweep(
         )
         model = model_builder.get_optimisation_model()
 
-        # 3) Set the primary objective
+        # Set the primary objective
         prim_expr = getattr(model, f'{primary_obj}_objective')
         model.obj_function.set_value(expr=prim_expr)
 
-        # 4) Add epsilon constraints for each secondary objective
+        # Add epsilon constraints for each secondary objective
         for sec in sec_objs:
             slack_name = f'aug_slack_{sec}'
             constr_name = f'aug_const_{sec}'
 
             # Slack variable
-            setattr(model, slack_name, pyo.Var(domain=pyo.NonNegativeReals))
+            setattr(model, slack_name, pyo.Var(within=pyo.NonNegativeReals))
             slack_var = getattr(model, slack_name)
 
-            # Set objective constraint using the slack variable
+            # Set objective constraint using the slack variable: f_j + s_j = e_j
             eps_val = eps[sec]
             expr = (getattr(model, f'{sec}_objective') + slack_var == eps_val)
             setattr(model, constr_name, pyo.Constraint(expr=expr))
 
-        # 5) Build augmented objective: primary + rho * sum(s_j / r_j)
+        # Build augmented objective: primary + rho * sum(s_j / r_j)
         aug_terms = []
         for sec in sec_objs:
             slack_var = getattr(model, f'aug_slack_{sec}')
@@ -231,24 +250,23 @@ def augmecon_sweep(
             denom = r if (r and r > 0.0) else 1.0
             aug_terms.append(slack_var / denom)
 
-        if aug_terms:
-            aug_obj_expr = prim_expr + (rho * sum(aug_terms))
-        else:
-            aug_obj_expr = prim_expr
+        # Set objective function expr
+        aug_obj_expr = prim_expr + (rho * sum(aug_terms)) if aug_terms else prim_expr
 
         model.obj_function.set_value(expr=aug_obj_expr)
 
-        # 6) Solve
+        # Solve model
         results = run_optimisation_model(
             config=config,
             charging_strategy=charging_strategy,
             version=ver,
             model=model,
             verbose=True,
-            time_limit=10,
-            mip_gap=1
+            time_limit=time_limit,
+            mip_gap=mip_gap
         )
 
+        # Check if model is solvable/feasible
         if results is None:
             # Model failed to solve or raised error — treat as infeasible
             infeasible_records.append({
@@ -271,15 +289,15 @@ def augmecon_sweep(
             })
             continue
 
-        # 7) Extract objective values
+        # Extract objective values
         sol = {}
         for obj in all_objs:
             val = results.objective_components.get(f'{obj}_objective')
             sol[obj] = val
 
-        # 7b) Check for violations (shouldn't happen, but log if so)
+        # Check for violations (shouldn't happen, but log if so)
         violations = {}
-        tol_abs = 1e-8  # absolute tolerance for numeric noise
+        tol_abs = epsilon_tolerance_frac  # absolute tolerance for numeric noise
         for sec in sec_objs:
             eps_val = eps[sec]
             actual = sol[sec]
@@ -298,11 +316,9 @@ def augmecon_sweep(
                 'objectives': sol.copy(),
                 'violations': violations
             })
-            # NOTE: we *do not* automatically discard solutions with tiny violation;
-            # we log them so you can inspect and decide whether to tighten tolerances or increase rho.
 
-        # 8) Duplicate detection
-        key = tuple(round(sol[o], 8) for o in all_objs)
+        # Duplicate detection
+        key = tuple(int(sol[o] / duplicate_tol) for o in all_objs)
         if key in seen:
             continue
         seen.add(key)
