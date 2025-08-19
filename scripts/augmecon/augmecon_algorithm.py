@@ -17,6 +17,7 @@ def get_lexicographic_optimal_solution(
         version: str,
         time_limit: int,
         mip_gap: float,
+        thread_count=None,
         eps_tolerance=1e-4) -> dict:
     """
     Runs lexicographic optimisation for the given order of objectives.
@@ -29,6 +30,7 @@ def get_lexicographic_optimal_solution(
         version: scenario parameter to build the model
         time_limit: time limit for each model run (in minutes)
         mip_gap: MIP gap for each model run (in percentage)
+        thread_count: setting for Gurobi thread_count
         eps_tolerance: tolerance for 'keeping' previous optima (fraction of value)
 
     Returns:
@@ -77,6 +79,7 @@ def get_lexicographic_optimal_solution(
             verbose=True,
             time_limit=time_limit,
             mip_gap=mip_gap,
+            thread_count=thread_count,
             save_model=True
         )
 
@@ -104,7 +107,8 @@ def build_payoff_table(
         charging_strategy: str,
         version: str,
         time_limit=20,
-        mip_gap=1) -> dict:
+        mip_gap=1,
+        thread_count=None) -> dict:
     payoff_table = {}
 
     for primary in objectives:
@@ -122,6 +126,7 @@ def build_payoff_table(
             version=ver,
             time_limit=time_limit,
             mip_gap=mip_gap,
+            thread_count=thread_count,
             eps_tolerance=1e-4
         )
 
@@ -263,7 +268,8 @@ def augmecon_sweep(
             model=model,
             verbose=True,
             time_limit=time_limit,
-            mip_gap=mip_gap
+            mip_gap=mip_gap,
+            thread_count=None
         )
 
         # Check if model is solvable/feasible
