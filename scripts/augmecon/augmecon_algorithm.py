@@ -10,7 +10,7 @@ from src.config import params
 from pprint import pprint
 
 
-def get_lexicographic_optimal_solution(obj_priority_order, config, charging_strategy, version, epsilon=1e-4):
+def get_lexicographic_optimal_solution(obj_priority_order: list, config: str, charging_strategy: str, version: str, tolerance=1e-4) -> dict:
     """
     Runs lexicographic optimisation for the given order of objectives.
 
@@ -20,7 +20,7 @@ def get_lexicographic_optimal_solution(obj_priority_order, config, charging_stra
         config: scenario parameter to build the model
         charging_strategy: scenario parameter to build the model
         version: scenario parameter to build the model
-        epsilon: tolerance for 'keeping' previous optima (fraction of value)
+        tolerance: tolerance for 'keeping' previous optima (fraction of value)
 
     Returns:
         dict: optimal values for the given objective priority order
@@ -31,7 +31,7 @@ def get_lexicographic_optimal_solution(obj_priority_order, config, charging_stra
         print(f'\n--- Objective: {obj} ---')
 
         # Update version
-        ver = version + f'_lex_{obj}_primary'
+        ver = f'{version}_{obj}_minimised'
 
         # Build model
         model_builder = BuildModel(
@@ -48,16 +48,11 @@ def get_lexicographic_optimal_solution(obj_priority_order, config, charging_stra
 
         # Add/update constraints for all previous objectives in the order
         for j in range(i):
-            print(range(i))
-            print(j)
-            print(f'\nPrevious objective: {obj_priority_order[j]}')
             prev_obj = obj_priority_order[j]
             constraint_name = f'lex_constraint_{prev_obj}'
             optimal_val = optimal_values[prev_obj]
-            print(f'Optimal value: {optimal_val}')
-            expr = getattr(model, f'{prev_obj}_objective') <= optimal_val * (1 + epsilon)
+            expr = getattr(model, f'{prev_obj}_objective') <= optimal_val * (1 + tolerance)
 
-            print(f'Optimal values: {optimal_values}')
 
             if hasattr(model, constraint_name):
                 getattr(model, constraint_name).set_value(expr)
@@ -72,14 +67,11 @@ def get_lexicographic_optimal_solution(obj_priority_order, config, charging_stra
             model=model,
             verbose=True,
             time_limit=20,
-            mip_gap=1
+            mip_gap=1,
+            save_model=True
         )
 
         if results is not None:
-            print('\nResults obj components:')
-            pprint(results.objective_components)
-            print()
-
             raw, formatted = analyse_results(
                 [config],
                 [charging_strategy],
@@ -97,11 +89,14 @@ def get_lexicographic_optimal_solution(obj_priority_order, config, charging_stra
     return optimal_values
 
 
-def build_payoff_table(objectives, config, charging_strategy, version):
+def build_payoff_table(objectives: list, config: str, charging_strategy: str, version: str) -> dict:
     payoff_table = {}
 
     for primary in objectives:
-        # Put primary first, rest in any order (can choose fixed order for consistency)
+        # Update version
+        ver = version + f'_lex_{primary}_primary'
+
+        # Put primary first, rest in any order
         secondary_objs = [o for o in objectives if o != primary]
         obj_order = [primary] + secondary_objs
 
@@ -109,8 +104,8 @@ def build_payoff_table(objectives, config, charging_strategy, version):
             obj_priority_order=obj_order,
             config=config,
             charging_strategy=charging_strategy,
-            version=version,
-            epsilon=1e-4
+            version=ver,
+            tolerance=1e-4
         )
 
     return payoff_table
@@ -133,6 +128,7 @@ def compute_ranges_from_payoff(payoff_table):
         vals = [payoff_table[row][obj] for row in payoff_table]
         r = max(vals) - min(vals)
         ranges[obj] = r
+
     return ranges
 
 
@@ -201,7 +197,7 @@ def augmecon_sweep(
 
     for idx, eps in enumerate(epsilons):
         # --- Rebuild the model fresh each time ---
-        ver = f"{version}_{primary_obj}_eps{idx}"
+        ver = f'{version}_{primary_obj}_eps{idx}'
         model_builder = BuildModel(
             config=config_map[config],
             charging_strategy=strategy_map[charging_strategy],
@@ -210,31 +206,33 @@ def augmecon_sweep(
         model = model_builder.get_optimisation_model()
 
         # 3) Set the primary objective
-        prim_expr = getattr(model, f"{primary_obj}_objective")
+        prim_expr = getattr(model, f'{primary_obj}_objective')
         model.obj_function.set_value(expr=prim_expr)
 
         # 4) Add epsilon constraints for each secondary objective
         for sec in sec_objs:
-            slack_name = f"aug_slack_{sec}"
-            constr_name = f"aug_eps_eq_{sec}"
+            slack_name = f'aug_slack_{sec}'
+            constr_name = f'aug_const_{sec}'
 
             # Slack variable
             setattr(model, slack_name, pyo.Var(domain=pyo.NonNegativeReals))
             slack_var = getattr(model, slack_name)
 
+            # Set objective constraint using the slack variable
             eps_val = eps[sec]
-            expr = (getattr(model, f"{sec}_objective") + slack_var == eps_val)
+            expr = (getattr(model, f'{sec}_objective') + slack_var == eps_val)
             setattr(model, constr_name, pyo.Constraint(expr=expr))
 
         # 5) Build augmented objective: primary + rho * sum(s_j / r_j)
         aug_terms = []
         for sec in sec_objs:
-            slack_var = getattr(model, f"aug_slack_{sec}")
+            slack_var = getattr(model, f'aug_slack_{sec}')
             r = ranges.get(sec, 0.0)
             denom = r if (r and r > 0.0) else 1.0
             aug_terms.append(slack_var / denom)
+
         if aug_terms:
-            aug_obj_expr = prim_expr + rho * sum(aug_terms)
+            aug_obj_expr = prim_expr + (rho * sum(aug_terms))
         else:
             aug_obj_expr = prim_expr
 
@@ -276,7 +274,7 @@ def augmecon_sweep(
         # 7) Extract objective values
         sol = {}
         for obj in all_objs:
-            val = results.objective_components.get(f"{obj}_objective")
+            val = results.objective_components.get(f'{obj}_objective')
             sol[obj] = val
 
         # 7b) Check for violations (shouldn't happen, but log if so)
