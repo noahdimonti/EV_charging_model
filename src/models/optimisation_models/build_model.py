@@ -79,17 +79,16 @@ class BuildModel:
 
         self.model.social_objective = pyo.Expression(expr=social_cost)
 
-        '''
-        Weighted sum method
+        # Sum of objectives as a placeholder for the objective function which value will be set later
+        # If value is not set than the model is run by the weighted sum method
         self.model.obj_function = pyo.Objective(
             expr=(
-                    0.4 * self.model.economic_objective +
-                    0.4 * self.model.technical_objective +
-                    0.2 * self.model.social_objective
+                    self.model.economic_objective +
+                    self.model.technical_objective +
+                    self.model.social_objective
             ),
             sense=pyo.minimize
         )
-        '''
 
     def assemble_components(self):
         # Initialise assets parameters and variables
@@ -107,26 +106,6 @@ class BuildModel:
 
         # Define objective components
         self.define_objective_components()
-
-        # Epsilon constraints
-        epsilon_placeholder = 1e6
-
-        self.model.economic_epsilon_constraint = pyo.Constraint(
-            expr=self.model.economic_objective <= epsilon_placeholder
-        )
-
-        self.model.technical_epsilon_constraint = pyo.Constraint(
-            expr=self.model.technical_objective <= epsilon_placeholder
-        )
-
-        self.model.social_epsilon_constraint = pyo.Constraint(
-            expr=self.model.social_objective <= epsilon_placeholder
-        )
-
-        self.model.obj_function = pyo.Objective(
-            expr=self.model.economic_objective,  # placeholder objective
-            sense=pyo.minimize
-        )
 
     def get_optimisation_model(self):
         return self.model
