@@ -1,5 +1,4 @@
-payoff_tables = {
-    'config_1_opportunistic': {'social': {'social': 494.30831075458633,
+{    'config_1_opportunistic': {'social': {'social': 494.30831075458633,
                                           'economic': 17255.3883632152,
                                           'technical': 222.89165444503868},
                                'economic': {'economic': 4015.106649625589,
