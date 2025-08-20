@@ -189,6 +189,7 @@ def augmecon_sweep(
         version,
         time_limit=10,
         mip_gap=1,
+        thread_count=None,
         rho=1e-5,
         epsilon_tolerance_frac=1e-8,
         duplicate_tol=1e-6):
@@ -269,7 +270,7 @@ def augmecon_sweep(
             verbose=True,
             time_limit=time_limit,
             mip_gap=mip_gap,
-            thread_count=None
+            thread_count=thread_count
         )
 
         # Check if model is solvable/feasible
