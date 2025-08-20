@@ -346,7 +346,7 @@ def augmecon_sweep(
         for inf in infeasible_records
     ])
 
-    augmecon_path = os.path.join(params.data_output_path, 'augmecon_method')
+    augmecon_path = os.path.join(params.data_output_path, 'augmecon')
     pareto_filename = f'{augmecon_path}/pareto_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
     infeasible_filename = f'{augmecon_path}/infeasible_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
 
