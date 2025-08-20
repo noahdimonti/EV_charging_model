@@ -348,8 +348,8 @@ def augmecon_sweep(
     ])
 
     augmecon_path = os.path.join(params.data_output_path, 'augmecon')
-    pareto_filename = f'{augmecon_path}/pareto_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
-    infeasible_filename = f'{augmecon_path}/infeasible_{config}_{charging_strategy}_{primary_obj}_primary_{grid_points}gp.csv'
+    pareto_filename = f'{augmecon_path}/pareto_{config}_{charging_strategy}_{params.num_of_evs}_{primary_obj}_primary_{grid_points}gp.csv'
+    infeasible_filename = f'{augmecon_path}/infeasible_{config}_{charging_strategy}_{params.num_of_evs}_{primary_obj}_primary_{grid_points}gp.csv'
 
     pareto_df.to_csv(pareto_filename)
     infeasible_df.to_csv(infeasible_filename)
