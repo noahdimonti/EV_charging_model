@@ -221,6 +221,7 @@ def augmecon_sweep(
     all_objs = list(next(iter(payoff_table.values())).keys())
 
     for idx, eps in enumerate(epsilons):
+        print(f'--- Running epsilon number {idx} ---')
         # --- Rebuild the model fresh each time ---
         ver = f'{version}_{primary_obj}_eps{idx}'
         model_builder = BuildModel(
