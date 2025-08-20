@@ -21,6 +21,17 @@ def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=
     if thread_count is not None:
         solver.options['Threads'] = thread_count
 
+    # Set solver parameters
+    solver.options['MIPFocus'] = 1  # Focus on finding good feasible solutions
+    solver.options['Heuristics'] = 0.5  # More aggressive heuristics
+    solver.options['Presolve'] = 2  # Aggressive presolve
+    solver.options['Cuts'] = 2  # Aggressive cut generation
+    solver.options['NodeMethod'] = 2  # Try barrier method at nodes for LP relaxation
+    solver.options['ImproveStartTime'] = 60  # Wait time before aggressive improvement heuristics
+    solver.options['Aggregate'] = 1  # Aggregate constraints to strengthen LP relaxation
+    solver.options['RINS'] = 10
+    solver.options['PumpPasses'] = 20
+
     # Solve model
     results = solver.solve(model, tee=verbose, logfile=file_path)
 

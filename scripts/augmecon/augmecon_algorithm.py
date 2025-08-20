@@ -90,7 +90,7 @@ def get_lexicographic_optimal_solution(
                 ver,
                 save_df=False,
             )
-            print(formatted)
+            print(f'\n{formatted}')
 
             # Store the optimal value for this objective
             val = results.objective_components.get(f'{obj}_objective')
