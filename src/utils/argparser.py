@@ -12,6 +12,8 @@ def get_parser():
 
     parser.add_argument('-t', '--time_limit', type=int, default=30,
                         help="Solver time limit in minutes")
+    parser.add_argument('-m', '--mip_gap', type=float, default=1,
+                        help="MIP gap in percentage")
     parser.add_argument('-n', '--thread_count', type=int, default=16,
                         help="Number of solver threads")
 
