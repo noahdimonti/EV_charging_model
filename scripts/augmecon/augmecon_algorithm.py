@@ -2,6 +2,8 @@ import os
 import itertools
 import pyomo.environ as pyo
 import pandas as pd
+from fontTools.misc.bezierTools import epsilon
+
 from src.models.optimisation_models.build_model import BuildModel
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from scripts.experiments_pipeline.analyse_results import analyse_results
@@ -138,18 +140,21 @@ def compute_ranges_from_payoff(payoff_table):
     payoff_table: dict like {primary: {obj: value, ...}, ...}
     returns: dict mapping objective -> range (max - min)
     """
-    # Get objectives from first row
-    objectives = []
+
+    # Collect all possible objectives across all rows
+    objectives = set()
     for row in payoff_table.values():
-        objectives = list(row.keys())
-        break
+        objectives.update(row.keys())
 
     ranges = {}
 
     for obj in objectives:
-        vals = [payoff_table[row][obj] for row in payoff_table]
-        r = max(vals) - min(vals)
-        ranges[obj] = r
+        vals = []
+        for row in payoff_table.values():
+            if obj in row:
+                vals.append(row[obj])
+        if vals:  # only compute if at least one value exists
+            ranges[obj] = max(vals) - min(vals)
 
     return ranges
 
@@ -159,23 +164,34 @@ def generate_epsilon_grid(payoff_table, primary_obj, grid_points):
     Generate epsilon combinations for secondary objectives.
     Returns list of dicts (each dict maps secondary_obj -> epsilon_value) and list of secondary_obj names.
     """
-    sec_objs = [o for o in next(iter(payoff_table.values())).keys() if o != primary_obj]
+    if grid_points <= 0:
+        raise ValueError('grid_points must be >= 1')
+
+    # Collect all objectives from all rows
+    all_objs = set()
+
+    for row in payoff_table.values():
+        all_objs.update(row.keys())
+
+    # Secondary objectives = everything except the primary
+    sec_objs = [o for o in all_objs if o != primary_obj]
 
     epsilon_values = {}
-    # For each secondary objective, compute min and max across payoff table (rows are primary choices)
-    for obj in sec_objs:
-        vals = [payoff_table[row][obj] for row in payoff_table]
-        obj_min, obj_max = min(vals), max(vals)
 
-        # generate grid_points+1 values inclusive of extremes
-        if grid_points <= 0:
-            raise ValueError('grid_points must be >= 1')
+    for obj in sec_objs:
+        # Collect only available values for this objective
+        vals = [row[obj] for row in payoff_table.values() if obj in row]
+
+        if not vals:  # skip if no values exist at all
+            continue
+
+        obj_min, obj_max = min(vals), max(vals)
         step = (obj_max - obj_min) / grid_points
         epsilon_values[obj] = [obj_max - (step * k) for k in range(grid_points + 1)]
 
-    # Cartesian product of epsilon values
+    # Cartesian product across objectives that actually had values
     combos = list(itertools.product(*[epsilon_values[o] for o in sec_objs]))
-    epsilons = [dict(zip(sec_objs, c)) for c in combos]
+    epsilons = [dict(zip(epsilon_values.keys(), c)) for c in combos]
 
     return epsilons, sec_objs
 
