@@ -238,6 +238,15 @@ def augmecon_sweep(
 
     for idx, eps in enumerate(epsilons):
         print(f'\n--- Running epsilon number {idx} ---')
+
+        # Check if model has been solved
+        filename = f'{config}_{charging_strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}_social_eps{idx}.pkl'
+        filepath = os.path.join(params.model_results_folder_path, filename)
+
+        if os.path.exists(filepath):
+            print(f'Model has been previously solved. Model result was saved in {filename}')
+            continue
+
         # --- Rebuild the model fresh each time ---
         ver = f'{version}_{primary_obj}_eps{idx}'
         model_builder = BuildModel(
