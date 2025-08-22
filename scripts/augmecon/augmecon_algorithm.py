@@ -221,7 +221,7 @@ def augmecon_sweep(
     all_objs = list(next(iter(payoff_table.values())).keys())
 
     for idx, eps in enumerate(epsilons):
-        print(f'--- Running epsilon number {idx} ---')
+        print(f'\n--- Running epsilon number {idx} ---')
         # --- Rebuild the model fresh each time ---
         ver = f'{version}_{primary_obj}_eps{idx}'
         model_builder = BuildModel(
@@ -328,6 +328,7 @@ def augmecon_sweep(
         # Duplicate detection
         key = tuple(int(sol[o] / duplicate_tol) for o in all_objs)
         if key in seen:
+            print(f'\nDuplication detected for epsilon {idx}\n')
             continue
         seen.add(key)
 
@@ -348,12 +349,20 @@ def augmecon_sweep(
         for inf in infeasible_records
     ])
 
-    augmecon_path = os.path.join(params.data_output_path, 'augmecon')
-    pareto_filename = f'{augmecon_path}/pareto_{config}_{charging_strategy}_{params.num_of_evs}_{primary_obj}_primary_{grid_points}gp.csv'
-    infeasible_filename = f'{augmecon_path}/infeasible_{config}_{charging_strategy}_{params.num_of_evs}_{primary_obj}_primary_{grid_points}gp.csv'
+    print(f'Violation records:\n{violation_records}')
 
+    # Save solutions
+    augmecon_path = os.path.join(params.data_output_path, 'augmecon')
+
+    pareto_filename = (f'{augmecon_path}/'
+                       f'pareto_{config}_{charging_strategy}_{params.num_of_evs}EVs_{primary_obj}_primary_{grid_points}gp.csv')
     pareto_df.to_csv(pareto_filename)
+    print(f'\nPareto solutions saved to {pareto_filename}')
+
+    infeasible_filename = (f'{augmecon_path}/'
+                           f'infeasible_{config}_{charging_strategy}_{params.num_of_evs}EVs_{primary_obj}_primary_{grid_points}gp.csv')
     infeasible_df.to_csv(infeasible_filename)
+    print(f'\nInfeasible solutions saved to {infeasible_filename}')
 
     return pareto_solutions, infeasible_records
 
