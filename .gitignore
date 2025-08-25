@@ -246,7 +246,7 @@ fabric.properties
 reports/
 
 # Data
-data/
+data/inputs
 
 .old_files
 
