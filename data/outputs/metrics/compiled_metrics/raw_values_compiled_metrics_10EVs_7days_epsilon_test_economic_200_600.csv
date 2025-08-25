@@ -1,0 +1,12 @@
+,config_1_opportunistic
+investment_cost,2000.0
+p_peak_increase,0.0
+papr,2.4149
+avg_soc_t_dep_percent,91.5041
+avg_soc_to_max_deviation,8.495900000000006
+soc_range,41.7986335834906
+num_cp,10.0
+p_cp_rated,2.4
+avg_num_charging_days,6.5
+total_objective_value,4235.206924872013
+mip_gap,6.442386768153574e-14

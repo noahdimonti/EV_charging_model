@@ -1,0 +1,12 @@
+,config_1_uncoordinated,config_1_opportunistic,config_1_flexible
+Investment cost,"$5,000.00","$5,000.00","$5,000.00"
+Average daily peak,35.382 kW,34.042 kW,34.042 kW
+Average daily PAPR,1.792,1.746,1.746
+Average daily peak increase from base load,1.042%,1.000%,1.000%
+Number of CP,25 charging points (2.4 kW),25 charging points (2.4 kW),25 charging points (2.4 kW)
+Average total cost per user,$36.17 over 7 days,$32.52 over 7 days,$31.87 over 7 days
+Average SOC at departure time,98.74%,95.09%,90.43%
+Lowest SOC at departure time,75.02%,67.32%,46.79%
+Highest SOC at departure time,100.00%,100.00%,100.00%
+Average number of charging days,7.00 days per week,6.40 days per week,3.76 days per week
+Optimality gap,,0.0000%,0.0988%

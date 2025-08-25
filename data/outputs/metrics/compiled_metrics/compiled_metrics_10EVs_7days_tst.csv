@@ -1,0 +1,14 @@
+,config_1_opportunistic
+Charging point info,10 CPs (1.30 kW)
+Investment cost,"$1,800.00"
+Peak demand increase,6.52%
+PAPR,2.60
+Average SOC at dep time,80.41%
+Average deviation of SOC at dep time to max SOC,19.59%
+SOC min-max range,72.52%
+Average num of charging days,6.90
+Optimality gap,0.0000%
+Objective value,"4,015.11"
+Economic objective,"4,015.11"
+Technical objective,"1,000,000.00"
+Social objective,"1,000,000.00"

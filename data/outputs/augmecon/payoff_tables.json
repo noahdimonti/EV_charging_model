@@ -1,0 +1,97 @@
+{
+    "config_1_opportunistic": {
+        "social": {
+            "social": 494.30831075458633,
+            "economic": 17255.388363215196,
+            "technical": 222.8916544450459
+        },
+        "economic": {
+            "economic": 4215.106649625589,
+            "social": 741.1641319089877,
+            "technical": 178.20802662334532
+        },
+        "technical": {
+            "technical": 163.3830737085036,
+            "social": 1044.6254079701469,
+            "economic": 17217.783324932298
+        }
+    },
+    "config_1_flexible": {
+        "social": {
+            "social": 586.7497897142772,
+            "economic": 17255.375489522918,
+            "technical": 245.18508252196642
+        },
+        "economic": {
+            "economic": 4215.106649625589,
+            "social": 838.8991456796481,
+            "technical": 198.5424901940722
+        },
+        "technical": {
+            "technical": 165.34658672195056,
+            "social": 1335.9278040623067,
+            "economic": 17216.68213958482
+        }
+    },
+    "config_2_opportunistic": {
+        "social": {
+            "social": 494.3083107545863,
+            "economic": 6701.696289167386,
+            "technical": 272.88357193519494
+        },
+        "economic": {
+            "economic": 2553.7367866118902,
+            "social": 857.111995457902,
+            "technical": 394.42503340491015
+        },
+        "technical": {
+            "technical": 163.38307370850356,
+            "social": 1044.6254079665644,
+            "economic": 15710.112092055597
+        }
+    },
+    "config_2_flexible": {
+        "social": {
+            "social": 586.7497897142772,
+            "economic": 6701.67685938593,
+            "technical": 266.0052484774568
+        },
+        "economic": {
+            "economic": 2553.736786611847,
+            "social": 915.2256188921543
+        },
+        "technical": {
+            "technical": 165.79148994335532,
+            "social": 1193.582029899867
+        }
+    },
+    "config_3_opportunistic": {
+        "social": {
+            "social": 494.3083107545862,
+            "economic": 6701.689733078213,
+            "technical": 283.7728338742191
+        },
+        "economic": {
+            "economic": 2553.7367866118902,
+            "social": 864.8671836147147
+        },
+        "technical": {
+            "technical": 163.38307370850418,
+            "social": 1044.625407969523,
+            "economic": 15710.112715706007
+        }
+    },
+    "config_3_flexible": {
+        "social": {
+            "social": 586.7497897143,
+            "economic": 6702.652305803
+        },
+        "economic": {
+            "economic": 2553.736786612,
+            "social": 939.0351584963
+        },
+        "technical": {
+            "technical": 165.3559507477
+        }
+    }
+}
