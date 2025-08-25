@@ -83,7 +83,7 @@ class BuildModel:
         # If value is not set than the model is run by the weighted sum method
         self.model.obj_function = pyo.Objective(
             expr=(
-                    self.model.economic_objective +
+                    (self.model.economic_objective / 10) +
                     self.model.technical_objective +
                     self.model.social_objective
             ),
