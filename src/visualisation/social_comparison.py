@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import seaborn as sns
 import os
 from src.config import params, ev_params, independent_variables
@@ -9,7 +10,7 @@ from src.visualisation import plot_configs
 from pprint import pprint
 
 
-def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+def get_soc_df(configurations, charging_strategies, version):
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
@@ -35,17 +36,89 @@ def soc_distribution(configurations: list[str], charging_strategies: list[str], 
                             'soc_t_dep': soc_t_dep
                         })
 
-    df_results = pd.DataFrame(all_results)
+    return pd.DataFrame(all_results)
 
-    # Violin plot with inner box
+
+def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+    df_results = get_soc_df(configurations, charging_strategies, version)
+
+    # Subplots: one per config
+    n_configs = len(configurations)
+    fig, axes = plt.subplots(
+        n_configs, 1,
+        figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs),
+        sharex=True
+    )
+
+    if n_configs == 1:
+        axes = [axes]  # make iterable
+
+    for idx, config in enumerate(df_results['config'].unique()):
+        ax = axes[idx]
+        sns.histplot(
+            x='soc_t_dep',
+            hue='strategy',
+            data=df_results[df_results['config'] == config],
+            multiple='dodge',
+            bins=20,
+            shrink=0.8,
+            palette='Set2',
+            ax=ax,
+            legend=(idx == 0)
+        )
+
+        # Configure the legend size and style
+        # Get the legend that Seaborn made
+        legend = ax.get_legend()
+        if legend:
+            legend.set_title('Charging Strategy')
+            legend.get_title().set_fontsize(15)
+            legend.get_title().set_fontweight('bold')
+
+            for text in legend.get_texts():
+                text.set_fontsize(14)
+                text.set_fontweight('bold')
+
+            # Adjust spacing
+            legend._legend_box.align = 'left'  # optional: align entries nicely
+            legend.handletextpad = 2.5  # space between marker/line and text
+            legend.labelspacing = 2.5  # vertical space between legend entries
+
+        # Tick labels
+        ax.tick_params(axis='x', labelbottom=True)
+
+        plot_setups.setup(
+            title=f'{config}',
+            ylabel='Count',
+            xlabel='SOC Distribution at Departure Time (%)',
+            legend=False,
+            ax=ax
+        )
+
+        ax.set_xlim(0, 100)  # SOC % range
+
+    plt.tight_layout()
+
+    # Set y axis limits
+    plt.ylim(0, 100)
+
+    if save_img:
+        plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
+    # plt.show()
+
+
+def soc_boxplot(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+    df_results = get_soc_df(configurations, charging_strategies, version)
+
     plt.figure(figsize=plot_setups.fig_size)
-    ax = sns.violinplot(
+    ax = sns.boxplot(
         x='config',
         y='soc_t_dep',
         hue='strategy',
         data=df_results,
-        inner='box',
-        palette='Set2'
+        palette='Set2',
+        medianprops={'linewidth': 2.5, 'color': 'black'}  # bold black median line
+
     )
 
     plot_setups.setup(
@@ -56,11 +129,13 @@ def soc_distribution(configurations: list[str], charging_strategies: list[str], 
         ax=ax
     )
 
+    plt.tight_layout()
+
     # Set y axis limits
     plt.ylim(0, 100)
 
     if save_img:
-        plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_plot(f'soc_boxplot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -82,7 +157,6 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
 
             # Scale rated power of CP
             p_cp_rated = results.variables['p_cp_rated'] * params.charging_power_resolution_factor
-
             all_results.append({
                 'config': cap_config,
                 'strategy': cap_strategy,
@@ -111,19 +185,34 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
         ax=ax
     )
 
-    # Add p_cp_rated labels on top of each bar
-    for container in ax.containers:
-        for bar, label in zip(container, df_results['p_cp_rated']):
-            height = bar.get_height()
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                height + 0.125,  # adjust for spacing above bar
-                f'{label} kW',  # or just `label` if not float
-                ha='center',
-                va='bottom',
-                fontsize=plot_configs.tick_fontsize,
-                fontweight='bold'
-            )
+    # Flatten the DataFrame in the same order as the bars are drawn
+    # Seaborn draws bars for each hue in order for each x
+    configs = df_results['config'].unique()
+    strategies = df_results['strategy'].unique()
+
+    # Loop over bars in order
+    bars = [bar for container in ax.containers for bar in container]
+    labels = []
+
+    for config in configs:
+        for strategy in strategies:
+            # Select the matching row
+            row = df_results[(df_results['config'] == config) & (df_results['strategy'] == strategy)]
+            if not row.empty:
+                labels.append(row['p_cp_rated'].values[0])
+
+    # Add text labels on top of bars
+    for bar, label in zip(bars, labels):
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            height + 0.125,
+            f'{label} kW',
+            ha='center',
+            va='bottom',
+            fontsize=plot_configs.tick_fontsize,
+            fontweight='bold'
+        )
 
     # Save plot
     if save_img:
