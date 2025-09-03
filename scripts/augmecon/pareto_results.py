@@ -1,7 +1,13 @@
+import pandas as pd
+from scripts.augmecon.process_pareto_solutions import get_pareto_solutions
 
 
 def main():
-    df = get_pareto_solutions()
+    df = get_pareto_solutions(
+        'config_2',
+        'flexible',
+        10
+    )
 
     # Pareto front only (rank 1)
     pareto_front = df[df['pareto_rank'] == 1].head(5)
@@ -22,3 +28,7 @@ def main():
 
     print('\nVersion(s):')
     print(best_sols_version)
+
+
+if __name__ == '__main__':
+    main()
