@@ -8,14 +8,11 @@ from src.utils.argparser import get_parser
 from pprint import pprint
 
 
-def main(argv=None):
-    parser = get_parser()
-    args = parser.parse_args(argv)
-
+def get_pareto_solutions(config, charging_strategy, grid_points):
     # Load CSV
     filepath = os.path.join(
         params.data_output_path,
-        f'augmecon/pareto_{args.config}_{args.charging_strategy}_{params.num_of_evs}EVs_social_primary_{args.grid_points}gp.csv'
+        f'augmecon/pareto_{config}_{charging_strategy}_{params.num_of_evs}EVs_social_primary_{grid_points}gp.csv'
     )
     df = pd.read_csv(filepath)
 
@@ -29,61 +26,7 @@ def main(argv=None):
     # Sort by Pareto rank first, then by distance to ideal
     df = df.sort_values(['pareto_rank', 'distance_to_ideal']).reset_index(drop=True)
 
-    # Pareto front only (rank 1)
-    pareto_front = df[df['pareto_rank'] == 1].head(5)
-
-    # Best solutions (lowest distance to ideal)
-    best_sols = df[df['distance_to_ideal'] == df['distance_to_ideal'].min()]
-    best_sols_version = best_sols['version'].values
-
-    pd.set_option('display.max_columns', None)
-    print('\nFull DataFrame with ranks:')
-    print(df)
-
-    print('\nPareto front:')
-    print(pareto_front)
-
-    print('\nBest solution(s):')
-    print(best_sols)
-
-    print('\nVersion(s):')
-    print(best_sols_version)
-
-    # Parallel coordinates plot for the Pareto front
-    conf_type, conf_num = args.config.split('_')
-    
-    fig = px.parallel_coordinates(
-        # df,
-        pareto_front,
-        dimensions=objective_cols,
-        color='distance_to_ideal',
-        color_continuous_scale=px.colors.sequential.Viridis,
-        labels={
-            **{col: f'{col.capitalize()} (↓)' for col in objective_cols},
-            'distance_to_ideal': 'Distance to Ideal'
-        },
-        title=f'Pareto Front Parallel Coordinates - {conf_type.capitalize()} {conf_num} {args.charging_strategy.capitalize()}',
-    )
-
-    parallel_plot_filepath = os.path.join(params.data_output_path,
-                                          f'augmecon/parallel_plot_{args.config}_{args.charging_strategy}_{args.grid_points}gp.png')
-
-
-    # df['highlight'] = df['version'].isin(best_sols_version).astype(int)
-    #
-    # fig = px.parallel_coordinates(
-    #     df,
-    #     dimensions=objective_cols,
-    #     color='highlight',
-    #     color_continuous_scale=[[0, 'lightgray'], [1, 'red']],
-    #     labels={**{col: f'{col.capitalize()} (↓)' for col in objective_cols}, 'highlight': 'Best'},
-    #     title=f'Pareto Front Parallel Coordinates - {conf_type.capitalize()} {conf_num} {args.charging_strategy.capitalize()}'
-    # )
-
-    fig.write_image(parallel_plot_filepath, scale=2)
-    print(f'\nPlot saved to {parallel_plot_filepath}')
-
-    # fig.show()
+    return df
 
 
 def get_pareto_ranks_min(df: pd.DataFrame) -> pd.Series:
@@ -157,7 +100,10 @@ def get_distance_to_ideal_min(df: pd.DataFrame, objectives: list) -> pd.DataFram
 
 
 if __name__ == '__main__':
-    main([
-        '-c', 'config_1',
-        '-s', 'opportunistic'
-    ])
+    main(
+        [
+            '-c', 'config_2',
+            '-s', 'flexible',
+            '-g', '10'
+        ]
+    )
