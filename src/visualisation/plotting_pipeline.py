@@ -8,6 +8,7 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         version,
         save_img
     )
+
     technical_comparison.demand_profiles_by_config(
         configurations,
         charging_strategies,
@@ -15,6 +16,13 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         save_img
     )
     technical_comparison.demand_profiles_overlay(
+        configurations,
+        charging_strategies,
+        version,
+        save_img
+    )
+
+    social_comparison.soc_boxplot(
         configurations,
         charging_strategies,
         version,
