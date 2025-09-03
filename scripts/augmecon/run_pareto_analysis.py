@@ -1,12 +1,17 @@
 import pandas as pd
 from scripts.augmecon.process_pareto_solutions import get_pareto_solutions
+from src.visualisation.pareto_parallel import pareto_parallel_plot
 
 
 def main():
+    config = 'config_2'
+    strategy = 'flexible'
+    grid_points = 10
+
     df = get_pareto_solutions(
-        'config_2',
-        'flexible',
-        10
+        config,
+        strategy,
+        grid_points
     )
 
     # Pareto front only (rank 1)
@@ -28,6 +33,13 @@ def main():
 
     print('\nVersion(s):')
     print(best_sols_version)
+
+    pareto_parallel_plot(
+        config,
+        strategy,
+        grid_points,
+        pareto_front
+    )
 
 
 if __name__ == '__main__':
