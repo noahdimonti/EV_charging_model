@@ -1,7 +1,7 @@
 import os
 import pickle
-from scripts.experiments_pipeline.analyse_results import analyse_results
-from src.config import params, independent_variables
+from src.pipelines.experiments_pipeline.analyse_results import analyse_results
+from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
 from src.visualisation import plotting_pipeline

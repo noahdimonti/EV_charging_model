@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 import os
-from scripts.sensitivity_analysis.pareto_front import get_pareto_ranks
+from src.pipelines.sensitivity_analysis.pareto_front import get_pareto_ranks
 from src.config import params
-from pprint import pprint
 
 
 def normalise_solution_metrics(df: pd.DataFrame) -> pd.DataFrame:

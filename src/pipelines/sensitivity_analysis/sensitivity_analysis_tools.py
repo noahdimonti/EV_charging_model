@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import itertools
 import os
-from scripts.experiments_pipeline.analyse_results import analyse_results
+from src.pipelines.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from pprint import pprint
