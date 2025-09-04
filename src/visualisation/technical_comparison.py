@@ -73,6 +73,97 @@ def demand_profiles_by_config(configurations: list[str], charging_strategies: li
     # plt.show()
 
 
+def charging_strategy_load_delta_comparison(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+    # Define grid size
+    n_configs = len(configurations)
+
+    # Define figure and axes
+    fig, axes = plt.subplots(nrows=n_configs, ncols=1,
+                             figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs))
+    axes = np.array(axes).reshape(-1)  # flatten in case nrows=1
+
+    colors = {
+        'opportunistic': 'tab:orange',
+        'flexible': 'tab:blue'
+    }
+
+    # collect all deltas into a tidy dataframe
+    records = []
+
+    for idx, config in enumerate(configurations):
+        ax = axes[idx]
+
+        if 'uncoordinated' in charging_strategies:
+            uncoordinated_results = plot_setups.get_model_results_data(config, 'uncoordinated', version)
+            strategies = [s for s in charging_strategies if s != 'uncoordinated']
+        else:
+            raise ValueError('Uncoordinated strategy does not exist.')
+
+        time_steps = list(uncoordinated_results.sets['TIME'])
+
+        for strategy in strategies:
+            strategy_results = plot_setups.get_model_results_data(config, strategy, version)
+            load_delta = [
+                strategy_results.variables['p_grid'][t] - uncoordinated_results.variables['p_grid'][t]
+                for t in time_steps
+            ]
+
+            ax.plot(
+                params.timestamps,
+                load_delta,
+                color=colors[strategy],
+                linewidth=2,
+                label=f'{strategy.capitalize()} Charging'
+            )
+
+            for t, delta in zip(time_steps, load_delta):
+                records.append({
+                    'Time': t,
+                    'Delta': delta,
+                    'Strategy': strategy
+                })
+
+        config_name, config_num = config.split('_')
+        config_name = f'{config_name}uration'.capitalize()
+        title = f'{config_name} {config_num}'
+
+        # Call the unified plot setup
+        plot_setups.setup(
+            title=title,
+            ylabel='Δ Load (Strategy – Uncoordinated)',
+            xlabel='Day',
+            legend=True,
+            legend_col=2,
+            ax=ax
+        )
+
+        plot_setups.timeseries_setup(ax)
+
+        # Add horizontal line on y=0
+        ax.axhline(0, color='black', linewidth=2.5)
+
+    # Add space between subplots
+    fig.subplots_adjust(hspace=0.3)
+
+    if save_img:
+        plot_setups.save_plot(f'charging_strategy_delta_profiles_{params.num_of_evs}EVs_{version}')
+
+
+charging_strategy_load_delta_comparison(
+    ['config_1', 'config_2'],
+    ['uncoordinated', 'opportunistic', 'flexible'],
+    'norm_w_sum',
+    True
+)
+
+
+
+
+
+
+
+
+
 def demand_profiles_overlay(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
     # Create the plot
     fig, ax = plt.subplots(figsize=plot_setups.fig_size)
