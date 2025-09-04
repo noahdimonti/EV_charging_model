@@ -254,13 +254,13 @@ data/inputs
 .DS_Store
 
 
-# Dynamic scripts
-/scripts/run_pipeline.py
-/scripts/sensitivity_analysis_pipeline.py
-/scripts/sketchbook.py
-/scripts/augmecon/run_augmecon.py
-/scripts/augmecon/get_payoff_tables.py
-/scripts/run_model_bash.py
+# Dynamic pipelines
+/src/pipelines/run_pipeline.py
+/src/pipelines/sensitivity_analysis_pipeline.py
+/src/pipelines/sketchbook.py
+/src/pipelines/augmecon/run_augmecon.py
+/src/pipelines/augmecon/get_payoff_tables.py
+/src/pipelines/run_model_bash.py
 
 /src/visualisation/plot_tst.py
 /src/config/independent_variables.py

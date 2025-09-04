@@ -2,7 +2,7 @@ from src.visualisation import economic_comparison, technical_comparison, social_
 
 
 def plot_all(configurations, charging_strategies, version, save_img=True):
-    economic_comparison.investment_cost(
+    economic_comparison.num_cp_plot(
         configurations,
         charging_strategies,
         version,
@@ -15,7 +15,7 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         version,
         save_img
     )
-    technical_comparison.demand_profiles_overlay(
+    technical_comparison.charging_strategy_load_delta_comparison(
         configurations,
         charging_strategies,
         version,
@@ -34,9 +34,10 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         version,
         save_img
     )
-    social_comparison.num_cp_plot(
+    social_comparison.num_charging_day_plot(
         configurations,
         charging_strategies,
         version,
         save_img
     )
+
