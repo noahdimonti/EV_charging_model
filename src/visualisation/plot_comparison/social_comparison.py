@@ -39,6 +39,42 @@ def get_soc_df(configurations, charging_strategies, version):
     return pd.DataFrame(all_results)
 
 
+def get_wait_time_list(config, strategy, version, all_results: list):
+    results = plot_setups.get_model_results_data(config, strategy, version)
+
+    # Capitalise config and strategy names
+    config_name, config_num = config.split('_')
+    config_name = config_name.capitalize()
+    cap_config = f'{config_name} {config_num}'
+    cap_strategy = strategy.capitalize()
+
+    for i in results.sets['EV_ID']:
+        for t in ev_params.t_arr_dict[i]:
+            soc_t_arr = (results.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100
+
+            wait_time = None
+
+            # search for the first charging time >= t
+            for future_t in results.sets['TIME']:
+                if future_t >= t and results.variables['p_ev'][i, future_t] > 0:
+                    delta = future_t - t
+                    wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
+                    break  # stop at the first charging event
+
+            all_results.append({
+                'config': cap_config,
+                'strategy': cap_strategy,
+                'model': f'{cap_config} - {cap_strategy} Charging',
+                'version': version,
+                'ev_id': i,
+                'time': t,
+                'wait_time': wait_time,
+                'soc_t_arr': soc_t_arr
+            })
+
+    return all_results
+
+
 def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
     df_results = get_soc_df(configurations, charging_strategies, version)
 
@@ -182,11 +218,47 @@ def num_charging_day_plot(configurations: list[str], charging_strategies: list[s
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'num_cp_plot_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_plot(f'num_charging_day_plot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
 def wait_time_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
     all_results = []
+    for config in configurations:
+        for strategy in charging_strategies:
+            results = get_wait_time_list(config, strategy, version, all_results)
+            all_results.extend(results)
 
-    
+    df_results = pd.DataFrame(all_results)
+
+    plt.figure(figsize=plot_setups.fig_size)
+    ax = sns.boxplot(
+        x='config',
+        y='wait_time',
+        hue='strategy',
+        data=df_results,
+        palette='Set2',
+        medianprops={'linewidth': 2.5, 'color': 'black'}  # bold black median line
+
+    )
+
+    plot_setups.setup(
+        title='Distribution of Charging Wait Time on Arrival',
+        ylabel='Wait Time (hours)',
+        xlabel='Configuration',
+        legend=True,
+        ax=ax
+    )
+
+    if save_img:
+        plot_setups.save_plot(f'wait_time_boxplot_{params.num_of_evs}EVs_{version}')
+    # plt.show()
+
+
+
+wait_time_distribution(
+    ['config_1', 'config_2', 'config_3'],
+    ['uncoordinated', 'opportunistic', 'flexible'],
+    'norm_w_sum',
+    True
+)

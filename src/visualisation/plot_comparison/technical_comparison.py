@@ -56,7 +56,7 @@ def demand_profiles_by_config(configurations: list[str], charging_strategies: li
         plot_setups.setup(
             title=title,
             ylabel='Load (kW)',
-            xlabel='Day',
+            xlabel='Day/Time',
             legend=True,
             legend_col=2,
             ax=ax
@@ -82,6 +82,9 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
                              figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs))
     axes = np.array(axes).reshape(-1)  # flatten in case nrows=1
 
+    # Get household load data
+    house_load = list(params.household_load['household_load'])
+
     colors = {
         'opportunistic': 'tab:orange',
         'flexible': 'tab:blue'
@@ -92,6 +95,15 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
 
     for idx, config in enumerate(configurations):
         ax = axes[idx]
+
+        # Plot household base load
+        ax.fill_between(
+            params.timestamps,
+            house_load,
+            color=plot_configs.household_baseline_load,
+            alpha=0.4,
+            label='Household Load'
+        )
 
         if 'uncoordinated' in charging_strategies:
             uncoordinated_results = plot_setups.get_model_results_data(config, 'uncoordinated', version)
@@ -131,9 +143,9 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
         plot_setups.setup(
             title=title,
             ylabel='Δ Load (Strategy – Uncoordinated)',
-            xlabel='Day',
+            xlabel='Day/Time',
             legend=True,
-            legend_col=2,
+            legend_col=3,
             ax=ax
         )
 
@@ -149,8 +161,34 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
         plot_setups.save_plot(f'charging_strategy_delta_profiles_{params.num_of_evs}EVs_{version}')
 
 
-charging_strategy_load_delta_comparison(
-    ['config_1', 'config_2'],
+def get_dso_metrics_df(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+    all_results = []
+    for config in configurations:
+        for strategy in charging_strategies:
+            results = plot_setups.get_model_results_data(config, strategy, version)
+
+            # Capitalise config and strategy names
+            config_name, config_num = config.split('_')
+            config_name = config_name.capitalize()
+            cap_config = f'{config_name} {config_num}'
+            cap_strategy = strategy.capitalize()
+
+            # Get peak demand increase and PAPR
+            all_results.append({
+                'config': cap_config,
+                'strategy': cap_strategy,
+                'model': f'{cap_config} - {cap_strategy} Charging',
+                'p_peak_increase': results.metrics['p_peak_increase'],
+                'papr': results.metrics['papr']
+            })
+
+    df_results = pd.DataFrame(all_results)
+
+    return df_results
+
+
+get_dso_metrics_df(
+    ['config_1', 'config_2', 'config_3'],
     ['uncoordinated', 'opportunistic', 'flexible'],
     'norm_w_sum',
     True

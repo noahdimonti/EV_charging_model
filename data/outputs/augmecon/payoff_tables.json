@@ -84,7 +84,8 @@
     "config_3_flexible": {
         "social": {
             "social": 586.7497897143,
-            "economic": 6702.652305803
+            "economic": 6702.652305803,
+            "technical": 283.7728338742191
         },
         "economic": {
             "economic": 2553.736786612,
