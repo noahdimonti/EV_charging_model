@@ -1,7 +1,7 @@
-from src.visualisation import economic_comparison, technical_comparison, social_comparison
+from src.visualisation.plot_comparison import economic_comparison, social_comparison, technical_comparison
 
 
-def plot_all(configurations, charging_strategies, version, save_img=True):
+def plot_all(configurations: list[str], charging_strategies: list[str], version: str, save_img=True):
     economic_comparison.num_cp_plot(
         configurations,
         charging_strategies,
@@ -9,17 +9,10 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         save_img
     )
 
-    technical_comparison.demand_profiles_by_config(
+    technical_comparison.get_dso_metrics_df(
         configurations,
         charging_strategies,
-        version,
-        save_img
-    )
-    technical_comparison.charging_strategy_load_delta_comparison(
-        configurations,
-        charging_strategies,
-        version,
-        save_img
+        version
     )
 
     social_comparison.soc_boxplot(
@@ -28,13 +21,13 @@ def plot_all(configurations, charging_strategies, version, save_img=True):
         version,
         save_img
     )
-    social_comparison.soc_distribution(
+    social_comparison.num_charging_day_plot(
         configurations,
         charging_strategies,
         version,
         save_img
     )
-    social_comparison.num_charging_day_plot(
+    social_comparison.wait_time_distribution(
         configurations,
         charging_strategies,
         version,

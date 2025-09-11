@@ -61,86 +61,30 @@ def get_wait_time_list(config, strategy, version, all_results: list):
                     wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
                     break  # stop at the first charging event
 
-            all_results.append({
-                'config': cap_config,
-                'strategy': cap_strategy,
-                'model': f'{cap_config} - {cap_strategy} Charging',
-                'version': version,
-                'ev_id': i,
-                'time': t,
-                'wait_time': wait_time,
-                'soc_t_arr': soc_t_arr
-            })
+            # all_results.append({
+            #     'config': cap_config,
+            #     'strategy': cap_strategy,
+            #     'model': f'{cap_config} - {cap_strategy} Charging',
+            #     'version': version,
+            #     'ev_id': i,
+            #     'time': t,
+            #     'wait_time': wait_time,
+            #     'soc_t_arr': soc_t_arr
+            # })
+
+            all_results.append((
+                cap_config,
+                cap_strategy,
+                f'{cap_config} - {cap_strategy} Charging',
+                version,
+                i,
+                t,
+                wait_time,
+                soc_t_arr
+            ))
 
     return all_results
 
-
-def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
-    df_results = get_soc_df(configurations, charging_strategies, version)
-
-    # Subplots: one per config
-    n_configs = len(configurations)
-    fig, axes = plt.subplots(
-        n_configs, 1,
-        figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs),
-        sharex=True
-    )
-
-    if n_configs == 1:
-        axes = [axes]  # make iterable
-
-    for idx, config in enumerate(df_results['config'].unique()):
-        ax = axes[idx]
-        sns.histplot(
-            x='soc_t_dep',
-            hue='strategy',
-            data=df_results[df_results['config'] == config],
-            multiple='dodge',
-            bins=20,
-            shrink=0.8,
-            palette='Set2',
-            ax=ax,
-            legend=(idx == 0)
-        )
-
-        # Configure the legend size and style
-        # Get the legend that Seaborn made
-        legend = ax.get_legend()
-        if legend:
-            legend.set_title('Charging Strategy')
-            legend.get_title().set_fontsize(15)
-            legend.get_title().set_fontweight('bold')
-
-            for text in legend.get_texts():
-                text.set_fontsize(14)
-                text.set_fontweight('bold')
-
-            # Adjust spacing
-            legend._legend_box.align = 'left'  # optional: align entries nicely
-            legend.handletextpad = 2.5  # space between marker/line and text
-            legend.labelspacing = 2.5  # vertical space between legend entries
-
-        # Tick labels
-        ax.tick_params(axis='x', labelbottom=True)
-
-        plot_setups.setup(
-            title=f'{config}',
-            ylabel='Count',
-            xlabel='SOC Distribution at Departure Time (%)',
-            legend=False,
-            ax=ax
-        )
-
-        ax.set_xlim(0, 100)  # SOC % range
-
-    plt.tight_layout()
-
-    # Set y axis limits
-    plt.ylim(0, 100)
-
-    if save_img:
-        plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
-    # plt.show()
 
 
 def soc_boxplot(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
@@ -256,9 +200,81 @@ def wait_time_distribution(configurations: list[str], charging_strategies: list[
 
 
 
-wait_time_distribution(
-    ['config_1', 'config_2', 'config_3'],
-    ['uncoordinated', 'opportunistic', 'flexible'],
-    'norm_w_sum',
-    True
-)
+if __name__ == '__main__':
+    wait_time_distribution(
+        ['config_1', 'config_2', 'config_3'],
+        ['uncoordinated', 'opportunistic', 'flexible'],
+        'norm_w_sum',
+        True
+    )
+
+
+
+
+# def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
+#     df_results = get_soc_df(configurations, charging_strategies, version)
+#
+#     # Subplots: one per config
+#     n_configs = len(configurations)
+#     fig, axes = plt.subplots(
+#         n_configs, 1,
+#         figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs),
+#         sharex=True
+#     )
+#
+#     if n_configs == 1:
+#         axes = [axes]  # make iterable
+#
+#     for idx, config in enumerate(df_results['config'].unique()):
+#         ax = axes[idx]
+#         sns.histplot(
+#             x='soc_t_dep',
+#             hue='strategy',
+#             data=df_results[df_results['config'] == config],
+#             multiple='dodge',
+#             bins=20,
+#             shrink=0.8,
+#             palette='Set2',
+#             ax=ax,
+#             legend=(idx == 0)
+#         )
+#
+#         # Configure the legend size and style
+#         # Get the legend that Seaborn made
+#         legend = ax.get_legend()
+#         if legend:
+#             legend.set_title('Charging Strategy')
+#             legend.get_title().set_fontsize(15)
+#             legend.get_title().set_fontweight('bold')
+#
+#             for text in legend.get_texts():
+#                 text.set_fontsize(14)
+#                 text.set_fontweight('bold')
+#
+#             # Adjust spacing
+#             legend._legend_box.align = 'left'  # optional: align entries nicely
+#             legend.handletextpad = 2.5  # space between marker/line and text
+#             legend.labelspacing = 2.5  # vertical space between legend entries
+#
+#         # Tick labels
+#         ax.tick_params(axis='x', labelbottom=True)
+#
+#         plot_setups.setup(
+#             title=f'{config}',
+#             ylabel='Count',
+#             xlabel='SOC Distribution at Departure Time (%)',
+#             legend=False,
+#             ax=ax
+#         )
+#
+#         ax.set_xlim(0, 100)  # SOC % range
+#
+#     plt.tight_layout()
+#
+#     # Set y axis limits
+#     plt.ylim(0, 100)
+#
+#     if save_img:
+#         plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
+#     # plt.show()
+
