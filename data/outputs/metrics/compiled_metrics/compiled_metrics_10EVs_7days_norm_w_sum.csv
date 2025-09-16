@@ -1,14 +1,14 @@
-,config_1_uncoordinated,config_1_opportunistic,config_1_flexible,config_2_uncoordinated,config_2_opportunistic,config_2_flexible,config_3_uncoordinated,config_3_opportunistic,config_3_flexible
-Charging point info,10 CPs (2.40 kW),10 CPs (2.40 kW),10 CPs (2.40 kW),5 CPs (2.40 kW),5 CPs (2.40 kW),4 CPs (2.40 kW),6 CPs (2.40 kW),6 CPs (2.40 kW),4 CPs (2.40 kW)
-Investment cost,"$2,000.00","$2,000.00","$2,000.00","$1,000.00","$1,000.00",$800.00,"$1,200.00","$1,200.00",$800.00
-Peak demand increase,3.01%,0.00%,0.00%,3.01%,0.00%,0.00%,3.01%,0.00%,0.00%
-PAPR,2.44,2.39,2.40,2.44,2.40,2.40,2.45,2.40,2.40
-Average SOC at dep time,99.04%,94.90%,91.21%,95.20%,93.51%,90.40%,94.61%,93.53%,89.87%
-Average deviation of SOC at dep time to max SOC,0.96%,5.10%,8.79%,4.80%,6.49%,9.60%,5.39%,6.47%,10.13%
-SOC min-max range,19.88%,27.13%,54.40%,52.22%,35.17%,54.40%,52.22%,34.04%,54.40%
-Average num of charging days,7.00,6.60,3.50,6.80,6.30,3.50,6.90,6.10,3.50
-Optimality gap,,0.0000%,0.4660%,,1.9982%,2.9932%,,2.8838%,5.3557%
-Objective value,,"1,179.60","1,315.38",,"1,111.33","1,203.22",,"1,120.81","1,211.70"
-Economic objective,,"4,252.80","4,248.69",,"3,210.35","3,002.45",,"3,418.25","3,002.45"
-Technical objective,,208.58,236.24,,238.76,242.35,,230.05,250.40
-Social objective,,545.74,654.27,,551.54,660.62,,548.94,661.05
+,config_1_opportunistic,config_1_flexible,config_2_opportunistic,config_2_flexible,config_3_opportunistic,config_3_flexible
+Charging point info,10 CPs (2.40 kW),10 CPs (2.40 kW),5 CPs (2.40 kW),4 CPs (2.40 kW),6 CPs (2.40 kW),4 CPs (2.40 kW)
+Investment cost,"$2,000.00","$2,000.00","$1,000.00",$800.00,"$1,200.00",$800.00
+Peak demand increase,0.00%,0.00%,0.00%,0.00%,0.00%,0.00%
+PAPR,2.39,2.40,2.40,2.40,2.40,2.40
+Average SOC at dep time,94.90%,91.21%,93.51%,90.40%,93.53%,89.87%
+Average deviation of SOC at dep time to max SOC,5.10%,8.79%,6.49%,9.60%,6.47%,10.13%
+SOC min-max range,27.13%,54.40%,35.17%,54.40%,34.04%,54.40%
+Average num of charging days,6.60,3.50,6.30,3.50,6.10,3.50
+Optimality gap,0.0000%,0.4660%,1.9982%,2.9932%,2.8838%,5.3557%
+Objective value,"1,179.60","1,315.38","1,111.33","1,203.22","1,120.81","1,211.70"
+Economic objective,"4,252.80","4,248.69","3,210.35","3,002.45","3,418.25","3,002.45"
+Technical objective,208.58,236.24,238.76,242.35,230.05,250.40
+Social objective,545.74,654.27,551.54,660.62,548.94,661.05
