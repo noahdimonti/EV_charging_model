@@ -28,20 +28,25 @@ def analyse_results(configurations: list,
     if model_results is None:
         for config in configurations:
             for strategy in charging_strategies:
-                folder_path = f'data/outputs/models/{config}_{strategy}_{params.num_of_evs}EVs_7days_{version}.pkl'
-                filename = os.path.join(params.project_root, folder_path)
+                try:
+                    folder_path = f'data/outputs/models/{config}_{strategy}_{params.num_of_evs}EVs_7days_{version}.pkl'
+                    filename = os.path.join(params.project_root, folder_path)
 
-                with open(filename, 'rb') as f:
-                    results = pickle.load(f)
+                    with open(filename, 'rb') as f:
+                        results = pickle.load(f)
 
-                # Get evaluation metrics from results
-                evaluation_metrics = EvaluationMetrics(results)
+                    # Get evaluation metrics from results
+                    evaluation_metrics = EvaluationMetrics(results)
 
-                # Format and collect metrics
-                formatted_metrics = evaluation_metrics.format_metrics()
+                    # Format and collect metrics
+                    formatted_metrics = evaluation_metrics.format_metrics()
 
-                raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
-                formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
+                    raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
+                    formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
+
+                except FileNotFoundError:
+                    print(f'{config} {strategy} data is not available.')
+                    continue
 
     # If model_results object is provided
     else:
