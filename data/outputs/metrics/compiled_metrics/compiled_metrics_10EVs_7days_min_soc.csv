@@ -1,0 +1,17 @@
+,config_1_opportunistic,config_1_flexible,config_2_opportunistic,config_2_flexible,config_3_opportunistic,config_3_flexible
+Charging point info,10 CPs (7.20 kW),10 CPs (7.20 kW),9 CPs (7.20 kW),9 CPs (7.20 kW),9 CPs (7.20 kW),7 CPs (7.20 kW)
+Investment cost,"$15,000.00","$15,000.00","$13,500.00","$13,500.00","$13,500.00","$10,500.00"
+Peak demand increase,4.28%,1.07%,13.42%,0.00%,0.00%,0.00%
+PAPR,2.49,2.40,2.71,2.39,2.39,2.39
+Average SOC at dep time,95.94%,93.91%,95.92%,93.68%,96.52%,93.98%
+SOC min-max range,26.32%,54.40%,26.32%,54.40%,23.17%,54.40%
+Average num of charging days,6.70,3.40,6.00,3.50,6.80,3.40
+Optimality gap,0.0000%,0.3615%,0.0000%,0.8537%,0.0000%,0.7284%
+Total objective value,494.31,586.75,494.31,586.75,494.31,586.75
+Normalised objective value,,,,,,
+Economic weight,0,0,0,0,0,0
+Technical weight,0,0,0,0,0,0
+Social weight,1,1,1,1,1,1
+Economic objective,"17,259.90","17,268.07","15,749.12","15,752.57","15,752.98","12,735.97"
+Technical objective,341.60,370.87,"1,282.88","1,215.34","1,193.74",992.79
+Social objective,494.31,586.75,494.31,586.75,494.31,586.75
