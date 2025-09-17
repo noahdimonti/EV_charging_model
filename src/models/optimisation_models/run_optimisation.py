@@ -11,7 +11,7 @@ def run_optimisation_model(
         config: str,
         charging_strategy: str,
         version: str,
-        obj_weights: dict[str|float],
+        obj_weights: dict[str, int|float],
         model: pyo.ConcreteModel = None,
         solver='gurobi',
         verbose=False,

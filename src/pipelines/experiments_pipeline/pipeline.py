@@ -10,7 +10,7 @@ from src.visualisation import plotting_pipeline
 def run_model_pipeline(configurations: list,
                        charging_strategies: list,
                        version: str,
-                       obj_weights: dict[str|float],
+                       obj_weights: dict[str, int|float],
                        run_model: bool,
                        analyse: bool,
                        plot: bool,

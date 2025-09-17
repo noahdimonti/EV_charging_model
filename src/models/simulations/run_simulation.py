@@ -28,7 +28,12 @@ def run_simulation_model(
         print_runtime(finished_label, simulation_time)
 
         # Save results
-        results = ModelResults(simulation_results, config_map[config], strategy_map[charging_strategy])
+        results = ModelResults(
+            simulation_results,
+            config_map[config],
+            strategy_map[charging_strategy],
+            obj_weights=None
+        )
         results.save_model_to_pickle(version=version)
 
         return results

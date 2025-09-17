@@ -17,7 +17,7 @@ class BuildModel:
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
                  version: str,
-                 obj_weights: dict[str|float]):
+                 obj_weights: dict[str, int|float]):
         self.config = config
         self.charging_strategy = charging_strategy
         self.version = version
@@ -96,8 +96,6 @@ class BuildModel:
             ),
             sense=pyo.minimize
         )
-
-        print(self.model.obj_function)
 
     def assemble_components(self):
         # Initialise assets parameters and variables

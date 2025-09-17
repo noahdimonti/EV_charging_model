@@ -13,7 +13,7 @@ class ModelResults:
     def __init__(self, model: pyo.ConcreteModel | dict,
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
-                 obj_weights: dict[str|float],
+                 obj_weights: None | dict[str, int|float],
                  mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
@@ -117,7 +117,6 @@ class EvaluationMetrics:
         self.sets = self.model.sets
         self.mip_gap = self.model.mip_gap
         self.objective_value = self.model.total_objective_value
-        print(self.model.obj_weights)
 
         # Evaluation metrics initialisation
         # Define number of cp as it varies between configurations
@@ -245,7 +244,6 @@ class EvaluationMetrics:
 
         if self.charging_strategy.value != 'uncoordinated':
             self.metrics.update({'total_objective_value': self.objective_value})
-
             self.metrics.update(self.model.obj_weights)
 
         if self.mip_gap is not None:
@@ -264,9 +262,7 @@ class EvaluationMetrics:
             'PAPR': f'{self.metrics['papr']:,.2f}',
 
             'Average SOC at dep time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
-            'Average deviation of SOC at dep time to max SOC': f'{self.metrics['avg_soc_to_max_deviation']:,.2f}%',
             'SOC min-max range': f'{self.metrics['soc_range']:,.2f}%',
-
             'Average num of charging days': f'{self.metrics['avg_num_charging_days']:,.2f}',
 
         }
@@ -274,7 +270,8 @@ class EvaluationMetrics:
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-                'Objective value': f'{self.objective_value:,.2f}',
+                'Total objective value': f'{self.objective_value:,.2f}',
+                'Normalised objective value': None,
 
                 'Economic weight': f'{self.model.obj_weights['economic']}',
                 'Technical weight': f'{self.model.obj_weights['technical']}',
