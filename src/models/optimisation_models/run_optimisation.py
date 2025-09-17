@@ -11,6 +11,7 @@ def run_optimisation_model(
         config: str,
         charging_strategy: str,
         version: str,
+        obj_weights: dict[str|float],
         model: pyo.ConcreteModel = None,
         solver='gurobi',
         verbose=False,
@@ -27,6 +28,7 @@ def run_optimisation_model(
             config=config_map[config],
             charging_strategy=strategy_map[charging_strategy],
             version=version,
+            obj_weights=obj_weights
         )
         model = model_builder.get_optimisation_model()
 

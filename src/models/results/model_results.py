@@ -5,7 +5,7 @@ import os
 import pyomo.environ as pyo
 from collections import defaultdict
 from pprint import pprint
-from src.config import params, ev_params, independent_variables
+from src.config import params, ev_params
 from src.models.utils.configs import CPConfig, ChargingStrategy
 
 
@@ -13,10 +13,12 @@ class ModelResults:
     def __init__(self, model: pyo.ConcreteModel | dict,
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
+                 obj_weights: dict[str|float],
                  mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
+        self.obj_weights = obj_weights
         self.total_objective_value = None
 
         self.solver_status = None
@@ -242,6 +244,7 @@ class EvaluationMetrics:
 
         if self.charging_strategy.value != 'uncoordinated':
             self.metrics.update({'total_objective_value': self.objective_value})
+            self.metrics.update(self.model.obj_weights)
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
@@ -270,6 +273,10 @@ class EvaluationMetrics:
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
                 'Objective value': f'{self.objective_value:,.2f}',
+
+                'Economic weight': f'{self.model.obj_weights['economic']}',
+                'Technical weight': f'{self.model.obj_weights['technical']}',
+                'Social weight': f'{self.model.obj_weights['social']}',
 
                 'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
                 'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',

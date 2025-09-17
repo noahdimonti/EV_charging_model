@@ -10,6 +10,7 @@ from src.visualisation import plotting_pipeline
 def run_model_pipeline(configurations: list,
                        charging_strategies: list,
                        version: str,
+                       obj_weights: dict[str|float],
                        run_model: bool,
                        analyse: bool,
                        plot: bool,
@@ -37,7 +38,8 @@ def run_model_pipeline(configurations: list,
                     version=version,
                     verbose=verbose,
                     time_limit=time_limit,
-                    mip_gap=mip_gap
+                    mip_gap=mip_gap,
+                    obj_weights=obj_weights
                 )
 
                 # Store optimisation model results
