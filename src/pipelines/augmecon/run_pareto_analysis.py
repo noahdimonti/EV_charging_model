@@ -1,21 +1,24 @@
 import pandas as pd
+import pickle
+import os
 
+from pprint import pprint
+
+from src.config import params
 from src.pipelines.augmecon.process_pareto_solutions import get_pareto_solutions
-from src.visualisation.pareto_front import pareto_parallel_plot
 
 
 def main():
-    # config = 'config_2'
-    # strategy = 'flexible'
-    # grid_points = 10
-
     versions = [
         {'config': 'config_1', 'strategy': 'opportunistic', 'grid_points': 20},
         {'config': 'config_1', 'strategy': 'flexible', 'grid_points': 20},
         {'config': 'config_2', 'strategy': 'opportunistic', 'grid_points': 20},
         {'config': 'config_2', 'strategy': 'flexible', 'grid_points': 10},
         {'config': 'config_3', 'strategy': 'opportunistic', 'grid_points': 20},
+        {'config': 'config_3', 'strategy': 'flexible', 'grid_points': 8},
     ]
+
+    augmecon_results = []
 
     for version in versions:
         config = version['config']
@@ -28,40 +31,37 @@ def main():
             grid_points
         )
 
-        # Pareto front only (rank 1)
-        num_solution_displayed = 4
-        pareto_df = df[df['pareto_rank'] == 1].head(num_solution_displayed)
-        pareto_df = pareto_df.round(2)
-
         # Best solutions (lowest distance to ideal)
-        best_sols = df[df['distance_to_ideal'] == df['distance_to_ideal'].min()]
-        best_sols_version = best_sols['version'].values
+        best_sol = df[df['distance_to_ideal'] == df['distance_to_ideal'].min()].head(1)
+        best_sol_version = best_sol['version'].values
 
-        pd.set_option('display.max_columns', None)
-        print('\nFull DataFrame with ranks:')
-        print(df)
+        augmecon_results.append({
+            'model': f'{config}_{strategy}',
+            'best_solution': best_sol_version.item()
+        })
 
-        print('\nPareto front:')
-        print(pareto_df)
+    pprint(augmecon_results)
 
-        print('\nBest solution(s):')
-        print(best_sols)
+    # Save best solution with a uniform version name
+    for result in augmecon_results:
+        model_name = result['model']
+        version = result['best_solution']
+        filename = f'{model_name}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
+        filepath = os.path.join(params.model_results_folder_path, filename)
 
-        print('\nVersion(s):')
-        print(best_sols_version)
+        if os.path.exists(filepath):
+            # Load best solution pkl file
+            with open(filepath, 'rb') as f:
+                data = pickle.load(f)
 
-        normalised_df = pareto_df.copy()
-        for col in ['social', 'economic', 'technical']:
-            normalised_df[col] = 1 - (pareto_df[col] - pareto_df[col].min()) / (pareto_df[col].max() - pareto_df[col].min())
+            # Dump best solution as pkl file with a new name version
+            new_filename = f'{model_name}_{params.num_of_evs}EVs_{params.num_of_days}days_augmecon.pkl'
+            new_filepath = os.path.join(params.model_results_folder_path, new_filename)
+            with open(new_filepath, 'wb') as f:
+                pickle.dump(data, f)
 
-        pareto_parallel_plot(
-            config,
-            strategy,
-            grid_points,
-            # normalised_df,
-            pareto_df,
-            num_solution_displayed
-        )
+        else:
+            raise FileNotFoundError(f'File path does not exist:\n{filepath}')
 
 
 if __name__ == '__main__':
