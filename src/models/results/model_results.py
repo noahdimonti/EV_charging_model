@@ -117,6 +117,7 @@ class EvaluationMetrics:
         self.sets = self.model.sets
         self.mip_gap = self.model.mip_gap
         self.objective_value = self.model.total_objective_value
+        print(self.model.obj_weights)
 
         # Evaluation metrics initialisation
         # Define number of cp as it varies between configurations
@@ -244,6 +245,7 @@ class EvaluationMetrics:
 
         if self.charging_strategy.value != 'uncoordinated':
             self.metrics.update({'total_objective_value': self.objective_value})
+
             self.metrics.update(self.model.obj_weights)
 
         if self.mip_gap is not None:

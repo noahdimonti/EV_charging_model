@@ -62,10 +62,11 @@ def run_optimisation_model(
 
         # Save results
         results = ModelResults(
-            solved_model,
-            config_map[config],
-            strategy_map[charging_strategy],
-            calc_mip_gap
+            model=solved_model,
+            config=config_map[config],
+            charging_strategy=strategy_map[charging_strategy],
+            mip_gap=calc_mip_gap,
+            obj_weights=obj_weights
         )
 
         results.solver_status = solver_status

@@ -97,6 +97,8 @@ class BuildModel:
             sense=pyo.minimize
         )
 
+        print(self.model.obj_function)
+
     def assemble_components(self):
         # Initialise assets parameters and variables
         self.assets['grid'] = Grid(self.model)
