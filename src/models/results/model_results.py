@@ -244,7 +244,13 @@ class EvaluationMetrics:
 
         if self.charging_strategy.value != 'uncoordinated':
             self.metrics.update({'total_objective_value': self.objective_value})
+            self.metrics.update({'normalised_objective': None})
             self.metrics.update(self.model.obj_weights)
+            self.metrics.update({
+                'economic_objective': self.model.objective_components['economic_objective'],
+                'technical_objective': self.model.objective_components['technical_objective'],
+                'social_objective': self.model.objective_components['social_objective'],
+            })
 
         if self.mip_gap is not None:
             self.metrics.update({'mip_gap': self.mip_gap})
