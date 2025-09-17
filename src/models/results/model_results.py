@@ -253,7 +253,7 @@ class EvaluationMetrics:
 
             self.metrics.update({'normalised_objective': self.model.norm_objective_value})
             self.metrics.update(self.model.normalised_values)
-            
+
             self.metrics.update({'total_objective_value': self.model.total_objective_value})
             self.metrics.update({
                 'economic_objective': self.model.objective_components['economic_objective'],

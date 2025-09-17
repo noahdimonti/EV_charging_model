@@ -116,8 +116,6 @@ class BuildModel:
             sense=pyo.minimize
         )
 
-        print(self.model.obj_function.display())
-
         # Total sum of the objectives
         self.model.total_objective_value = pyo.Expression(
             expr=(self.model.economic_objective + self.model.technical_objective + self.model.social_objective)
