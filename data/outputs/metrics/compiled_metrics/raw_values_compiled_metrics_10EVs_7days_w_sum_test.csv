@@ -1,0 +1,12 @@
+,config_1_uncoordinated,config_1_opportunistic,config_1_flexible
+investment_cost,2000.0,2000.0,2000.0
+p_peak_increase,1.63,3.1300000000000003,3.3099999999999996
+papr,2.4152,2.5145,2.519
+avg_soc_t_dep_percent,96.5428,42.1151,54.9335
+avg_soc_to_max_deviation,3.4572000000000003,57.8849,45.0665
+soc_range,35.69912981761631,81.13613361170474,75.4316020342732
+num_cp,10.0,10.0,10.0
+p_cp_rated,1.3,1.3,1.3
+avg_num_charging_days,7.0,5.3,3.5
+total_objective_value,,4215.106649625589,4215.106649625588
+mip_gap,,0.0,0.40537954460832865
