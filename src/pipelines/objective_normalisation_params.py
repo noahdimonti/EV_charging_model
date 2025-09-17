@@ -49,12 +49,6 @@ def get_min_max_obj_values(payoff_table: dict):
 
     filepath = os.path.join(params.compiled_metrics_folder_path, 'payoff_table.py')
 
-    # Save dictionary
-    # with open(filepath, 'w') as f:
-    #     json.dump(obj_min_max, f, indent=4)
-    #
-    #     print(f'\nPayoff table saved to {filepath}')
-
     # Convert defaultdict into dict
     payoff = to_dict(obj_min_max)
 
