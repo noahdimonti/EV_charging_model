@@ -61,27 +61,27 @@ def get_wait_time_list(config, strategy, version, all_results: list):
                     wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
                     break  # stop at the first charging event
 
-            # all_results.append({
-            #     'config': cap_config,
-            #     'strategy': cap_strategy,
-            #     'model': f'{cap_config} - {cap_strategy} Charging',
-            #     'version': version,
-            #     'ev_id': i,
-            #     'time': t,
-            #     'wait_time': wait_time,
-            #     'soc_t_arr': soc_t_arr
-            # })
+            all_results.append({
+                'config': cap_config,
+                'strategy': cap_strategy,
+                'model': f'{cap_config} - {cap_strategy} Charging',
+                'version': version,
+                'ev_id': i,
+                'time': t,
+                'wait_time': wait_time,
+                'soc_t_arr': soc_t_arr
+            })
 
-            all_results.append((
-                cap_config,
-                cap_strategy,
-                f'{cap_config} - {cap_strategy} Charging',
-                version,
-                i,
-                t,
-                wait_time,
-                soc_t_arr
-            ))
+            # all_results.append((
+            #     cap_config,
+            #     cap_strategy,
+            #     f'{cap_config} - {cap_strategy} Charging',
+            #     version,
+            #     i,
+            #     t,
+            #     wait_time,
+            #     soc_t_arr
+            # ))
 
     return all_results
 
@@ -174,6 +174,7 @@ def wait_time_distribution(configurations: list[str], charging_strategies: list[
             all_results.extend(results)
 
     df_results = pd.DataFrame(all_results)
+    print(df_results)
 
     plt.figure(figsize=plot_setups.fig_size)
     ax = sns.boxplot(

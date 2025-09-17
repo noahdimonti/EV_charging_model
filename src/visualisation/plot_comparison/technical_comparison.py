@@ -76,15 +76,16 @@ def get_dso_metrics_df(configurations: list[str], charging_strategies: list[str]
     return df_results
 
 
-get_dso_metrics_df(
-    ['config_1', 'config_2', 'config_3'],
-    # ['opportunistic', 'flexible'],
-    ['uncoordinated', 'opportunistic', 'flexible'],
-    'norm_w_sum',
-    'models_comparison'
-    # 'objective_comparison',
-    # ['min_economic', 'min_technical', 'min_econ_tech', 'norm_w_sum']
-)
+if __name__ == '__main__':
+    get_dso_metrics_df(
+        ['config_1', 'config_2', 'config_3'],
+        # ['opportunistic', 'flexible'],
+        ['uncoordinated', 'opportunistic', 'flexible'],
+        'norm_w_sum',
+        'models_comparison'
+        # 'objective_comparison',
+        # ['min_economic', 'min_technical', 'min_econ_tech', 'norm_w_sum']
+    )
 
 
 

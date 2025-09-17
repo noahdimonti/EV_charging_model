@@ -12,7 +12,8 @@ def plot_all(configurations: list[str], charging_strategies: list[str], version:
     technical_comparison.get_dso_metrics_df(
         configurations,
         charging_strategies,
-        version
+        version,
+        'models_comparison'
     )
 
     social_comparison.soc_boxplot(
