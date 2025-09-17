@@ -1,4 +1,7 @@
+from poplib import error_proto
+
 import pyomo.environ as pyo
+import os
 from src.config import params
 from src.models.utils.configs import (
     CPConfig,
@@ -10,6 +13,8 @@ from src.models.optimisation_models.assets.common_connection_point import Common
 from src.models.optimisation_models.assets.charging_point import ChargingPoint
 from src.models.optimisation_models.assets.electric_vehicle import ElectricVehicle
 from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
+
+from data.outputs.metrics.compiled_metrics.payoff_table import payoff_table
 
 
 class BuildModel:
@@ -42,8 +47,13 @@ class BuildModel:
         self.model.DAY = pyo.Set(initialize=[_ for _ in params.T_d.keys()])
         self.model.WEEK = pyo.Set(initialize=[_ for _ in params.D_w.keys()])
 
-    def _normalise_cost(self):
-        pass
+    def _normalise_cost(self, obj_expr, name):
+        payoff = payoff_table[f'{self.config.value}_{self.charging_strategy.value}']
+        min_val = payoff[f'{name}_min']
+        max_val = payoff[f'{name}_max']
+        scaling_constant = 10
+
+        return (obj_expr - min_val) / (max_val - min_val) * scaling_constant
 
     def define_objective_components(self):
         # Economic objective
@@ -84,17 +94,33 @@ class BuildModel:
 
         self.model.social_objective = pyo.Expression(expr=social_cost)
 
-        # Normalise objective
+
+        # Normalise objectives
+        norm_economic_cost = self._normalise_cost(economic_cost, 'economic')
+        self.model.norm_economic_objective = pyo.Expression(expr=norm_economic_cost)
+
+        norm_technical_cost = self._normalise_cost(technical_cost, 'technical')
+        self.model.norm_technical_objective = pyo.Expression(expr=norm_technical_cost)
+
+        norm_social_cost = self._normalise_cost(social_cost, 'social')
+        self.model.norm_social_objective = pyo.Expression(expr=norm_social_cost)
 
 
-        # Total objective
+        # Objective formulation
         self.model.obj_function = pyo.Objective(
             expr=(
-                    self.obj_weights['economic'] * self.model.economic_objective +
-                    self.obj_weights['technical'] * self.model.technical_objective +
-                    self.obj_weights['social'] * self.model.social_objective
+                    self.obj_weights['economic'] * self.model.norm_economic_objective +
+                    self.obj_weights['technical'] * self.model.norm_technical_objective +
+                    self.obj_weights['social'] * self.model.norm_social_objective
             ),
             sense=pyo.minimize
+        )
+
+        print(self.model.obj_function.display())
+
+        # Total sum of the objectives
+        self.model.total_objective_value = pyo.Expression(
+            expr=(self.model.economic_objective + self.model.technical_objective + self.model.social_objective)
         )
 
     def assemble_components(self):

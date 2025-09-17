@@ -19,6 +19,7 @@ class ModelResults:
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
         self.obj_weights = obj_weights
+        self.norm_objective_value = None
         self.total_objective_value = None
 
         self.solver_status = None
@@ -45,7 +46,13 @@ class ModelResults:
                 self.sets[model_set.name] = model_set.data()
 
             # Objective values
-            self.total_objective_value = pyo.value(model.obj_function)
+            self.norm_objective_value = pyo.value(model.obj_function)
+            self.total_objective_value = pyo.value(model.total_objective_value)
+            self.normalised_values = {
+                'norm_economic': pyo.value(model.norm_economic_objective),
+                'norm_technical': pyo.value(model.norm_technical_objective),
+                'norm_social': pyo.value(model.norm_social_objective)
+            }
 
             for obj in model.component_objects(pyo.Expression, active=True):
                 self.objective_components[obj.name] = pyo.value(obj)
@@ -116,7 +123,6 @@ class EvaluationMetrics:
         self.variables = self.model.variables
         self.sets = self.model.sets
         self.mip_gap = self.model.mip_gap
-        self.objective_value = self.model.total_objective_value
 
         # Evaluation metrics initialisation
         # Define number of cp as it varies between configurations
@@ -243,9 +249,12 @@ class EvaluationMetrics:
         self.metrics.update(self._general_metrics())
 
         if self.charging_strategy.value != 'uncoordinated':
-            self.metrics.update({'total_objective_value': self.objective_value})
-            self.metrics.update({'normalised_objective': None})
             self.metrics.update(self.model.obj_weights)
+
+            self.metrics.update({'normalised_objective': self.model.norm_objective_value})
+            self.metrics.update(self.model.normalised_values)
+            
+            self.metrics.update({'total_objective_value': self.model.total_objective_value})
             self.metrics.update({
                 'economic_objective': self.model.objective_components['economic_objective'],
                 'technical_objective': self.model.objective_components['technical_objective'],
@@ -276,12 +285,13 @@ class EvaluationMetrics:
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-                'Total objective value': f'{self.objective_value:,.2f}',
-                'Normalised objective value': None,
 
                 'Economic weight': f'{self.model.obj_weights['economic']}',
                 'Technical weight': f'{self.model.obj_weights['technical']}',
                 'Social weight': f'{self.model.obj_weights['social']}',
+
+                'Normalised objective value': f'{self.model.norm_objective_value:,.4f}',
+                'Total objective value': f'{self.model.total_objective_value:,.2f}',
 
                 'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
                 'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',
