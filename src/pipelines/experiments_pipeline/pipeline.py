@@ -14,7 +14,8 @@ def run_model_pipeline(configurations: list,
                        run_model: bool,
                        analyse: bool,
                        plot: bool,
-                       solver_settings: dict):
+                       solver_settings: dict,
+                       thread_count: int):
 
     if run_model:
         for config in configurations:
@@ -39,7 +40,8 @@ def run_model_pipeline(configurations: list,
                     verbose=verbose,
                     time_limit=time_limit,
                     mip_gap=mip_gap,
-                    obj_weights=obj_weights
+                    obj_weights=obj_weights,
+                    thread_count=thread_count
                 )
 
                 # Store optimisation model results
