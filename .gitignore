@@ -263,6 +263,7 @@ data/inputs
 /src/pipelines/run_model_bash.py
 
 /src/visualisation/plot_tst.py
+/src/visualisation/plotting_pipeline.py
 /src/config/independent_variables.py
 
 
