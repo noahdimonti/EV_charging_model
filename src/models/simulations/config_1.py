@@ -1,4 +1,6 @@
 import pandas as pd
+from joblib.testing import param
+
 from src.config import params, ev_params
 from src.data_processing.electric_vehicle import ElectricVehicle
 
@@ -25,17 +27,21 @@ class UncoordinatedModelConfig1:
                     # Assign initial charging power and soc
                     p_ev.append(0)
                     soc_ev.append(ev.soc_init)
-                elif not self._is_at_home(ev, t):
-                    # EV is NOT at home: charging power is 0 and soc remains unchanged
-                    p_ev.append(0)
-                    soc_ev.append(soc_ev[-1])
-                else:
+                elif (self._is_at_home(ev, t)) and (t.time() not in params.no_charging_time):
                     # EV is at home: calculate charging power and soc
+                    print(f't: {t}')
+                    print(f'ev: {i}')
                     available_power_at_cp = self._get_available_power_per_cp(t)
                     p, soc = self._compute_power_and_soc(i, ev, t, soc_ev[-1], available_power_at_cp)
+                    print(f'charging power: {p}')
 
                     p_ev.append(p)
                     soc_ev.append(soc)
+                # elif not self._is_at_home(ev, t):
+                else:
+                    # EV is NOT at home: charging power is 0 and soc remains unchanged
+                    p_ev.append(0)
+                    soc_ev.append(soc_ev[-1])
 
             # Assign charging power and soc list to dataframes in EV object
             ev.charging_power['charging_power'] = p_ev
@@ -49,6 +55,8 @@ class UncoordinatedModelConfig1:
 
         # calculate maximum charging power per EV divided evenly
         evs_at_home = self.num_ev_at_home.loc[t].values.item()
+
+        print(f'ccp capacity: {(ccp_capacity / evs_at_home) if evs_at_home > 1 else ccp_capacity}')
 
         return (ccp_capacity / evs_at_home) if evs_at_home > 1 else ccp_capacity
 
