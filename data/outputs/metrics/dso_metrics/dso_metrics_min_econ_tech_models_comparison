@@ -1,0 +1,10 @@
+,config,strategy,p_peak_increase,papr
+0,Config 1,Uncoordinated,3.01,2.4442
+1,Config 1,Opportunistic,0.0,2.4357
+2,Config 1,Flexible,0.0,2.437
+3,Config 2,Uncoordinated,3.01,2.4454
+4,Config 2,Opportunistic,0.0,2.4375
+5,Config 2,Flexible,0.0,2.4375
+6,Config 3,Uncoordinated,3.01,2.4475
+7,Config 3,Opportunistic,0.0,2.4375
+8,Config 3,Flexible,0.0,2.4375

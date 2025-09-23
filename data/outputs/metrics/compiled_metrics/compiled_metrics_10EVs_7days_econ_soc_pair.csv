@@ -1,0 +1,13 @@
+,config_3_flexible
+Charging point info,4 CPs (2.40 kW)
+Investment cost,$800.00
+Peak demand increase,6.02%
+PAPR,2.53
+Average SOC at dep time,90.88%
+Lowest SOC at dep time,45.60%
+SOC min-max range,54.40%
+Average num of charging days,3.50
+Optimality gap,3.3657%
+Economic objective,301.02
+Technical objective,989.34
+Social objective,659.17
