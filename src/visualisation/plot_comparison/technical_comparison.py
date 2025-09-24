@@ -64,6 +64,8 @@ def get_dso_metrics_df(configurations: list[str], charging_strategies: list[str]
         raise ValueError("Invalid comparison_ver. Valid options: 'models_comparison' or 'objective_comparison'")
 
     df_results = pd.DataFrame(all_results)
+
+    print(f'\nDSO metrics summary:\n')
     print(df_results)
 
     # Save dataframe
@@ -71,7 +73,7 @@ def get_dso_metrics_df(configurations: list[str], charging_strategies: list[str]
     filename = os.path.join(filepath, f'dso_metrics_{version}_{comparison_ver}')
     df_results.to_csv(filename)
 
-    print(f'\nDSO metrics dataframe saved as csv to {filename}')
+    print(f'\nDSO metrics dataframe saved as csv to {filename}\n')
 
     return df_results
 
@@ -170,6 +172,7 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
     house_load = list(params.household_load['household_load'])
 
     colors = {
+        'uncoordinated': 'tab:red',
         'opportunistic': 'tab:orange',
         'flexible': 'tab:blue'
     }
@@ -200,7 +203,7 @@ def charging_strategy_load_delta_comparison(configurations: list[str], charging_
         for strategy in strategies:
             strategy_results = plot_setups.get_model_results_data(config, strategy, version)
             load_delta = [
-                strategy_results.variables['p_grid'][t] - uncoordinated_results.variables['p_grid'][t]
+                strategy_results.variables['p_grid'][t] - strategy_results.variables['household_load'][t]
                 for t in time_steps
             ]
 
