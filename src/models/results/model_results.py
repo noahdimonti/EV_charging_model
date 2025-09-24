@@ -201,7 +201,8 @@ class EvaluationMetrics:
         return {
             'avg_soc_t_dep_percent': avg_soc_t_dep_percent,
             'avg_soc_to_max_deviation': avg_soc_to_max_deviation,
-            'soc_range': soc_range
+            'soc_range': soc_range,
+            'lowest_soc': lowest_soc_percent,
         }
 
     def _general_metrics(self):
@@ -219,19 +220,20 @@ class EvaluationMetrics:
                 for i in self.sets['EV_ID'] for d in self.sets['DAY']
             }
 
-            num_charging_days = {
+            self.num_charging_days = {
                 (i, w): sum(is_charging_day[i, d] for d in params.D_w[w])
                 for i in self.sets['EV_ID'] for w in self.sets['WEEK']
             }
 
             avg_num_charging_days = sum(
-                num_charging_days[i, w] for i in self.sets['EV_ID'] for w in self.sets['WEEK']
+                self.num_charging_days[i, w] for i in self.sets['EV_ID'] for w in self.sets['WEEK']
             ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK']))
 
         elif self.charging_strategy.value == 'flexible':
+            self.num_charging_days = self.variables['num_charging_days']
             avg_num_charging_days = pyo.value(
                 sum(
-                    self.variables['num_charging_days'][i, w]
+                    self.num_charging_days[i, w]
                     for i in self.sets['EV_ID']
                     for w in self.sets['WEEK'])
             ) / (len(self.sets['EV_ID']) * len(self.sets['WEEK']))
@@ -249,10 +251,14 @@ class EvaluationMetrics:
         self.metrics.update(self._general_metrics())
 
         if self.charging_strategy.value != 'uncoordinated':
-            self.metrics.update(self.model.obj_weights)
+            if hasattr(self.model, 'obj_weights'):
+                self.metrics.update(self.model.obj_weights)
 
-            self.metrics.update({'normalised_objective': self.model.norm_objective_value})
-            self.metrics.update(self.model.normalised_values)
+            if hasattr(self.model, 'norm_objective_value'):
+                self.metrics.update({'normalised_objective': self.model.norm_objective_value})
+
+            if hasattr(self.model, 'normalised_values'):
+                self.metrics.update(self.model.normalised_values)
 
             self.metrics.update({'total_objective_value': self.model.total_objective_value})
             self.metrics.update({
@@ -277,6 +283,7 @@ class EvaluationMetrics:
             'PAPR': f'{self.metrics['papr']:,.2f}',
 
             'Average SOC at dep time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
+            'Lowest SOC at dep time': f'{self.metrics['lowest_soc']:,.2f}%',
             'SOC min-max range': f'{self.metrics['soc_range']:,.2f}%',
             'Average num of charging days': f'{self.metrics['avg_num_charging_days']:,.2f}',
 
@@ -286,12 +293,12 @@ class EvaluationMetrics:
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
 
-                'Economic weight': f'{self.model.obj_weights['economic']}',
-                'Technical weight': f'{self.model.obj_weights['technical']}',
-                'Social weight': f'{self.model.obj_weights['social']}',
-
-                'Normalised objective value': f'{self.model.norm_objective_value:,.4f}',
-                'Total objective value': f'{self.model.total_objective_value:,.2f}',
+                # 'Economic weight': f'{self.model.obj_weights['economic']}',
+                # 'Technical weight': f'{self.model.obj_weights['technical']}',
+                # 'Social weight': f'{self.model.obj_weights['social']}',
+                #
+                # 'Normalised objective value': f'{self.model.norm_objective_value:,.4f}',
+                # 'Total objective value': f'{self.model.total_objective_value:,.2f}',
 
                 'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
                 'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',
