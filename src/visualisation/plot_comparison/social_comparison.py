@@ -52,7 +52,6 @@ def get_wait_time_list(config, strategy, version):
     cap_strategy = strategy.capitalize()
 
     print(f'\n{config} {strategy}\n')
-    print(results.__dict__.keys())
 
     t_arr_count = 0
     for i in results.sets['EV_ID']:
@@ -67,9 +66,8 @@ def get_wait_time_list(config, strategy, version):
                 if future_t >= t_arr and results.variables['p_ev'][i, future_t] > 0:
                     delta = future_t - t_arr
                     wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
-                    # print(f'wait time: {wait_time}')
-                    if wait_time >= 60:
-                        print(f'\n{config} {strategy} EV {i}, arrival time: {t_arr}, wait time: {wait_time}, soc t arr: {soc_t_arr}\n')
+                    print(f'EV {i}, arrival time: {t_arr}, current time: {future_t}, wait time: {wait_time}, '
+                          f'soc t arr: {soc_t_arr}, soc current time: {(results.variables['soc_ev'][i, future_t] / ev_params.soc_max_dict[i]) * 100}')
                     break  # stop at the first charging event
 
             results_list.append({

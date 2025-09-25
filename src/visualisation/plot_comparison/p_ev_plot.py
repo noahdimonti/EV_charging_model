@@ -1,13 +1,14 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 import os
 from pprint import pprint
-from src.visualisation import plot_setups
+from src.visualisation import plot_setups, plot_configs
 from src.config import params, ev_params
 
 
-def charging_power_plot(configurations, charging_strategies, version, save_img: False):
+def get_p_ev_df(configurations, charging_strategies, version):
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
@@ -34,50 +35,162 @@ def charging_power_plot(configurations, charging_strategies, version, save_img: 
                             'time': t,
                             'charging_power': p_ev
                         })
-                        # print(f'EV: {i}, time: {t}, charging power: {p_ev}')
-
-
+                        print(f'EV: {i}, time: {t}, charging power: {p_ev}')
 
     df = pd.DataFrame(all_results)
     print(df)
 
-    # Create subplots: one per config
-    fig, axes = plt.subplots(len(configurations), 1, figsize=(12, 4*len(configurations)), sharex=True, sharey=True)
+    return df
+
+
+def num_ev_charging_plot(configurations, charging_strategies, version, save_img=False):
+    df = get_p_ev_df(configurations, charging_strategies, version)
+
+    # Define grid size
+    n_configs = len(configurations)
+
+    # Define figure and axes
+    fig, axes = plt.subplots(nrows=n_configs, ncols=1,
+                             figsize=(8, 5 * n_configs))
+    axes = np.array(axes).reshape(-1)  # flatten in case nrows=1
 
     if len(configurations) == 1:
         axes = [axes]  # make it iterable
 
-    for ax, config in zip(axes, df['config'].unique()):
-        for strategy in df['strategy'].unique():
+    for idx, config in enumerate(configurations):
+        ax = axes[idx]
+
+        for i, strategy in enumerate(charging_strategies):
             sub = df[(df['config'] == config) & (df['strategy'] == strategy)]
             if sub.empty:
                 continue
             sub['charging_flag'] = sub['charging_power'] > 0
             occupancy = sub.groupby('time')['charging_flag'].sum()
 
-            ax.plot(
-                occupancy.index, occupancy.values,
-                label=strategy
+            ax.step(
+                occupancy.index,
+                occupancy.values,
+                where='post',
+                label=strategy.capitalize()
             )
 
-        ax.set_title(config)
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Number of EVs charging')
-        ax.grid(True, linestyle='--', alpha=0.5)
-        ax.legend(title='Strategy')
+        config_name, config_num = config.split('_')
+        config_name = f'{config_name}uration'.capitalize()
+        title = f'{config_name} {config_num}'
 
+        # Call the unified plot setup
+        plot_setups.setup(
+            title=title,
+            ylabel='Number of EVs charging',
+            xlabel=None,
+            legend=False,
+            legend_col=2,
+            ax=ax
+        )
+
+        plot_setups.timeseries_setup(ax=ax)
+
+        # Set y axis limits
+        ax.set_ylim(0, 11)
+
+        if idx == n_configs-1:
+            ax.set_xlabel('Day/Time', fontsize=plot_configs.label_fontsize, weight='bold')
+
+            ax.legend(
+                loc='upper center',
+                bbox_to_anchor=(0.5, -0.15),
+                frameon=True,
+                ncol=2,
+                prop={
+                    'weight': 'bold',
+                    'size': plot_configs.legend_fontsize
+                },
+            )
+
+    # Add space between subplots
+    fig.subplots_adjust(hspace=0.5)
     plt.tight_layout()
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'charger_occupancy_{params.num_of_evs}EVs.png')
+        plot_setups.save_plot(f'num_evs_charging_{params.num_of_evs}EVs.png')
 
 
+def p_ev_charging_plot(configurations, charging_strategies, version, save_img=False):
+    df = get_p_ev_df(configurations, charging_strategies, version)
 
+    # Define grid size
+    n_configs = len(configurations)
+
+    # Define figure and axes
+    fig, axes = plt.subplots(nrows=n_configs, ncols=1,
+                             figsize=(8, 5 * n_configs))
+    axes = np.array(axes).reshape(-1)  # flatten in case nrows=1
+
+    if len(configurations) == 1:
+        axes = [axes]  # make it iterable
+
+    for idx, config in enumerate(configurations):
+        ax = axes[idx]
+
+        for i, strategy in enumerate(charging_strategies):
+            sub = df[(df['config'] == config) & (df['strategy'] == strategy)]
+            if sub.empty:
+                continue
+
+            print(sub)
+
+            ax.step(
+                params.timestamps,
+                sub.charging_power,
+                where='post',
+                label=strategy.capitalize()
+            )
+
+        config_name, config_num = config.split('_')
+        config_name = f'{config_name}uration'.capitalize()
+        title = f'{config_name} {config_num}'
+
+        # Call the unified plot setup
+        plot_setups.setup(
+            title=title,
+            ylabel='Number of EVs charging',
+            xlabel=None,
+            legend=False,
+            legend_col=2,
+            ax=ax
+        )
+
+        plot_setups.timeseries_setup(ax=ax)
+
+        # Set y axis limits
+        ax.set_ylim(0, 11)
+
+        if idx == n_configs - 1:
+            ax.set_xlabel('Day/Time', fontsize=plot_configs.label_fontsize, weight='bold')
+
+            ax.legend(
+                loc='upper center',
+                bbox_to_anchor=(0.5, -0.15),
+                frameon=True,
+                ncol=2,
+                prop={
+                    'weight': 'bold',
+                    'size': plot_configs.legend_fontsize
+                },
+            )
+
+    # Add space between subplots
+    fig.subplots_adjust(hspace=0.5)
+    plt.tight_layout()
+
+    # Save plot
+    if save_img:
+        plot_setups.save_plot(f'p_ev_charging_{params.num_of_evs}EVs.png')
 
 
 if __name__ == '__main__':
-    charging_power_plot(
+    p_ev_charging_plot(
         ['config_1', 'config_2', 'config_3'],
         ['opportunistic', 'flexible'],
         'norm_w_sum',
