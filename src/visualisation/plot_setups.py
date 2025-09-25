@@ -92,8 +92,8 @@ def setup(title: str, ylabel: str, xlabel: str = None, legend=True, legend_col: 
     if legend:
         ax.legend(
             loc='upper center',
-            bbox_to_anchor=(0.5, -0.1),
-            frameon=False,
+            bbox_to_anchor=(0.5, -0.15),
+            frameon=True,
             ncol=legend_col,
             prop={
                 'weight': 'bold',
