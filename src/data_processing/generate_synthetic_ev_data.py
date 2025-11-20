@@ -2,13 +2,15 @@ import numpy as np
 import pickle
 import os
 from scipy.stats import truncnorm
+
+from src.config.params import max_initial_soc
 from src.data_processing.electric_vehicle import ElectricVehicle
 from src.config import params
 import vista_data_cleaning as vdc
 import generate_ev_dep_arr_data as gda
 
 
-def main(num_of_evs, output_filename):
+def main(num_of_evs, min_init_soc, max_init_soc, output_filename):
     # Initialise ready to use data_processing
     weekday_df, weekend_list = vdc.main()
 
@@ -16,6 +18,8 @@ def main(num_of_evs, output_filename):
     ev_instances = create_ev_instances(
         timestamps=params.timestamps,
         num_of_evs=num_of_evs,
+        min_init_soc=min_init_soc,
+        max_init_soc=max_init_soc,
         num_of_days=params.num_of_days,
         avg_travel_distance=params.avg_travel_distance,
         weekday_df=weekday_df,
@@ -34,7 +38,7 @@ def main(num_of_evs, output_filename):
     return ev_instances
 
 
-def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_travel_distance: float, weekday_df, weekend_df_list):
+def create_ev_instances(timestamps, num_of_evs: int, min_init_soc: float, max_init_soc: float, num_of_days: int, avg_travel_distance: float, weekday_df, weekend_df_list):
     """Create EV instances and assign availability profiles."""
 
     # Initialise EV objects
@@ -44,7 +48,12 @@ def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_trave
     for ev_id, ev in enumerate(ev_instances_list):
         # Get EV dep arr times, capacity, and soc init
         dep_arr_times, capacity_of_EVs, SOC_init_of_EVs = generate_ev_attributes(
-            num_of_evs, num_of_days, weekday_df, weekend_df_list
+            num_of_evs,
+            min_init_soc,
+            max_init_soc,
+            num_of_days,
+            weekday_df,
+            weekend_df_list
         )
 
         # Get travel energy consumption
@@ -69,7 +78,7 @@ def create_ev_instances(timestamps, num_of_evs: int, num_of_days: int, avg_trave
     return ev_instances_list
 
 
-def generate_ev_attributes(num_of_evs, num_of_days, weekday_df, weekend_df_list):
+def generate_ev_attributes(num_of_evs, min_init_soc, max_init_soc, num_of_days, weekday_df, weekend_df_list):
     """Generate EV attributes: departure arrival times, capacity, and SOC initial."""
 
     # Get departure and arrival times
@@ -87,7 +96,7 @@ def generate_ev_attributes(num_of_evs, num_of_days, weekday_df, weekend_df_list)
     )
 
     # Generate initial SOC values
-    SOC_init_of_EVs = rng.uniform(low=params.min_initial_soc, high=params.max_initial_soc, size=num_of_evs)
+    SOC_init_of_EVs = rng.uniform(low=min_init_soc, high=max_init_soc, size=num_of_evs)
 
     return dep_arr_times, capacity_of_EVs, SOC_init_of_EVs
 
@@ -112,8 +121,16 @@ def generate_travel_energy_consumption(avg_travel_distance: float, rand_seed: in
 
 if __name__ == '__main__':
     num_evs = None
-    version = None
+    # num_evs = 100
+    version = 'avgdist25km'
+    min_init_soc = 0.6
+    max_init_soc = 0.8
+
     if num_evs is not None:
-        main(num_evs, f'EV_instances_{num_evs}_{version}')
+        main(num_of_evs=num_evs,
+             min_init_soc=min_init_soc,
+             max_init_soc=max_init_soc,
+             output_filename=f'EV_instances_{num_evs}_{version}_min{min_init_soc}_max{max_init_soc}'
+             )
     else:
         raise ValueError('Provide a number of EV instances.')
