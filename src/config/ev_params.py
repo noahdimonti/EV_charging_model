@@ -5,7 +5,10 @@ from src.config import params
 from pprint import pprint
 
 # Load EV data
-folder_path = f'data/inputs/processed/EV_instances_100_avgdist{params.avg_travel_distance}km'
+avg_travel_dist = params.avg_travel_distance
+min_init_soc = params.min_initial_soc
+max_init_soc = params.max_initial_soc
+folder_path = f'data/inputs/processed/EV_instances_100_avgdist{avg_travel_dist}km_min{min_init_soc}_max{max_init_soc}'
 
 filename = os.path.join(params.project_root, folder_path)
 with open(filename, 'rb') as f:
