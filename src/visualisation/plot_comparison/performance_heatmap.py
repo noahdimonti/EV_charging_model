@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-from src.visualisation import plot_setups
+from src.visualisation import plot_setups, plot_configs
 from src.config import params
 
 
@@ -32,10 +32,19 @@ def plot_performance_heatmap(df: pd.DataFrame, title: str, y_label: str, filenam
     annot_df = df.copy().astype(str)
     for col in df.columns:
         unit = units.get(col, '')
-        if unit:
-            annot_df[col] = df[col].apply(lambda v: f'{v:.2f} {unit}')
+
+        # set formatting for columns
+        if col == 'G coefficient':
+            fmt = '{:.3f}'
+        elif col == 'Num CP':
+            fmt = '{:.0f}'
         else:
-            annot_df[col] = df[col].apply(lambda v: f'{v:.2f}')
+            fmt = '{:.2f}'
+
+        if unit:
+            annot_df[col] = df[col].apply(lambda v: fmt.format(v) + f' {unit}')
+        else:
+            annot_df[col] = df[col].apply(lambda v: fmt.format(v))
 
     # plot
     plt.figure(figsize=(max(8, len(df.columns)*1.5), 5))
@@ -50,12 +59,6 @@ def plot_performance_heatmap(df: pd.DataFrame, title: str, y_label: str, filenam
         cbar=True,
         cbar_kws={'label': 'Performance (higher = better)'}
     )
-
-    # highlight best values per column
-    for j, col in enumerate(df.columns):
-        best_idx = norm_df[col].idxmax()
-        i = list(df.index).index(best_idx)
-        ax.add_patch(plt.Rectangle((j, i), 1, 1, fill=False, edgecolor='black', lw=2))
 
     # bold labels
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0, weight='bold')
@@ -78,9 +81,11 @@ if __name__ == '__main__':
         'Num CP': [4.67, 9.33, 9.00, 5.33, 9.30, 6.16, 6.50],
         'Rated power': [2.03, 7.20, 7.20, 2.40, 7.20, 2.40, 2.40],
         'Peak increase': [3.08, 0.00, 3.13, 0.00, 0.00, 3.82, 0.00],
-        'Peak-to-average': [2.5133, 2.4360, 2.4607, 2.4371, 2.3910, 2.4828, 2.3988],
+        'Peak-to-average': [2.51, 2.44, 2.46, 2.44, 2.40, 2.48, 2.40],
         'Average SOC': [58.54, 78.08, 94.99, 73.81, 95.10, 93.04, 92.24],
-        'Lowest SOC': [18.86, 24.32, 45.60, 24.01, 45.60, 45.60, 45.60]
+        'Lowest SOC': [18.86, 24.32, 45.60, 24.01, 45.60, 45.60, 45.60],
+        'G coefficient': [0.1976, 0.1343, 0.0418, 0.1394, 0.0415, 0.0536, 0.0583],
+        # 'CV': [0.3444, 0.2423, 0.1022, 0.2456, 0.1016, 0.1154, 0.1202]
     }
     df = pd.DataFrame(data).set_index('Objective')
 
@@ -93,9 +98,11 @@ if __name__ == '__main__':
         'Num CP': [10, 10, 5, 4, 6, 4],
         'Rated power': [2.40, 2.40, 2.40, 2.40, 2.40, 2.40],
         'Peak increase': [0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-        'Peak-to-average': [2.3949, 2.3995, 2.3995, 2.3998, 2.3992, 2.3998],
+        'Peak-to-average': [2.40, 2.40, 2.40, 2.40, 2.40, 2.40],
         'Average SOC': [94.90, 91.21, 93.51, 90.40, 93.53, 89.87],
-        'Lowest SOC': [72.87, 45.60, 64.83, 45.60, 65.96, 45.60]
+        'Lowest SOC': [72.87, 45.60, 64.83, 45.60, 65.96, 45.60],
+        'G coefficient': [0.0377, 0.0676, 0.0483, 0.0706, 0.0478, 0.0744],
+        # 'CV': [0.0761, 0.1410, 0.0976, 0.1412, 0.0958, 0.1462]
     }
 
     df2 = pd.DataFrame(data2).set_index('Scenario')
@@ -107,7 +114,9 @@ if __name__ == '__main__':
         'Peak increase': '%',
         'Peak-to-average': '',
         'Average SOC': '%',
-        'Lowest SOC': '%'
+        'Lowest SOC': '%',
+        'G coefficient': '',
+        'CV': ''
     }
 
     # define which direction is better
@@ -117,7 +126,9 @@ if __name__ == '__main__':
         'Peak increase': False,
         'Peak-to-average': False,
         'Average SOC': True,
-        'Lowest SOC': True
+        'Lowest SOC': True,
+        'G coefficient': False,
+        'CV': False
     }
 
     # usage
