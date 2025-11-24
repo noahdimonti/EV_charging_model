@@ -20,6 +20,12 @@ cap_version_names_dict = {
     'econ_soc_pair': 'Socio-economic'
 }
 
+cap_conf_names_dict = {
+    'config_1': 'Config 1',
+    'config_2': 'Config 2',
+    'config_3': 'Config 3'
+}
+
 
 def get_soc_stats(configurations: list[str], charging_strategies: list[str], versions: list[str]):
     dfs = []
@@ -70,6 +76,9 @@ def soc_distrib_obj_comparison(configurations: list[str], charging_strategies: l
         legend=False,
         ax=ax
     )
+
+    # Adjust x tick label size
+    # ax.tick_params(axis='x', labelsize=20)
 
     # Set y axis limits
     plt.ylim(0, 100)
@@ -208,6 +217,86 @@ def wait_time_distrib_stats(configurations: list[str], charging_strategies: list
     # plt.show()
 
 
+def calculate_gini(soc_vals):
+    soc_vals = soc_vals.flatten()
+    n = len(soc_vals)
+    mean_soc = np.mean(soc_vals)
+
+    if mean_soc == 0:
+        return 0.0  # avoid division by zero if all values are zero
+
+    # Compute all pairwise absolute differences
+    total_diff_sum = 0
+    for i in range(n):
+        for j in range(n):
+            total_diff_sum += abs(soc_vals[i] - soc_vals[j])
+
+    gini_coeff = total_diff_sum / (2 * (n**2) * mean_soc)
+
+    return gini_coeff
+
+
+def calculate_cv(soc_vals):
+    return np.std(soc_vals) / np.mean(soc_vals)
+
+
+def gini_objective_comparison(configurations: list[str], charging_strategies: list[str], versions: list[str]):
+    df_long = get_soc_stats(configurations, charging_strategies, versions)
+
+    all_results = []
+
+    for version in versions:
+        ver = cap_version_names_dict[version]
+        df_long_copy = df_long.copy()
+        df = df_long_copy.loc[df_long_copy['version'] == ver]
+        soc_values = df['soc_t_dep'].values
+
+        gini_coefficient = calculate_gini(soc_values)
+
+        cv_vals = calculate_cv(soc_values)
+
+        all_results.append({
+            'version': ver,
+            'gini_coeff': round(gini_coefficient, 4),
+            'cv': round(cv_vals, 4)
+        })
+
+    gini_df = pd.DataFrame(all_results)
+    print(gini_df)
+
+    return gini_df
+
+
+def gini_strategy_comparison(configurations: list[str], charging_strategies: list[str], version):
+    soc_df = social_comparison.get_soc_df(configurations, charging_strategies, version)
+
+    all_results = []
+
+    for config in configurations:
+        config = cap_conf_names_dict[config]
+        for strategy in charging_strategies:
+            strategy = strategy.capitalize()
+            df = soc_df.loc[(soc_df['config'] == config) & (soc_df['strategy'] == strategy)]
+            soc_values = df['soc_t_dep'].values
+
+            gini_coefficient = calculate_gini(soc_values)
+            cv = calculate_cv(soc_values)
+
+            all_results.append({
+                'config': config,
+                'strategy': strategy,
+                'gini_coeff': round(gini_coefficient, 4),
+                'cv': round(cv, 4)
+            })
+
+    gini_df = pd.DataFrame(all_results)
+    print(gini_df)
+
+    return gini_df
+
+
+
+
 if __name__ == '__main__':
     configs = [
         'config_1',
@@ -216,6 +305,7 @@ if __name__ == '__main__':
         ]
 
     strategies = [
+        'uncoordinated',
         'opportunistic',
         'flexible'
         ]
@@ -230,14 +320,19 @@ if __name__ == '__main__':
             'norm_w_sum'
         ]
 
-    dso_stats_df(configs, strategies, versions)
-    #
+    strategy_version = 'norm_w_sum'
+
+    # dso_stats_df(configs, strategies, versions)
+
     # soc_stats_df(configs, strategies, versions)
-    #
+
     # econ_stats_df(configs, strategies, versions)
 
-    soc_distrib_obj_comparison(configs, strategies, versions, True)
+    # soc_distrib_obj_comparison(configs, strategies, versions, True)
 
     # wait_time_distrib_stats(configs, strategies, versions)
 
+    gini_objective_comparison(configs, strategies, versions)
+
+    gini_strategy_comparison(configs, strategies, strategy_version)
 
