@@ -54,11 +54,13 @@ def num_ev_charging_plot(configurations, charging_strategies, version, save_img=
                              figsize=(8, 5 * n_configs))
     axes = np.array(axes).reshape(-1)  # flatten in case nrows=1
 
-    if len(configurations) == 1:
-        axes = [axes]  # make it iterable
+    # Normalize axes -> always a flat list of Axes objects
+    # When n_configs == 1, plt.subplots returns a single Axes, not an array
+    axes = np.atleast_1d(axes).ravel().tolist()
 
     for idx, config in enumerate(configurations):
         ax = axes[idx]
+        print(type(ax))
 
         for i, strategy in enumerate(charging_strategies):
             sub = df[(df['config'] == config) & (df['strategy'] == strategy)]
@@ -77,11 +79,16 @@ def num_ev_charging_plot(configurations, charging_strategies, version, save_img=
         config_name, config_num = config.split('_')
         config_name = f'{config_name}uration'.capitalize()
         title = f'{config_name} {config_num}'
+        ylabel = 'Number of EVs charging'
+
+        if n_configs == 1:
+            title = f'Number of EVs Charging - Configuration {config_num}'
+            ylabel = 'Count'
 
         # Call the unified plot setup
         plot_setups.setup(
             title=title,
-            ylabel='Number of EVs charging',
+            ylabel=ylabel,
             xlabel=None,
             legend=False,
             legend_col=2,
@@ -113,7 +120,7 @@ def num_ev_charging_plot(configurations, charging_strategies, version, save_img=
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'num_evs_charging_{params.num_of_evs}EVs.png')
+        plot_setups.save_plot(f'num_evs_charging_{params.num_of_evs}EVs_config{config_num}.png')
 
 
 def p_ev_charging_plot(configurations, charging_strategies, version, save_img=False):
@@ -190,8 +197,8 @@ def p_ev_charging_plot(configurations, charging_strategies, version, save_img=Fa
 
 
 if __name__ == '__main__':
-    p_ev_charging_plot(
-        ['config_1', 'config_2', 'config_3'],
+    num_ev_charging_plot(
+        ['config_2'],
         ['opportunistic', 'flexible'],
         'norm_w_sum',
         True

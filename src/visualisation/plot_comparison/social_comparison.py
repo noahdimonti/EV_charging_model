@@ -13,6 +13,7 @@ from pprint import pprint
 
 
 def get_soc_df(configurations, charging_strategies, version):
+    # Get a compilation of SOC for ONE version: for 7 days, ALL EVs, concatenated across ALL configurations and strategies.
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
@@ -51,7 +52,7 @@ def get_wait_time_list(config, strategy, version):
     cap_config = f'{config_name} {config_num}'
     cap_strategy = strategy.capitalize()
 
-    print(f'\n{config} {strategy}\n')
+    # print(f'\n{config} {strategy}\n')
 
     t_arr_count = 0
     for i in results.sets['EV_ID']:
@@ -66,8 +67,8 @@ def get_wait_time_list(config, strategy, version):
                 if future_t >= t_arr and results.variables['p_ev'][i, future_t] > 0:
                     delta = future_t - t_arr
                     wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
-                    print(f'EV {i}, arrival time: {t_arr}, current time: {future_t}, wait time: {wait_time}, '
-                          f'soc t arr: {soc_t_arr}, soc current time: {(results.variables['soc_ev'][i, future_t] / ev_params.soc_max_dict[i]) * 100}')
+                    # print(f'EV {i}, arrival time: {t_arr}, current time: {future_t}, wait time: {wait_time}, '
+                    #       f'soc t arr: {soc_t_arr}, soc current time: {(results.variables['soc_ev'][i, future_t] / ev_params.soc_max_dict[i]) * 100}')
                     break  # stop at the first charging event
 
             results_list.append({
@@ -85,9 +86,12 @@ def get_wait_time_list(config, strategy, version):
 def soc_boxplot(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
     df_results = get_soc_df(configurations, charging_strategies, version)
 
+    # Rename config column values to only numbers
+    df_results['config_num'] = df_results['config'].str.extract(r'(\d+)').astype(int)
+
     plt.figure(figsize=plot_setups.fig_size)
     ax = sns.boxplot(
-        x='config',
+        x='config_num',
         y='soc_t_dep',
         hue='strategy',
         data=df_results,
@@ -104,7 +108,8 @@ def soc_boxplot(configurations: list[str], charging_strategies: list[str], versi
         ax=ax
     )
 
-    plt.tight_layout()
+    # Adjust x tick label size
+    ax.tick_params(axis='x', labelsize=20)
 
     # Set y axis limits
     plt.ylim(0, 100)
@@ -137,10 +142,13 @@ def num_charging_days_plot(configurations: list[str], charging_strategies: list[
 
     df_results = pd.DataFrame(all_results)
 
+    # Rename config column values to only numbers
+    df_results['config_num'] = df_results['config'].str.extract(r'(\d+)').astype(int)
+
     plt.figure(figsize=plot_setups.fig_size)
 
     ax = sns.barplot(
-        x='config',
+        x='config_num',
         y='num_charging_day',
         hue='strategy',
         data=df_results,
@@ -148,12 +156,15 @@ def num_charging_days_plot(configurations: list[str], charging_strategies: list[
     )
 
     plot_setups.setup(
-        title='Average Number of Charging Days',
+        title='Number of Charging Days Comparison',
         ylabel='Average Number of Charging Days',
         xlabel='Configuration',
         legend=True,
         ax=ax
     )
+
+    # Adjust x tick label size
+    ax.tick_params(axis='x', labelsize=20)
 
     # Save plot
     if save_img:
@@ -297,21 +308,23 @@ def wait_time_boxplot(configurations: list[str], charging_strategies: list[str],
     df_results.to_csv(filepath)
     print(f'csv saved to {filepath}')
 
+    # Rename config column values to only numbers
+    df_results['config_num'] = df_results['config'].str.extract(r'(\d+)').astype(int)
+
     for config in configurations:
         conf, num = config.split('_')
         conf = conf.capitalize()
         df = df_results[df_results['config'] == f'{conf} {num}']
-        # print(df)
+        print(df)
 
     plt.figure(figsize=plot_setups.fig_size)
     ax = sns.boxplot(
-        x='config',
+        x='config_num',
         y='wait_time',
         hue='strategy',
         data=df_results,
         palette='Set2',
         medianprops={'linewidth': 2.5, 'color': 'black'}  # bold black median line
-
     )
 
     plot_setups.setup(
@@ -322,6 +335,9 @@ def wait_time_boxplot(configurations: list[str], charging_strategies: list[str],
         ax=ax
     )
 
+    # Adjust x tick label size
+    ax.tick_params(axis='x', labelsize=20)
+
     if save_img:
         plot_setups.save_plot(f'wait_time_boxplot_{params.num_of_evs}EVs_{version}')
     # plt.show()
@@ -329,7 +345,7 @@ def wait_time_boxplot(configurations: list[str], charging_strategies: list[str],
 
 
 if __name__ == '__main__':
-    wait_time_boxplot(
+    num_charging_days_plot(
         ['config_1', 'config_2', 'config_3'],
         ['uncoordinated', 'opportunistic', 'flexible'],
         'norm_w_sum',
