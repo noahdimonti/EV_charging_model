@@ -17,8 +17,8 @@ models_colour_dict = {
 }
 
 # Font size settings
-title_fontsize = 18
-label_fontsize = 16
+title_fontsize = 20
+label_fontsize = 18
 tick_fontsize = 14
 value_fontsize = 12
 legend_fontsize = 14
