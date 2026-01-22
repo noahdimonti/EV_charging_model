@@ -305,7 +305,7 @@ if __name__ == '__main__':
         ]
 
     strategies = [
-        'uncoordinated',
+        # 'uncoordinated',
         'opportunistic',
         'flexible'
         ]
@@ -313,10 +313,10 @@ if __name__ == '__main__':
     versions = [
             'min_econ',
             'min_tech',
-            'min_soc',
+            # 'min_soc',
             'econ_tech_pair',
-            'tech_soc_pair',
-            'econ_soc_pair',
+            # 'tech_soc_pair',
+            # 'econ_soc_pair',
             'norm_w_sum'
         ]
 
@@ -328,11 +328,11 @@ if __name__ == '__main__':
 
     # econ_stats_df(configs, strategies, versions)
 
-    # soc_distrib_obj_comparison(configs, strategies, versions, True)
+    soc_distrib_obj_comparison(configs, strategies, versions, True)
 
     # wait_time_distrib_stats(configs, strategies, versions)
 
-    gini_objective_comparison(configs, strategies, versions)
+    # gini_objective_comparison(configs, strategies, versions)
 
-    gini_strategy_comparison(configs, strategies, strategy_version)
+    # gini_strategy_comparison(configs, strategies, strategy_version)
 
