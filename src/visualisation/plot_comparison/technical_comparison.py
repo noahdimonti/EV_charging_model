@@ -78,16 +78,7 @@ def get_dso_metrics_df(configurations: list[str], charging_strategies: list[str]
     return df_results
 
 
-if __name__ == '__main__':
-    get_dso_metrics_df(
-        ['config_1', 'config_2', 'config_3'],
-        # ['opportunistic', 'flexible'],
-        ['uncoordinated', 'opportunistic', 'flexible'],
-        'norm_w_sum',
-        'models_comparison'
-        # 'objective_comparison',
-        # ['min_economic', 'min_technical', 'min_econ_tech', 'norm_w_sum']
-    )
+
 
 
 
@@ -157,6 +148,19 @@ def demand_profiles_by_config(configurations: list[str], charging_strategies: li
         plot_setups.save_plot(f'demand_profiles_by_config_{params.num_of_evs}EVs_{version}')
 
     # plt.show()
+
+
+if __name__ == '__main__':
+    demand_profiles_by_config(
+        ['config_1', 'config_2', 'config_3'],
+        # ['opportunistic', 'flexible'],
+        ['uncoordinated', 'opportunistic', 'flexible'],
+        'norm_w_sum',
+        save_img=True,
+        # 'models_comparison'
+        # 'objective_comparison',
+        # ['min_economic', 'min_technical', 'min_econ_tech', 'norm_w_sum']
+    )
 
 
 def charging_strategy_load_delta_comparison(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
