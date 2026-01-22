@@ -145,9 +145,9 @@ def demand_profiles_by_config(configurations: list[str], charging_strategies: li
     fig.subplots_adjust(hspace=0.3)
 
     if save_img:
-        plot_setups.save_plot(f'demand_profiles_by_config_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_plot(f'demand_profiles_by_config_{params.num_of_evs}EVs_{version}.png')
 
-    # plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':
