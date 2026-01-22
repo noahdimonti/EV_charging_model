@@ -124,4 +124,10 @@ def timeseries_setup(ax=None):
 
 def save_plot(filename: str):
     file_path = os.path.join(params.plots_folder_path, filename)
-    plt.savefig(file_path, dpi=300)
+    plt.savefig(
+        file_path,
+        dpi=300,
+        transparent=True,
+        bbox_inches='tight',
+        pad_inches=0
+    )
