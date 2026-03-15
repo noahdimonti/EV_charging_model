@@ -1,5 +1,3 @@
-from poplib import error_proto
-
 import pyomo.environ as pyo
 import os
 from src.config import params

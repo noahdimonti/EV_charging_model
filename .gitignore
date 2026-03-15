@@ -266,6 +266,3 @@ data/inputs
 /src/visualisation/plotting_pipeline.py
 /src/config/independent_variables.py
 
-
-# Temporary
-/src/unit_tests
