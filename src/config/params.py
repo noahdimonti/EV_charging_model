@@ -94,8 +94,8 @@ SOC_critical = 0.1  # (%)
 min_initial_soc = 0.4  # (%)
 max_initial_soc = 0.6  # (%)
 
-ev_capacity_range_low = 55  # (kWh)
-ev_capacity_range_high = 65  # (kWh)
+ev_capacity_range_low = 35  # (kWh)
+ev_capacity_range_high = 60  # (kWh)
 
 charging_efficiency = 0.95  # (%)
 
