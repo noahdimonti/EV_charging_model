@@ -4,7 +4,6 @@ from src.pipelines.experiments_pipeline.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
-from src.visualisation import plotting_pipeline
 
 
 def run_model_pipeline(configurations: list,
@@ -83,9 +82,10 @@ def run_model_pipeline(configurations: list,
         print(f'\nFormatted Metrics\n{formatted_metrics}')
 
     if plot:
-        plotting_pipeline.plot_all(
-            configurations,
-            charging_strategies,
-            version,
-            save_img=True
-        )
+        pass
+        # plotting_pipeline.plot_all(
+        #     configurations,
+        #     charging_strategies,
+        #     version,
+        #     save_img=True
+        # )
