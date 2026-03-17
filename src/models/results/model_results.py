@@ -5,7 +5,8 @@ import os
 import pyomo.environ as pyo
 from collections import defaultdict
 from pprint import pprint
-from src.config import params, ev_params
+from src.config import params
+from src.config.ev_params import EVParams as ev_params
 from src.models.utils.configs import CPConfig, ChargingStrategy
 
 

@@ -1,5 +1,6 @@
 import pyomo.environ as pyo
-from src.config import params, ev_params, independent_variables
+from src.config import params, independent_variables
+from src.config.ev_params import EVParams as ev_params
 
 
 class EconomicObjective:

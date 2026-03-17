@@ -4,34 +4,37 @@ from collections import defaultdict
 from src.config import params
 from pprint import pprint
 
-# Load EV data
-avg_travel_dist = params.avg_travel_distance
-min_init_soc = params.min_initial_soc
-max_init_soc = params.max_initial_soc
-folder_path = f'data/inputs/processed/EV_instances_100_avgdist{avg_travel_dist}km_min{min_init_soc}_max{max_init_soc}'
 
-filename = os.path.join(params.project_root, folder_path)
-with open(filename, 'rb') as f:
-    ev_instance_list = pickle.load(f)
+class EVParams:
+    # Load EV data
+    avg_travel_dist = params.avg_travel_distance
+    min_init_soc = params.min_initial_soc
+    max_init_soc = params.max_initial_soc
+    folder_path = (f'data/inputs/processed/EV_instances_100_avgdist{avg_travel_dist}km'
+                   f'_min{min_init_soc}_max{max_init_soc}_cap{params.ev_capacity_range_low}-{params.ev_capacity_range_high}')
 
-# Slice data
-ev_instance_list = ev_instance_list[:params.num_of_evs]
+    filename = os.path.join(params.project_root, folder_path)
+    with open(filename, 'rb') as f:
+        ev_instance_list = pickle.load(f)
 
-# Initialise data
-soc_init_dict = {ev.ev_id: ev.soc_init for ev in ev_instance_list}
-soc_critical_dict = {ev.ev_id: ev.soc_critical for ev in ev_instance_list}
-soc_max_dict = {ev.ev_id: ev.soc_max for ev in ev_instance_list}
+    # Slice data
+    ev_instance_list = ev_instance_list[:params.num_of_evs]
 
-at_home_status_dict = {ev.ev_id: ev.at_home_status for ev in ev_instance_list}
-t_arr_dict = {ev.ev_id: ev.t_arr for ev in ev_instance_list}
-t_dep_dict = {ev.ev_id: ev.t_dep for ev in ev_instance_list}
-travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
+    # Initialise data
+    soc_init_dict = {ev.ev_id: ev.soc_init for ev in ev_instance_list}
+    soc_critical_dict = {ev.ev_id: ev.soc_critical for ev in ev_instance_list}
+    soc_max_dict = {ev.ev_id: ev.soc_max for ev in ev_instance_list}
 
-t_dep_on_day = defaultdict(list)  # {day: [(ev_id, t_dep), ...]}
+    at_home_status_dict = {ev.ev_id: ev.at_home_status for ev in ev_instance_list}
+    t_arr_dict = {ev.ev_id: ev.t_arr for ev in ev_instance_list}
+    t_dep_dict = {ev.ev_id: ev.t_dep for ev in ev_instance_list}
+    travel_energy_dict = {ev.ev_id: ev.travel_energy for ev in ev_instance_list}
 
-for ev_id, times in t_dep_dict.items():
-    for t in times:
-        t_dep_on_day[t.date()].append((ev_id, t))
+    t_dep_on_day = defaultdict(list)  # {day: [(ev_id, t_dep), ...]}
 
-# EV charging efficiency
-charging_efficiency = 0.95  # (%)
+    for ev_id, times in t_dep_dict.items():
+        for t in times:
+            t_dep_on_day[t.date()].append((ev_id, t))
+
+    # EV charging efficiency
+    charging_efficiency = 0.95  # (%)

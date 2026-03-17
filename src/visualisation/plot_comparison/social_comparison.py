@@ -6,7 +6,8 @@ import seaborn as sns
 import os
 
 import math
-from src.config import params, ev_params
+from src.config import params
+from src.config.ev_params import EVParams as ev_params
 from src.visualisation import plot_setups
 from src.visualisation import plot_configs
 from pprint import pprint

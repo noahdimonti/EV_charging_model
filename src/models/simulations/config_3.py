@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import copy
 from collections import deque, defaultdict
-from src.config import params, ev_params
+from src.config import params
+from src.config.ev_params import EVParams as ev_params
 from src.models.simulations.config_2 import ChargingPointSlot
 from src.data_processing.electric_vehicle import ElectricVehicle
 from pprint import pprint

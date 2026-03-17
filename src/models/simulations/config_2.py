@@ -1,7 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import deque
-from src.config import params, ev_params
+from src.config import params
+from src.config.ev_params import EVParams as ev_params
 from src.data_processing.electric_vehicle import ElectricVehicle
 from pprint import pprint
 

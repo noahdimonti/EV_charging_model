@@ -1,7 +1,6 @@
 import pandas as pd
-from joblib.testing import param
-
-from src.config import params, ev_params
+from src.config import params
+from src.config.ev_params import EVParams as ev_params
 from src.data_processing.electric_vehicle import ElectricVehicle
 
 
