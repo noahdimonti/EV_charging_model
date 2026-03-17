@@ -255,14 +255,10 @@ data/inputs
 
 
 # Dynamic pipelines
-/src/pipelines/run_pipeline.py
 /src/pipelines/sensitivity_analysis_pipeline.py
 /src/pipelines/sketchbook.py
 /src/pipelines/augmecon/run_augmecon.py
 /src/pipelines/augmecon/get_payoff_tables.py
-/src/pipelines/run_model_bash.py
 
-/src/visualisation/plot_tst.py
-/src/visualisation/plotting_pipeline.py
 /src/config/independent_variables.py
 
