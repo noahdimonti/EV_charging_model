@@ -7,8 +7,6 @@ from src.visualisation import plot_setups, plot_configs
 from src.config import params
 
 
-
-
 def get_filepath(version: str, min_soc: float, max_soc: float, cap: str, avg_dist: int):
     file_prefix = f'raw_values_compiled_metrics_{params.num_of_evs}EVs_{params.num_of_days}days_{version}'
     file_parameters = f'{min_soc}min_{max_soc}max_cap{cap}_{avg_dist}km.csv'
@@ -96,7 +94,7 @@ def get_df(params_comb: list[dict]):
 def plot_sensitivity(df: pd.DataFrame, metrics: list[str], y_labels: list[str], x_col: str, title: str, filename: str, order: list[str]):
     sns.set_theme(style='whitegrid', context='paper')
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 9), constrained_layout=True)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9))
     axes = axes.flatten()
 
     df = df.copy()
@@ -106,15 +104,15 @@ def plot_sensitivity(df: pd.DataFrame, metrics: list[str], y_labels: list[str], 
     ylims = {
         'num_cp': (0, 10),
         'papr': (2.2, 2.6),
-        'avg_soc_t_dep_percent': (90, 100),
+        'avg_soc_t_dep_percent': (50, 100),
         'lowest_soc': (50, 100)
     }
 
     offsets = {
-        'num_cp': 0.15,
-        'papr': 0.01,
-        'avg_soc_t_dep_percent': 0.3,
-        'lowest_soc': 0.5
+        'num_cp': 0.5,
+        'papr': 0.02,
+        'avg_soc_t_dep_percent': 3,
+        'lowest_soc': 3
     }
 
     baseline = order[1]
@@ -140,15 +138,56 @@ def plot_sensitivity(df: pd.DataFrame, metrics: list[str], y_labels: list[str], 
         )
 
         axes[i].set_xlabel('')
-        axes[i].set_ylabel(y_labels[metric])
-        axes[i].set_title(y_labels[metric])
+        axes[i].set_ylabel(
+            ''
+            # y_labels[metric],
+            # fontsize=12,
+            # fontweight='bold',
+            # labelpad=12
+        )
+        axes[i].set_title(
+            y_labels[metric],
+            fontsize=15,
+            fontweight='bold',
+            pad=12
+        )
         axes[i].margins(x=0.1)
         axes[i].set_ylim(ylims[metric])
 
-        for x, y in zip(df[x_col], df[metric]):
-            axes[i].text(x, y + offsets[metric], f'{y:.1f}', ha='center', fontsize=9)
+        axes[i].tick_params(
+            axis='both',
+            labelsize=14,
+        )
 
-    fig.suptitle(title, fontsize=14)
+        for label in axes[i].get_xticklabels():
+            label.set_fontweight('bold')
+
+        for label in axes[i].get_yticklabels():
+            label.set_fontweight('bold')
+
+        # Set annotation on datapoints
+        for x, y in zip(df[x_col], df[metric]):
+            if metric == 'num_cp':
+                label = f'{int(y)} CP'
+            else:
+                label = f'{y:.2f}'
+
+            axes[i].text(
+                x,
+                y + offsets[metric],
+                label,
+                ha='center',
+                fontsize=11,
+                fontweight='bold'
+            )
+
+    fig.suptitle(
+        title,
+        fontsize=18,
+        fontweight='bold',
+    )
+
+    plt.tight_layout(pad=2.5)
 
     filepath = os.path.join(params.plots_folder_path, filename)
     plt.savefig(filepath, dpi=300)
@@ -185,16 +224,15 @@ if __name__ == '__main__':
 
     df_all = get_df(params_combination)
 
-
     # Sensitivity to initial SOC
     df_soc = df_all[df_all['capacity'] == '35-60 kWh']
     df_soc = df_soc[df_soc['distance'] == '25 km']
     plot_sensitivity(
+        df_soc,
         metrics,
         y_labels,
-        df_soc,
         'soc_range',
-        'Sensitivity to initial SOC limits',
+        'Sensitivity to initial SOC range',
         'soc_sensitivity.png',
         ['20-40%', '40-60%', '60-80%']
     )
@@ -203,11 +241,11 @@ if __name__ == '__main__':
     df_cap = df_all[df_all['soc_range'] == '40-60%']
     df_cap = df_cap[df_cap['distance'] == '25 km']
     plot_sensitivity(
+        df_cap,
         metrics,
         y_labels,
-        df_cap,
         'capacity',
-        'Sensitivity to battery capacity',
+        'Sensitivity to EV battery capacity',
         'capacity_sensitivity.png',
         ['30-40 kWh', '35-60 kWh', '55-65 kWh']
     )
@@ -216,9 +254,9 @@ if __name__ == '__main__':
     df_dist = df_all[df_all['soc_range'] == '40-60%']
     df_dist = df_dist[df_dist['capacity'] == '35-60 kWh']
     plot_sensitivity(
+        df_dist,
         metrics,
         y_labels,
-        df_dist,
         'distance',
         'Sensitivity to average travel distance',
         'distance_sensitivity.png',
