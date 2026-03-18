@@ -129,8 +129,8 @@ def main(argv=None):
 if __name__ == '__main__':
     main(
         [
-            '-c', 'config_2',
-            '-s', 'opportunistic',
+            '-c', 'config_1',
+            '-s', 'uncoordinated',
             # '-w', f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max'
             '-w', f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max'
                   f'_cap{ev_capacity_range_low}-{ev_capacity_range_high}_{avg_travel_distance}km'
