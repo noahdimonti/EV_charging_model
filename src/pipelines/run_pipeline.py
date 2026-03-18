@@ -1,6 +1,7 @@
 import pandas as pd
 from src.pipelines.experiments_pipeline.pipeline import run_model_pipeline
 from src.utils.argparser import get_parser
+from src.config.params import min_initial_soc, max_initial_soc, ev_capacity_range_low, ev_capacity_range_high, avg_travel_distance
 
 def main(argv=None):
     pd.options.display.max_columns = None
@@ -12,14 +13,16 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     configurations = [
+        args.config
         # 'config_1',
         # 'config_2',
-        'config_3',
+        # 'config_3',
     ]
     charging_strategies = [
+        args.charging_strategy
         # 'uncoordinated',
         # 'opportunistic',
-        'flexible',
+        # 'flexible',
     ]
 
     # Objective weights
@@ -32,6 +35,22 @@ def main(argv=None):
 
         'norm_w_sum': {  # DONE
             'norm_w_sum': {'economic': 1, 'technical': 1, 'social': 1}
+        },
+
+        f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max': {
+            f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max': {'economic': 1, 'technical': 1, 'social': 1}
+        },
+
+        f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max_cap{ev_capacity_range_low}-{ev_capacity_range_high}': {
+            f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max_cap{ev_capacity_range_low}-{ev_capacity_range_high}': {
+                'economic': 1, 'technical': 1, 'social': 1}
+        },
+
+        f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max_cap{ev_capacity_range_low}-{ev_capacity_range_high}'
+        f'_{avg_travel_distance}km': {
+            f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max_cap{ev_capacity_range_low}-{ev_capacity_range_high}'
+            f'_{avg_travel_distance}km': {
+                'economic': 1, 'technical': 1, 'social': 1}
         },
 
         'balanced': {
@@ -109,9 +128,12 @@ def main(argv=None):
 
 if __name__ == '__main__':
     main(
-        # [
-        #     '-c', 'config_1',
-        #     '-s', 'uncoordinated',
-        #     '-w', 'norm_w_sum'
-        # ]
+        [
+            '-c', 'config_2',
+            '-s', 'opportunistic',
+            # '-w', f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max'
+            '-w', f'norm_w_sum_{min_initial_soc}min_{max_initial_soc}max'
+                  f'_cap{ev_capacity_range_low}-{ev_capacity_range_high}_{avg_travel_distance}km'
+
+        ]
     )

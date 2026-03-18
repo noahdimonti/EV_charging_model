@@ -1,6 +1,8 @@
 import numpy as np
 import pickle
 import os
+
+from joblib.testing import param
 from scipy.stats import truncnorm
 
 from src.config.params import max_initial_soc
@@ -120,17 +122,18 @@ def generate_travel_energy_consumption(avg_travel_distance: float, rand_seed: in
 
 
 if __name__ == '__main__':
-    num_evs = None
-    # num_evs = 100
-    version = 'avgdist25km'
-    min_init_soc = 0.6
-    max_init_soc = 0.8
+    num_evs = 100
+    version = f'avgdist{params.avg_travel_distance}km'
+    min_init_soc = 0.4
+    max_init_soc = 0.6
+    min_cap = params.ev_capacity_range_low
+    max_cap = params.ev_capacity_range_high
 
     if num_evs is not None:
         main(num_of_evs=num_evs,
              min_init_soc=min_init_soc,
              max_init_soc=max_init_soc,
-             output_filename=f'EV_instances_{num_evs}_{version}_min{min_init_soc}_max{max_init_soc}'
+             output_filename=f'EV_instances_{num_evs}_{version}_min{min_init_soc}_max{max_init_soc}_cap{min_cap}-{max_cap}'
              )
     else:
         raise ValueError('Provide a number of EV instances.')
