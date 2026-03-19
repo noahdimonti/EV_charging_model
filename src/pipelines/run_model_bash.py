@@ -1,5 +1,5 @@
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
-from src.utils.argparser import get_parser
+from src.pipelines.utils import get_parser
 from pprint import pprint
 
 def main(argv=None):

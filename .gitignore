@@ -242,23 +242,16 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
-# Model results and reports
-reports/
-
-# Data
-data/inputs
-
-.old_files
-
 
 .DS_Store
 
 
 # Dynamic pipelines
-/src/pipelines/sensitivity_analysis_pipeline.py
-/src/pipelines/sketchbook.py
-/src/pipelines/augmecon/run_augmecon.py
-/src/pipelines/augmecon/get_payoff_tables.py
+/archived/src/sensitivity_analysis_pipeline.py
+/archived/src/sketchbook.py
+/archived/src/augmecon/run_augmecon.py
+/archived/src/augmecon/get_payoff_tables.py
 
-/src/config/independent_variables.py
 
+# Archives
+/archived

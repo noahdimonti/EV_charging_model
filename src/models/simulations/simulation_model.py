@@ -1,4 +1,5 @@
 import pandas as pd
+from copy import deepcopy
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
 from src.models.simulations import config_1, config_2, config_3
@@ -12,7 +13,7 @@ def simulate_uncoordinated_model(
     household_load = params.household_load
 
     # Initialise EV data
-    ev_data = ev_params.ev_instance_list
+    ev_data = deepcopy(ev_params.ev_instance_list)
 
     # Set rated power of CP
     p_cp_rated_scaled = config_attribute['p_cp_rated'] / params.charging_power_resolution_factor

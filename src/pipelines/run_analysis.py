@@ -1,6 +1,6 @@
 import pandas as pd
 from src.pipelines.experiments_pipeline.pipeline import run_model_pipeline
-from src.utils.argparser import get_parser
+
 
 def main():
     pd.options.display.max_columns = None

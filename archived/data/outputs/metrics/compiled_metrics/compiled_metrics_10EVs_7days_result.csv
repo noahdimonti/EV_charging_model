@@ -1,0 +1,11 @@
+,config_1_uncoordinated,config_1_opportunistic,config_1_flexible,config_2_uncoordinated,config_2_opportunistic,config_2_flexible,config_3_uncoordinated,config_3_opportunistic,config_3_flexible
+Charging point info,10 CPs (2.40 kW),10 CPs (2.40 kW),10 CPs (2.40 kW),3 CPs (2.40 kW),3 CPs (2.40 kW),4 CPs (2.40 kW),4 CPs (2.40 kW),4 CPs (2.40 kW),3 CPs (2.40 kW)
+Investment cost,"$2,000.00","$2,000.00","$2,000.00",$600.00,$600.00,$800.00,$800.00,$800.00,$600.00
+Peak demand increase,3.01%,0.00%,0.00%,3.01%,0.00%,0.00%,3.01%,0.00%,0.00%
+PAPR,2.44,2.40,2.40,2.45,2.40,2.42,2.45,2.40,2.40
+Average SOC at dep time,99.04%,94.42%,91.44%,93.01%,90.97%,86.69%,93.27%,91.84%,88.15%
+Average deviation of SOC at dep time to max SOC,0.96%,5.58%,8.56%,6.99%,9.03%,13.31%,6.73%,8.16%,11.85%
+SOC min-max range,19.88%,28.79%,50.24%,59.19%,47.61%,52.22%,55.49%,47.61%,54.25%
+Average num of charging days,7.00,6.50,3.50,6.60,6.10,3.50,6.80,6.10,3.50
+Optimality gap,,0.0000%,0.0000%,,2.6753%,6.5447%,,4.0765%,8.8674%
+Objective value,,747.49,"1,205.37",,616.68,604.56,,622.91,665.07

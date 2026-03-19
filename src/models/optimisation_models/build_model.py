@@ -1,5 +1,4 @@
 import pyomo.environ as pyo
-import os
 from src.config import params
 from src.models.utils.configs import (
     CPConfig,
@@ -12,7 +11,7 @@ from src.models.optimisation_models.assets.charging_point import ChargingPoint
 from src.models.optimisation_models.assets.electric_vehicle import ElectricVehicle
 from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
 
-from data.outputs.metrics.compiled_metrics.payoff_table import payoff_table
+from archived.data.outputs.metrics.compiled_metrics.payoff_table import payoff_table
 
 
 class BuildModel:
