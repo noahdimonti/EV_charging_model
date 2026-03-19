@@ -29,7 +29,7 @@ def main(num_of_evs, min_init_soc, max_init_soc, output_filename):
     )
 
     # Save data_processing into a pickle file
-    folder_path = 'data/inputs/processed'
+    folder_path = 'data/inputs/ev_data'
     file_path = os.path.join(params.project_root, folder_path)
     filename = os.path.join(file_path, output_filename)
     with open(filename, "wb") as f:

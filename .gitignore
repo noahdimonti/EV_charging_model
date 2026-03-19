@@ -246,12 +246,6 @@ fabric.properties
 .DS_Store
 
 
-# Dynamic pipelines
-/archived/src/sensitivity_analysis_pipeline.py
-/archived/src/sketchbook.py
-/archived/src/augmecon/run_augmecon.py
-/archived/src/augmecon/get_payoff_tables.py
-
 
 # Archives
 /archived
