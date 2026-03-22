@@ -4,7 +4,7 @@ from src.config import params
 
 
 def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=None, mip_gap=None, thread_count=None):
-    """Returns: (results, mip_gap, solver_status, termination_condition)"""
+    """Returns: (results_processing, mip_gap, solver_status, termination_condition)"""
     solver = pyo.SolverFactory(solver_name)
 
     # Set options

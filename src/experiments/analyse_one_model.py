@@ -1,4 +1,4 @@
-from src.pipelines.metrics_analysis.analyse_results import analyse_one_model_from_file
+from src.pipelines.analyse_results import analyse_one_model_from_file
 
 def main():
     config = 'config_2'

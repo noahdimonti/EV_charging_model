@@ -1,12 +1,8 @@
 import pandas as pd
 import pickle
 import os
-
-from IPython.core.completerlib import module_list
-from pyomo.contrib.pynumero.examples.callback.reactor_design import model
-
 from src.config import params
-from src.models.results.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
+from src.models.results_processing.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
 from pprint import pprint
 
 
@@ -34,7 +30,7 @@ def analyse_multiple_models(configurations: list,
             try:
                 results = load_model(config, strategy, version)
 
-                # Get evaluation metrics from results
+                # Get evaluation metrics from results_processing
                 evaluation_metrics = EvaluationMetrics(results)
 
                 # Format and collect metrics
@@ -63,7 +59,7 @@ def analyse_multiple_models(configurations: list,
 
 
 def analyse_one_model(model_results: ModelResults):
-    # Get evaluation metrics from results
+    # Get evaluation metrics from results_processing
     evaluation_metrics = EvaluationMetrics(model_results)
 
     # Format and collect metrics

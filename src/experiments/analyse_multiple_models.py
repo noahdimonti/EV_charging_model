@@ -1,5 +1,5 @@
 import pandas as pd
-from src.pipelines.metrics_analysis.analyse_results import analyse_multiple_models
+from src.pipelines.analyse_results import analyse_multiple_models
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
         'flexible',
     ]
 
-    version = 'min_tech'
+    version = 'min_soc'
     save_df = True
 
     print(

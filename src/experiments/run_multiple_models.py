@@ -1,6 +1,6 @@
 import pandas as pd
-from src.pipelines.run_models.multiple_models_pipeline import run_multiple_models
-from src.pipelines.utils.obj_weights_map import obj_weights_dict
+from src.pipelines.multiple_models_pipeline import run_multiple_models
+from src.experiments.obj_weights_map import obj_weights_dict
 
 
 def main():

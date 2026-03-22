@@ -1,7 +1,7 @@
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
-from src.pipelines.metrics_analysis.analyse_results import analyse_one_model
-from src.pipelines.utils.argparser import get_parser
-from src.pipelines.utils.obj_weights_map import obj_weights_dict
+from src.pipelines.analyse_results import analyse_one_model
+from src.pipelines.argparser import get_parser
+from src.experiments.obj_weights_map import obj_weights_dict
 
 
 def main(argv=None):

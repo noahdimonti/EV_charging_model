@@ -45,7 +45,7 @@ def get_soc_stats(configurations: list[str], charging_strategies: list[str], ver
         value_name='soc_t_dep'
     )
 
-    # Save results
+    # Save results_processing
     filepath = os.path.join(params.plots_folder_path, 'comparison_plots')
     filename = os.path.join(filepath, f'objective_comparison_soc_{params.num_of_evs}EVs.csv')
     df_long.to_csv(filename)
@@ -186,7 +186,7 @@ def wait_time_distrib_stats(configurations: list[str], charging_strategies: list
         # )
         print(df_results)
 
-        # Save results
+        # Save results_processing
         # df_results.to_csv(filename)
         # print(f'csv saved to {filename}')
 

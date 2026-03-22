@@ -99,7 +99,7 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
 #     all_results = []
 #     for config in configurations:
 #         for strategy in charging_strategies:
-#             results = plot_setups.get_model_results_data(config, strategy, version)
+#             results_processing = plot_setups.get_model_results_data(config, strategy, version)
 #
 #             # Capitalise config and strategy names
 #             config_name, config_num = config.split('_')
@@ -111,7 +111,7 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
 #                 'config': cap_config,
 #                 'strategy': cap_strategy,
 #                 'model': f'{cap_config} - {cap_strategy} Charging',
-#                 'investment_cost': float(results.metrics['investment_cost'])
+#                 'investment_cost': float(results_processing.metrics['investment_cost'])
 #             })
 #
 #     df_results = pd.DataFrame(all_results)
