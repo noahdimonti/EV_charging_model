@@ -11,13 +11,13 @@ def main():
         'config_3',
     ]
     charging_strategies = [
-        'uncoordinated',
-        # 'opportunistic',
-        # 'flexible',
+        # 'uncoordinated',
+        'opportunistic',
+        'flexible',
     ]
 
-    version = 'min_econ'
-    save_df = False
+    version = 'min_tech'
+    save_df = True
 
     print(
         "-----------------------------------------------------------",

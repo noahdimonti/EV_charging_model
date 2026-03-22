@@ -21,7 +21,7 @@ def main():
         'config_3_flexible': [5, 360, True, 32],
     }
 
-    version = 'min_econ'
+    version = 'balanced'
     obj_weights = obj_weights_dict[version]
 
     configurations = [
@@ -30,9 +30,8 @@ def main():
         'config_3',
     ]
     charging_strategies = [
-        'uncoordinated',
-        # 'opportunistic',
-        # 'flexible',
+        'opportunistic',
+        'flexible',
     ]
 
     run_multiple_models(
