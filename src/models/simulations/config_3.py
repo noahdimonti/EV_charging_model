@@ -5,8 +5,7 @@ from collections import deque, defaultdict
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
 from src.models.simulations.config_2 import ChargingPointSlot
-from src.data_processing.electric_vehicle import ElectricVehicle
-from pprint import pprint
+from data.data_processing.electric_vehicle import ElectricVehicle
 
 
 class UncoordinatedModelConfig3:

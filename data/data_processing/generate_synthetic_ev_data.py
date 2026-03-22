@@ -2,11 +2,9 @@ import numpy as np
 import pickle
 import os
 
-from joblib.testing import param
 from scipy.stats import truncnorm
 
-from src.config.params import max_initial_soc
-from src.data_processing.electric_vehicle import ElectricVehicle
+from data.data_processing.electric_vehicle import ElectricVehicle
 from src.config import params
 import vista_data_cleaning as vdc
 import generate_ev_dep_arr_data as gda
