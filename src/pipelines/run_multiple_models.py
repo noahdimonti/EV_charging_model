@@ -1,22 +1,10 @@
 import pandas as pd
-from .run_models.multiple_models_pipeline import run_multiple_models
-from .utils.argparser import get_parser
-from .utils.obj_weights_map import obj_weights_dict
+from src.pipelines.run_models.multiple_models_pipeline import run_multiple_models
+from src.pipelines.utils.obj_weights_map import obj_weights_dict
 
 
 def main():
     pd.options.display.max_columns = None
-
-    configurations = [
-        'config_1',
-        'config_2',
-        'config_3',
-    ]
-    charging_strategies = [
-        'uncoordinated',
-        'opportunistic',
-        'flexible',
-    ]
 
     # Mapping for mip_gap, time_limit, and verbose for each model
     solver_settings = {  # { model_name: [mip_gap (%), time_limit (minute), verbose] }
@@ -30,21 +18,30 @@ def main():
 
         'config_3_uncoordinated': [None, None, False, 4],
         'config_3_opportunistic': [5, 360, True, 32],
-        'config_3_flexible': [4, 360, True, 32],
+        'config_3_flexible': [5, 360, True, 32],
     }
 
-    # Execute model, analyse, and plot
-    for obj, weights in obj_weights_dict.items():
-        version = obj
-        obj_weights = weights
+    version = 'min_econ'
+    obj_weights = obj_weights_dict[version]
 
-        run_multiple_models(
-            configurations=configurations,
-            charging_strategies=charging_strategies,
-            version=version,
-            obj_weights=obj_weights,
-            solver_settings=solver_settings,
-        )
+    configurations = [
+        'config_1',
+        'config_2',
+        'config_3',
+    ]
+    charging_strategies = [
+        'uncoordinated',
+        'opportunistic',
+        'flexible',
+    ]
+
+    run_multiple_models(
+        configurations=configurations,
+        charging_strategies=charging_strategies,
+        version=version,
+        obj_weights=obj_weights,
+        solver_settings=solver_settings,
+    )
 
 
 

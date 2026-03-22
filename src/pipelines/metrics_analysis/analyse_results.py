@@ -1,6 +1,9 @@
 import pandas as pd
 import pickle
 import os
+
+from IPython.core.completerlib import module_list
+
 from src.config import params
 from src.models.results.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
 from pprint import pprint
@@ -65,7 +68,9 @@ def analyse_one_model(model_results: ModelResults):
     # Format and collect metrics
     formatted_metrics = evaluation_metrics.format_metrics()
 
-    df_metrics = pd.DataFrame(formatted_metrics)
+    # Convert metrics into a dataframe
+    model_name = f'{model_results.config.value}_{model_results.charging_strategy.value}'
+    df_metrics = pd.DataFrame.from_dict(formatted_metrics, orient='index', columns=[model_name])
 
     print(df_metrics)
 

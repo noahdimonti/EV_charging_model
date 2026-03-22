@@ -1,5 +1,8 @@
 import argparse
 
+from pygments.lexer import default
+
+
 def get_parser():
     parser = argparse.ArgumentParser()
 

@@ -1,6 +1,5 @@
 import os
 import pickle
-from src.pipelines.metrics_analysis.analyse_results import analyse_multiple_models
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
