@@ -1,7 +1,7 @@
 import pyomo.environ as pyo
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
-from src.models.model_utils.configs import (
+from src.models.utils.configs import (
     CPConfig,
     ChargingStrategy
 )

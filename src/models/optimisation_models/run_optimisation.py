@@ -1,10 +1,10 @@
 import pyomo.environ as pyo
 from src.config import params
 from src.models.optimisation_models.build_model import BuildModel
-from src.models.model_utils.log_model_info import log_with_runtime, print_runtime
+from src.models.utils.log_model_info import log_with_runtime, print_runtime
 from src.models.optimisation_models.optimisation_model import solve_model, log_solver_results
-from src.models.model_utils.mapping import validate_config_strategy, config_map, strategy_map
-from src.models.results_processing.model_results import ModelResults
+from src.models.utils.mapping import validate_config_strategy, config_map, strategy_map
+from src.models.results.model_results import ModelResults
 
 
 def run_optimisation_model(
@@ -60,7 +60,7 @@ def run_optimisation_model(
 
         print_runtime(finished_label, solving_time)
 
-        # Save results_processing
+        # Save results
         results = ModelResults(
             model=solved_model,
             config=config_map[config],
@@ -72,7 +72,7 @@ def run_optimisation_model(
         results.solver_status = solver_status
         results.termination_condition = termination_condition
 
-        # Save results_processing to pickle
+        # Save results to pickle
         if save_model:
             results.save_model_to_pickle(version=version)
 

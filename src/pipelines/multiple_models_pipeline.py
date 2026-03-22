@@ -38,10 +38,10 @@ def run_multiple_models(configurations: list,
                 thread_count=thread_count
             )
 
-            # Store optimisation model results_processing
+            # Store optimisation model results
             opt_results_per_config[strategy] = opt_result
 
-        # Run simulation model after getting optimisation model results_processing
+        # Run simulation model after getting optimisation model results
         if 'uncoordinated' in charging_strategies:
             # Check if opportunistic model result exists
             root_path = params.model_results_folder_path

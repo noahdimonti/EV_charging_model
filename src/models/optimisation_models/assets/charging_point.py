@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
-from src.models.model_utils.configs import CPConfig
+from src.models.utils.configs import CPConfig
 
 
 class ChargingPoint:

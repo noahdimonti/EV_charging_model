@@ -69,7 +69,7 @@ def get_wait_time_list(config, strategy, version):
                     delta = future_t - t_arr
                     wait_time = round((delta.total_seconds() / 3600), 2)  # in hours
                     # print(f'EV {i}, arrival time: {t_arr}, current time: {future_t}, wait time: {wait_time}, '
-                    #       f'soc t arr: {soc_t_arr}, soc current time: {(results_processing.variables['soc_ev'][i, future_t] / ev_params.soc_max_dict[i]) * 100}')
+                    #       f'soc t arr: {soc_t_arr}, soc current time: {(results.variables['soc_ev'][i, future_t] / ev_params.soc_max_dict[i]) * 100}')
                     break  # stop at the first charging event
 
             results_list.append({

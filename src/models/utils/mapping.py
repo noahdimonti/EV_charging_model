@@ -1,4 +1,4 @@
-from src.models.model_utils.configs import CPConfig, ChargingStrategy
+from src.models.utils.configs import CPConfig, ChargingStrategy
 
 config_map = {
     'config_1': CPConfig.CONFIG_1,

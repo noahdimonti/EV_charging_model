@@ -5,7 +5,7 @@ import os
 import pickle
 from src.config import params
 from src.visualisation import plot_configs
-from src.models.results_processing.model_results import ModelResults, EvaluationMetrics
+from src.models.results.model_results import ModelResults, EvaluationMetrics
 
 fig_size = (12, 8)
 

@@ -7,7 +7,7 @@ from collections import defaultdict
 from pprint import pprint
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
-from src.models.model_utils.configs import CPConfig, ChargingStrategy
+from src.models.utils.configs import CPConfig, ChargingStrategy
 
 
 class ModelResults:
@@ -26,7 +26,7 @@ class ModelResults:
         self.solver_status = None
         self.termination_condition = None
 
-        # Extract results_processing from solved model
+        # Extract results from solved model
         # Initialise dictionaries
         self.variables = {}
         self.sets = {}
@@ -322,7 +322,7 @@ def compile_multiple_models_metrics(
         models_metrics: dict,
         filename: str,
         save_df: bool = True) -> pd.DataFrame:
-    # Create a list of DataFrames, one for each results_processing
+    # Create a list of DataFrames, one for each results
     dfs = [pd.DataFrame(data.values(), index=data.keys(), columns=[model_name])
            for model_name, data in models_metrics.items()]
 

@@ -1,8 +1,8 @@
 from src.config import params
-from src.models.results_processing.model_results import ModelResults
+from src.models.results.model_results import ModelResults
 from src.models.simulation_models.simulation_model import simulate_and_process
-from src.models.model_utils.log_model_info import log_with_runtime, print_runtime
-from src.models.model_utils.mapping import validate_config_strategy, config_map, strategy_map
+from src.models.utils.log_model_info import log_with_runtime, print_runtime
+from src.models.utils.mapping import validate_config_strategy, config_map, strategy_map
 
 
 def run_simulation_model(
@@ -27,7 +27,7 @@ def run_simulation_model(
 
         print_runtime(finished_label, simulation_time)
 
-        # Save results_processing
+        # Save results
         results = ModelResults(
             simulation_results,
             config_map[config],
