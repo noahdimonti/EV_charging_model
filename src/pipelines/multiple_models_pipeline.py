@@ -2,7 +2,7 @@ import os
 import pickle
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
-from src.models.simulations.run_simulation import run_simulation_model
+from src.models.simulation_models.run_simulation import run_simulation_model
 
 
 def run_multiple_models(configurations: list,

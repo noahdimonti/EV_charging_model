@@ -21,7 +21,7 @@ def main():
         'config_3_flexible': [5, 360, True, 32],
     }
 
-    version = 'balanced'
+    version = 'econ_tech'
     obj_weights = obj_weights_dict[version]
 
     configurations = [

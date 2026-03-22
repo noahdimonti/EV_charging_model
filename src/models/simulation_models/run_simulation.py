@@ -1,6 +1,6 @@
 from src.config import params
 from src.models.results_processing.model_results import ModelResults
-from src.models.simulations.simulation_model import simulate_and_process
+from src.models.simulation_models.simulation_model import simulate_and_process
 from src.models.model_utils.log_model_info import log_with_runtime, print_runtime
 from src.models.model_utils.mapping import validate_config_strategy, config_map, strategy_map
 

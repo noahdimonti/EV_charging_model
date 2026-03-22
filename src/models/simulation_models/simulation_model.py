@@ -2,7 +2,7 @@ import pandas as pd
 from copy import deepcopy
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
-from src.models.simulations import config_1, config_2, config_3
+from src.models.simulation_models import config_1, config_2, config_3
 from src.data_processing.electric_vehicle import ElectricVehicle
 
 
