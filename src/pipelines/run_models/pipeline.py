@@ -1,20 +1,20 @@
 import os
 import pickle
-from src.pipelines.experiments_pipeline.analyse_results import analyse_results
+from src.pipelines.metrics_analysis.analyse_results import analyse_results
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulations.run_simulation import run_simulation_model
 
 
-def run_model_pipeline(configurations: list,
-                       charging_strategies: list,
-                       version: str,
-                       obj_weights: dict[str, int|float],
-                       run_model: bool,
-                       analyse: bool,
-                       plot: bool,
-                       solver_settings: dict,
-                       thread_count: int):
+def multiple_models_pipeline(configurations: list,
+                             charging_strategies: list,
+                             version: str,
+                             obj_weights: dict[str, int|float],
+                             run_model: bool,
+                             analyse: bool,
+                             plot: bool,
+                             solver_settings: dict,
+                             thread_count: int):
 
     if run_model:
         for config in configurations:
@@ -72,20 +72,3 @@ def run_model_pipeline(configurations: list,
                     config_attribute=config_attr
                 )
                 opt_results_per_config['uncoordinated'] = simulation_result
-
-    if analyse:
-        raw_metrics, formatted_metrics = analyse_results(
-            configurations,
-            charging_strategies,
-            version
-        )
-        print(f'\nFormatted Metrics\n{formatted_metrics}')
-
-    if plot:
-        pass
-        # plotting_pipeline.plot_all(
-        #     configurations,
-        #     charging_strategies,
-        #     version,
-        #     save_img=True
-        # )

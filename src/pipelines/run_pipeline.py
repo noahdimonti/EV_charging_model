@@ -1,8 +1,6 @@
 import pandas as pd
-from src.pipelines.experiments_pipeline.pipeline import run_model_pipeline
+from src.pipelines.run_models.pipeline import multiple_models_pipeline
 from src.pipelines.utils.argparser import get_parser
-from src.config.ev_params import EVParams as ev_params
-from src.config.params import min_initial_soc, max_initial_soc, ev_capacity_range_low, ev_capacity_range_high, avg_travel_distance
 
 
 def main(argv=None):
@@ -72,7 +70,7 @@ def main(argv=None):
         analyse = True
         plot = False
 
-        run_model_pipeline(
+        multiple_models_pipeline(
             configurations=configurations,
             charging_strategies=charging_strategies,
             version=version,
