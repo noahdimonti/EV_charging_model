@@ -14,7 +14,7 @@ def solve_model(model, version, solver_name='gurobi', verbose=False, time_limit=
         solver.options['MIPGap'] = mip_gap / 100
 
     # Log path
-    file_name = f'solver_log_{model.name}_{version}.log'
+    file_name = f'solver_log_{model.name}.log'
     file_path = os.path.join(params.model_results_folder_path, 'solver_logs', file_name)
 
     # Set thread count

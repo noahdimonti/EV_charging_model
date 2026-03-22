@@ -222,7 +222,7 @@ P_grid_max = 500  # (kW)
 # --------------------------
 # Household Load Settings
 # --------------------------
-folder_path = f'data/inputs/interim/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
+folder_path = f'data/inputs/household_load/load_profile_{num_of_days}_days_{num_of_households}_households.csv'
 household_load_path = os.path.join(project_root, folder_path)
 household_load = pd.read_csv(filepath_or_buffer=household_load_path, parse_dates=True, index_col=0)
 

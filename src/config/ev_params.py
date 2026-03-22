@@ -10,7 +10,7 @@ class EVParams:
     avg_travel_dist = params.avg_travel_distance
     min_init_soc = params.min_initial_soc
     max_init_soc = params.max_initial_soc
-    folder_path = (f'data/inputs/processed/EV_instances_100_avgdist{avg_travel_dist}km'
+    folder_path = (f'data/inputs/ev_data/EV_instances_100_avgdist{avg_travel_dist}km'
                    f'_min{min_init_soc}_max{max_init_soc}_cap{params.ev_capacity_range_low}-{params.ev_capacity_range_high}')
 
     filename = os.path.join(params.project_root, folder_path)
