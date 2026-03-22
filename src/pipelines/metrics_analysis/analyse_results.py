@@ -12,56 +12,36 @@ def load_model(
         version: str) -> ModelResults:
     filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
     filepath = os.path.join(params.model_results_folder_path, filename)
+
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
 
-def analyse_results(configurations: list,
-                    charging_strategies: list,
-                    version: str,
-                    save_df: bool = True,
-                    model_results: ModelResults = None) -> (pd.DataFrame, pd.DataFrame):
+def analyse_multiple_models(configurations: list,
+                            charging_strategies: list,
+                            version: str,
+                            save_df: bool = True) -> (pd.DataFrame, pd.DataFrame):
     formatted_models_metrics = {}
     raw_val_metrics = {}
 
-    # Analyse if model_results object is not passed in
-    if model_results is None:
-        for config in configurations:
-            for strategy in charging_strategies:
-                try:
-                    folder_path = f'data/outputs/models/{config}_{strategy}_{params.num_of_evs}EVs_7days_{version}.pkl'
-                    filename = os.path.join(params.project_root, folder_path)
+    # Analyse multiple models from pkl files
+    for config in configurations:
+        for strategy in charging_strategies:
+            try:
+                results = load_model(config, strategy, version)
 
-                    with open(filename, 'rb') as f:
-                        results = pickle.load(f)
+                # Get evaluation metrics from results
+                evaluation_metrics = EvaluationMetrics(results)
 
-                    # Get evaluation metrics from results
-                    evaluation_metrics = EvaluationMetrics(results)
+                # Format and collect metrics
+                formatted_metrics = evaluation_metrics.format_metrics()
 
-                    # Format and collect metrics
-                    formatted_metrics = evaluation_metrics.format_metrics()
+                raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
+                formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
 
-                    raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
-                    formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
-
-                except FileNotFoundError:
-                    print(f'{config} {strategy} data is not available.')
-                    continue
-
-    # If model_results object is provided
-    else:
-        # Get config and strategy
-        config = model_results.config.value
-        strategy = model_results.charging_strategy.value
-
-        # Get evaluation metrics from results
-        evaluation_metrics = EvaluationMetrics(model_results)
-
-        # Format and collect metrics
-        formatted_metrics = evaluation_metrics.format_metrics()
-
-        raw_val_metrics[f'{config}_{strategy}'] = evaluation_metrics.metrics
-        formatted_models_metrics[f'{config}_{strategy}'] = formatted_metrics
+            except FileNotFoundError:
+                print(f'{config} {strategy} data is not available.')
+                continue
 
     # Compile formatted models metrics
     formatted_filename = (f'{params.formatted_metrics_filename_format}_'
@@ -76,3 +56,16 @@ def analyse_results(configurations: list,
                                                           save_df=save_df)
 
     return raw_metrics_results, formatted_results
+
+
+def analyse_one_model(model_results: ModelResults):
+    # Get evaluation metrics from results
+    evaluation_metrics = EvaluationMetrics(model_results)
+
+    # Format and collect metrics
+    formatted_metrics = evaluation_metrics.format_metrics()
+
+    df_metrics = pd.DataFrame(formatted_metrics)
+
+    print(df_metrics)
+

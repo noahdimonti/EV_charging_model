@@ -7,7 +7,7 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    results = run_optimisation_model(
+    run_optimisation_model(
         config=args.config,
         charging_strategy=args.charging_strategy,
         version=args.version,
@@ -17,17 +17,6 @@ def main(argv=None):
         thread_count=args.thread_count
     )
 
-    print(f'\nSolution values:')
-    pprint(results.objective_components)
 
 if __name__ == '__main__':
-    main(
-            # [
-            #     '-c', 'config_3',
-            #     '-s', 'flexible',
-            #     '-m', '5',
-            #     '-t', '720',
-            #     '-n', '16',
-            #     '-v', 'norm_w_sum'
-            # ]
-    )
+    main()

@@ -1,8 +1,8 @@
 import pandas as pd
-from src.pipelines.metrics_analysis.analyse_results import analyse_results
+from .analyse_results import analyse_multiple_models
 
 
-def analyse_multiple_models():
+def main():
     pd.options.display.max_columns = None
 
     configurations = [
@@ -27,7 +27,7 @@ def analyse_multiple_models():
         "-----------------------------------------------------------"
     )
 
-    raw_metrics, formatted_metrics = analyse_results(
+    raw_metrics, formatted_metrics = analyse_multiple_models(
         configurations,
         charging_strategies,
         version

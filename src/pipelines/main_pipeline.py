@@ -1,5 +1,5 @@
 import pandas as pd
-from src.pipelines.run_models.pipeline import multiple_models_pipeline
+from src.pipelines.run_models.multiple_models_pipeline import run_multiple_models
 from src.pipelines.utils.argparser import get_parser
 
 
@@ -70,7 +70,7 @@ def main(argv=None):
         analyse = True
         plot = False
 
-        multiple_models_pipeline(
+        run_multiple_models(
             configurations=configurations,
             charging_strategies=charging_strategies,
             version=version,
