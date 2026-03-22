@@ -11,6 +11,7 @@ def main(argv=None):
         config=args.config,
         charging_strategy=args.charging_strategy,
         version=args.version,
+        obj_weights=None,
         verbose=True,
         mip_gap=args.mip_gap,
         time_limit=args.time_limit,

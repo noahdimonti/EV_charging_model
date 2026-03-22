@@ -10,9 +10,7 @@ def run_multiple_models(configurations: list,
                         charging_strategies: list,
                         version: str,
                         obj_weights: dict[str, int|float],
-                        solver_settings: dict,
-                        thread_count: int):
-
+                        solver_settings: dict):
     for config in configurations:
         opt_results_per_config = {}
 
@@ -23,9 +21,11 @@ def run_multiple_models(configurations: list,
                 continue
 
             # Set mip_gap, time_limit, and verbose
-            mip_gap = solver_settings[f'{config}_{strategy}'][0]
-            time_limit = solver_settings[f'{config}_{strategy}'][1]
-            verbose = solver_settings[f'{config}_{strategy}'][2]
+            model_name = f'{config}_{strategy}'
+            mip_gap = solver_settings[model_name][0]
+            time_limit = solver_settings[model_name][1]
+            verbose = solver_settings[model_name][2]
+            thread_count = solver_settings[model_name][3]
 
             # Run optimisation model
             opt_result = run_optimisation_model(
