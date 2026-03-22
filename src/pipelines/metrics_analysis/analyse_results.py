@@ -3,6 +3,7 @@ import pickle
 import os
 
 from IPython.core.completerlib import module_list
+from pyomo.contrib.pynumero.examples.callback.reactor_design import model
 
 from src.config import params
 from src.models.results.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
@@ -71,6 +72,15 @@ def analyse_one_model(model_results: ModelResults):
     # Convert metrics into a dataframe
     model_name = f'{model_results.config.value}_{model_results.charging_strategy.value}'
     df_metrics = pd.DataFrame.from_dict(formatted_metrics, orient='index', columns=[model_name])
+
+    return df_metrics
+
+
+def analyse_one_model_from_file(config, strategy, version):
+    # Load model
+    model_results = load_model(config, strategy, version)
+
+    df_metrics = analyse_one_model(model_results)
 
     print(df_metrics)
 

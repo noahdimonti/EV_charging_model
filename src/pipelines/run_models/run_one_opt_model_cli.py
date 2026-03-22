@@ -20,7 +20,8 @@ def main(argv=None):
         thread_count=args.thread_count
     )
 
-    analyse_one_model(results)
+    df_metrics = analyse_one_model(results)
+    print(df_metrics)
 
 
 if __name__ == '__main__':

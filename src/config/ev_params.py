@@ -11,7 +11,7 @@ class EVParams:
     min_init_soc = params.min_initial_soc
     max_init_soc = params.max_initial_soc
     folder_path = (f'data/inputs/ev_data/EV_instances_100_avgdist{avg_travel_dist}km'
-                   f'_min{min_init_soc}_max{max_init_soc}_cap{params.ev_capacity_range_low}-{params.ev_capacity_range_high}')
+                   f'_min{min_init_soc}_max{max_init_soc}_cap{params.ev_capacity_range_low}_{params.ev_capacity_range_high}')
 
     filename = os.path.join(params.project_root, folder_path)
     with open(filename, 'rb') as f:

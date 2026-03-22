@@ -16,7 +16,7 @@ def main():
         'flexible',
     ]
 
-    version = 'norm_w_sum'
+    version = 'min_econ'
 
     print(
         "-----------------------------------------------------------",
@@ -32,6 +32,7 @@ def main():
         charging_strategies,
         version
     )
+
     print(f'\nFormatted Metrics\n{formatted_metrics}')
 
 
