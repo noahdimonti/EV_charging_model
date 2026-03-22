@@ -1,5 +1,5 @@
 import pandas as pd
-from .analyse_results import analyse_multiple_models
+from src.pipelines.metrics_analysis.analyse_results import analyse_multiple_models
 
 
 def main():
@@ -12,25 +12,27 @@ def main():
     ]
     charging_strategies = [
         'uncoordinated',
-        'opportunistic',
-        'flexible',
+        # 'opportunistic',
+        # 'flexible',
     ]
 
     version = 'min_econ'
+    save_df = False
 
     print(
         "-----------------------------------------------------------",
-        f"Running Metrics Analysis of Models:",
-        f"Version: {version}",
-        f"Configurations: {configurations}",
-        f"Charging strategies: {charging_strategies}"
-        "-----------------------------------------------------------"
+        f"\nRunning Metrics Analysis of Models:",
+        f"\nVersion: {version}",
+        f"\nConfigurations: {configurations}",
+        f"\nCharging strategies: {charging_strategies}"
+        "\n-----------------------------------------------------------"
     )
 
     raw_metrics, formatted_metrics = analyse_multiple_models(
         configurations,
         charging_strategies,
-        version
+        version,
+        save_df
     )
 
     print(f'\nFormatted Metrics\n{formatted_metrics}')

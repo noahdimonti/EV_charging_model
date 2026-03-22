@@ -31,8 +31,8 @@ def main():
     ]
     charging_strategies = [
         'uncoordinated',
-        'opportunistic',
-        'flexible',
+        # 'opportunistic',
+        # 'flexible',
     ]
 
     run_multiple_models(
