@@ -1,10 +1,10 @@
-from src.visualisation.datasets.technical import (
+from src.visualisation.datasets.technical_dataset import (
     build_dso_metrics_df,
     build_objective_dso_metrics_df,
     build_p_ev_df,
     save_dso_metrics_df
 )
-from src.visualisation.plots.technical import (
+from src.visualisation.plots.technical_plot import (
     plot_num_ev_charging,
 )
 

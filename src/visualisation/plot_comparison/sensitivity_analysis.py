@@ -138,13 +138,7 @@ def plot_sensitivity(df: pd.DataFrame, metrics: list[str], y_labels: list[str], 
         )
 
         axes[i].set_xlabel('')
-        axes[i].set_ylabel(
-            ''
-            # y_labels[metric],
-            # fontsize=12,
-            # fontweight='bold',
-            # labelpad=12
-        )
+        axes[i].set_ylabel('')
         axes[i].set_title(
             y_labels[metric],
             fontsize=15,

@@ -1,4 +1,4 @@
-from src.visualisation.datasets.economic import build_num_cp_df
+from src.visualisation.datasets.economic_dataset import build_num_cp_df
 
 
 def main():

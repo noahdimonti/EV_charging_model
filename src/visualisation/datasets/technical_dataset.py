@@ -1,13 +1,15 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-from src.config import params, ev_params
+import numpy as np
+import pandas as pd
+
+from src.config import params
 from src.models.results.model_results import EvaluationMetrics
-from src.visualisation import io, style, style_helpers
-from src.visualisation.labels import format_config_label, format_strategy_label, format_version_label
-from pprint import pprint
+from src.visualisation import io
+from src.visualisation.labels import (
+    format_config_label,
+    format_strategy_label,
+    format_version_label,
+)
 
 
 
@@ -94,5 +96,31 @@ def build_p_ev_df(
                             'time': time,
                             'charging_power': charging_power,
                         })
+
+    return pd.DataFrame(rows)
+
+
+def build_technical_summary_df(
+        configurations: list[str],
+        charging_strategies: list[str],
+        version: str,
+) -> pd.DataFrame:
+    rows = []
+
+    for config in configurations:
+        for strategy in charging_strategies:
+            model_results = io.load_model_results(config, strategy, version)
+            evaluation_metrics = EvaluationMetrics(model_results)
+
+            rows.append({
+                'config': format_config_label(config),
+                'strategy': format_strategy_label(strategy),
+                'num_cp': evaluation_metrics.metrics['num_cp'],
+                'p_cp_rated': evaluation_metrics.metrics['p_cp_rated'],
+                'p_peak_increase': evaluation_metrics.metrics['p_peak_increase'],
+                'papr': evaluation_metrics.metrics['papr'],
+                'avg_soc_t_dep_percent': evaluation_metrics.metrics['avg_soc_t_dep_percent'],
+                'lowest_soc': evaluation_metrics.metrics['lowest_soc'],
+            })
 
     return pd.DataFrame(rows)

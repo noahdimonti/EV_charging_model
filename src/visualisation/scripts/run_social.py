@@ -1,9 +1,9 @@
-from src.visualisation.datasets.social import (
+from src.visualisation.datasets.social_dataset import (
     build_soc_df,
     build_wait_time_df,
     build_num_charging_days_df,
 )
-from src.visualisation.plots.social import (
+from src.visualisation.plots.social_plot import (
     plot_soc_boxplot,
     plot_wait_time_boxplot,
     plot_num_charging_days,
