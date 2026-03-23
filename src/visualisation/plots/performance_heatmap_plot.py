@@ -59,10 +59,18 @@ def plot_performance_heatmap(
         cmap: str = 'YlGnBu',
         save_img: bool = False,
 ) -> None:
-    norm_df = normalise_heatmap_df(df, higher_is_better)
+    df_for_plot = df.copy()
+
+    if 'Peak-to-average' in df_for_plot.columns:
+        df_for_plot['Peak-to-average'] = df_for_plot['Peak-to-average'].round(1)
+
+    norm_df = normalise_heatmap_df(df_for_plot, higher_is_better)
     annot_df = build_heatmap_annotation_df(df, units, formatters)
 
-    plt.figure(figsize=(max(8, len(df.columns) * 1.5), max(4, len(df.index) * 0.7)))
+    # plt.figure(figsize=(max(8, len(df.columns) * 1.5), max(4, len(df.index) * 0.7)))
+    fig, ax = plt.subplots(
+        figsize=(max(8, len(df.columns) * 1.5), max(4, len(df.index) * 0.7))
+    )
 
     ax = sns.heatmap(
         norm_df,
@@ -82,7 +90,8 @@ def plot_performance_heatmap(
     ax.set_xticklabels(ax.get_xticklabels(), rotation=15, ha='right')
 
     plt.title(title, fontsize=13, fontweight='bold', pad=15)
-    plt.tight_layout()
+    # plt.tight_layout()
+    fig.subplots_adjust(left=0.25, right=0.92, top=0.90, bottom=0.18)
 
     if save_img and filename:
         io.save_figure(filename)

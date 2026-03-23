@@ -1,3 +1,5 @@
+import pandas as pd
+
 from src.config import params
 from src.visualisation.datasets.performance_heatmap_dataset import (
     HEATMAP_HIGHER_IS_BETTER,
@@ -10,6 +12,7 @@ from src.visualisation.plots.performance_heatmap_plot import plot_performance_he
 
 
 def main() -> None:
+    pd.set_option('display.max_columns', None)
     configurations = ['config_1', 'config_2', 'config_3']
     charging_strategies = ['opportunistic', 'flexible']
     versions = [
