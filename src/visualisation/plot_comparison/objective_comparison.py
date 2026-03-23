@@ -4,20 +4,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from src.config import params
-from src.visualisation import plot_setups
+from src.visualisation import io
 from src.visualisation.plot_comparison import social_comparison
 from src.visualisation.plot_comparison.social_comparison import get_wait_time_list
 from pprint import pprint
 
 # Rename version
 cap_version_names_dict = {
-    'norm_w_sum': 'Socio-techno-economic',
+    'balanced': 'Socio-techno-economic',
     'min_econ': 'Economic',
     'min_tech': 'Technical',
     'min_soc': 'Social',
-    'econ_tech_pair': 'Techno-economic',
-    'tech_soc_pair': 'Socio-technical',
-    'econ_soc_pair': 'Socio-economic'
+    'econ_tech': 'Techno-economic',
+    'tech_soc': 'Socio-technical',
+    'econ_soc': 'Socio-economic'
 }
 
 cap_conf_names_dict = {
@@ -84,7 +84,7 @@ def soc_distrib_obj_comparison(configurations: list[str], charging_strategies: l
     plt.ylim(0, 100)
 
     if save_img:
-        plot_setups.save_plot(f'objective_comparison_soc_{params.num_of_evs}EVs.png')
+        plot_setups.save_figure(f'objective_comparison_soc_{params.num_of_evs}EVs.png')
     # plt.show()
 
 
@@ -175,7 +175,7 @@ def wait_time_distrib_stats(configurations: list[str], charging_strategies: list
             for config in configurations:
                 for strategy in charging_strategies:
                     print(f'Fetching data for {version} version, {config}, {strategy} ...')
-                    results = get_wait_time_list(config, strategy, version, all_results)
+                    results = get_wait_time_list(config, strategy, version)
                     all_results.extend(results)
 
         print(f'Creating a dataframe ...')
@@ -213,7 +213,7 @@ def wait_time_distrib_stats(configurations: list[str], charging_strategies: list
     )
 
     if save_img:
-        plot_setups.save_plot(f'objective_comparison_wait_time_boxplot_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_figure(f'objective_comparison_wait_time_boxplot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -305,32 +305,32 @@ if __name__ == '__main__':
         ]
 
     strategies = [
-        'uncoordinated',
-        # 'opportunistic',
-        # 'flexible'
+        # 'uncoordinated',
+        'opportunistic',
+        'flexible'
         ]
 
     versions = [
-            # 'min_econ',
-            # 'min_tech',
-            # 'min_soc',
-            # 'econ_tech_pair',
-            # 'tech_soc_pair',
-            # 'econ_soc_pair',
-            'norm_w_sum'
+            'min_econ',
+            'min_tech',
+            'min_soc',
+            'econ_tech',
+            'tech_soc',
+            'econ_soc',
+            'balanced'
         ]
 
-    strategy_version = 'norm_w_sum'
+    strategy_version = 'balanced'
 
-    # dso_stats_df(configs, strategies, versions)
+    dso_stats_df(configs, strategies, versions)
 
-    # soc_stats_df(configs, strategies, versions)
+    soc_stats_df(configs, strategies, versions)
 
-    # econ_stats_df(configs, strategies, versions)
+    econ_stats_df(configs, strategies, versions)
 
-    # soc_distrib_obj_comparison(configs, strategies, versions, True)
+    soc_distrib_obj_comparison(configs, strategies, versions, True)
 
-    # wait_time_distrib_stats(configs, strategies, versions)
+    wait_time_distrib_stats(configs, strategies, versions)
 
     gini_objective_comparison(configs, strategies, versions)
 

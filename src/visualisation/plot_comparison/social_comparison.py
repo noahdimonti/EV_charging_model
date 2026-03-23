@@ -8,8 +8,8 @@ import os
 import math
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
-from src.visualisation import plot_setups
-from src.visualisation import plot_configs
+from src.visualisation import io
+from src.visualisation import style
 from pprint import pprint
 
 
@@ -116,7 +116,7 @@ def soc_boxplot(configurations: list[str], charging_strategies: list[str], versi
     plt.ylim(0, 100)
 
     if save_img:
-        plot_setups.save_plot(f'soc_boxplot_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_figure(f'soc_boxplot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -169,7 +169,7 @@ def num_charging_days_plot(configurations: list[str], charging_strategies: list[
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'num_charging_day_plot_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_figure(f'num_charging_day_plot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -217,7 +217,7 @@ def num_charging_days_distrib(configurations: list[str], charging_strategies: li
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'num_charging_day_distribution_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_figure(f'num_charging_day_distribution_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -289,7 +289,7 @@ def wait_time_histogram(configurations: list[str],
     plt.tight_layout()
 
     if save_img:
-        plot_setups.save_plot(f'wait_time_hist_{params.num_of_evs}EVs_{version}.png')
+        plot_setups.save_figure(f'wait_time_hist_{params.num_of_evs}EVs_{version}.png')
     # plt.show()
 
 
@@ -340,7 +340,7 @@ def wait_time_boxplot(configurations: list[str], charging_strategies: list[str],
     ax.tick_params(axis='x', labelsize=20)
 
     if save_img:
-        plot_setups.save_plot(f'wait_time_boxplot_{params.num_of_evs}EVs_{version}')
+        plot_setups.save_figure(f'wait_time_boxplot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
@@ -353,73 +353,4 @@ if __name__ == '__main__':
         True
     )
 
-
-
-
-# def soc_distribution(configurations: list[str], charging_strategies: list[str], version: str, save_img=False):
-#     df_results = get_soc_df(configurations, charging_strategies, version)
-#
-#     # Subplots: one per config
-#     n_configs = len(configurations)
-#     fig, axes = plt.subplots(
-#         n_configs, 1,
-#         figsize=(plot_setups.fig_size[0], plot_setups.fig_size[1] * n_configs),
-#         sharex=True
-#     )
-#
-#     if n_configs == 1:
-#         axes = [axes]  # make iterable
-#
-#     for idx, config in enumerate(df_results['config'].unique()):
-#         ax = axes[idx]
-#         sns.histplot(
-#             x='soc_t_dep',
-#             hue='strategy',
-#             data=df_results[df_results['config'] == config],
-#             multiple='dodge',
-#             bins=20,
-#             shrink=0.8,
-#             palette='Set2',
-#             ax=ax,
-#             legend=(idx == 0)
-#         )
-#
-#         # Configure the legend size and style
-#         # Get the legend that Seaborn made
-#         legend = ax.get_legend()
-#         if legend:
-#             legend.set_title('Charging Strategy')
-#             legend.get_title().set_fontsize(15)
-#             legend.get_title().set_fontweight('bold')
-#
-#             for text in legend.get_texts():
-#                 text.set_fontsize(14)
-#                 text.set_fontweight('bold')
-#
-#             # Adjust spacing
-#             legend._legend_box.align = 'left'  # optional: align entries nicely
-#             legend.handletextpad = 2.5  # space between marker/line and text
-#             legend.labelspacing = 2.5  # vertical space between legend entries
-#
-#         # Tick labels
-#         ax.tick_params(axis='x', labelbottom=True)
-#
-#         plot_setups.setup(
-#             title=f'{config}',
-#             ylabel='Count',
-#             xlabel='SOC Distribution at Departure Time (%)',
-#             legend=False,
-#             ax=ax
-#         )
-#
-#         ax.set_xlim(0, 100)  # SOC % range
-#
-#     plt.tight_layout()
-#
-#     # Set y axis limits
-#     plt.ylim(0, 100)
-#
-#     if save_img:
-#         plot_setups.save_plot(f'soc_distribution_{params.num_of_evs}EVs_{version}')
-#     # plt.show()
 

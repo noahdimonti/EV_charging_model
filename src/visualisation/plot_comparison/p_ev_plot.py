@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 import os
 from pprint import pprint
-from src.visualisation import plot_setups, plot_configs
+from src.visualisation import io, style
 from src.config import params
 from src.config.ev_params import EVParams as ev_params
 
@@ -121,7 +121,7 @@ def num_ev_charging_plot(configurations, charging_strategies, version, save_img=
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'num_evs_charging_{params.num_of_evs}EVs_config{config_num}.png')
+        plot_setups.save_figure(f'num_evs_charging_{params.num_of_evs}EVs_config{config_num}.png')
 
 
 def p_ev_charging_plot(configurations, charging_strategies, version, save_img=False):
@@ -194,7 +194,7 @@ def p_ev_charging_plot(configurations, charging_strategies, version, save_img=Fa
 
     # Save plot
     if save_img:
-        plot_setups.save_plot(f'p_ev_charging_{params.num_of_evs}EVs.png')
+        plot_setups.save_figure(f'p_ev_charging_{params.num_of_evs}EVs.png')
 
 
 if __name__ == '__main__':

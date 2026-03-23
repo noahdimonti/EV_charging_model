@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-from src.visualisation import plot_setups, plot_configs
+from src.visualisation import io, style
 from src.config import params
 
 
@@ -68,7 +68,7 @@ def plot_performance_heatmap(df: pd.DataFrame, title: str, y_label: str, filenam
     plt.title(title, fontsize=13, fontweight='bold', pad=15)
 
     plt.tight_layout()
-    plot_setups.save_plot(filename)
+    plot_setups.save_figure(filename)
 
 
 if __name__ == '__main__':
@@ -85,7 +85,6 @@ if __name__ == '__main__':
         'Average SOC': [58.54, 78.08, 94.99, 73.81, 95.10, 93.04, 92.24],
         'Lowest SOC': [18.86, 24.32, 45.60, 24.01, 45.60, 45.60, 45.60],
         'G coefficient': [0.1976, 0.1343, 0.0418, 0.1394, 0.0415, 0.0536, 0.0583],
-        # 'CV': [0.3444, 0.2423, 0.1022, 0.2456, 0.1016, 0.1154, 0.1202]
     }
     df = pd.DataFrame(data).set_index('Objective')
 
@@ -102,7 +101,6 @@ if __name__ == '__main__':
         'Average SOC': [94.90, 91.21, 93.51, 90.40, 93.53, 89.87],
         'Lowest SOC': [72.87, 45.60, 64.83, 45.60, 65.96, 45.60],
         'G coefficient': [0.0377, 0.0676, 0.0483, 0.0706, 0.0478, 0.0744],
-        # 'CV': [0.0761, 0.1410, 0.0976, 0.1412, 0.0958, 0.1462]
     }
 
     df2 = pd.DataFrame(data2).set_index('Scenario')

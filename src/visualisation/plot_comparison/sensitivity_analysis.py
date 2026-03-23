@@ -3,7 +3,7 @@ import seaborn as sns
 import pandas as pd
 import os
 
-from src.visualisation import plot_setups, plot_configs
+from src.visualisation import io, style
 from src.config import params
 
 
