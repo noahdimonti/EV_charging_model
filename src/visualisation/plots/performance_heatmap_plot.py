@@ -67,7 +67,6 @@ def plot_performance_heatmap(
     norm_df = normalise_heatmap_df(df_for_plot, higher_is_better)
     annot_df = build_heatmap_annotation_df(df, units, formatters)
 
-    # plt.figure(figsize=(max(8, len(df.columns) * 1.5), max(4, len(df.index) * 0.7)))
     fig, ax = plt.subplots(
         figsize=(max(8, len(df.columns) * 1.5), max(4, len(df.index) * 0.7))
     )
@@ -90,7 +89,6 @@ def plot_performance_heatmap(
     ax.set_xticklabels(ax.get_xticklabels(), rotation=15, ha='right')
 
     plt.title(title, fontsize=13, fontweight='bold', pad=15)
-    # plt.tight_layout()
     fig.subplots_adjust(left=0.25, right=0.92, top=0.90, bottom=0.18)
 
     if save_img and filename:

@@ -131,10 +131,8 @@ def build_config_strategy_heatmap_df(
             scenario=lambda x: (
                     x['config']
                     .str.replace('Configuration', 'Config', regex=False)
-                    + ' | ' +
+                    + ' ' +
                     x['strategy']
-                    .str.replace('Opportunistic', 'Opp', regex=False)
-                    .str.replace('Flexible', 'Flex', regex=False)
             )
         )
         .rename(columns={
