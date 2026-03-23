@@ -38,7 +38,7 @@ def save_figure(filename: str):
     plt.savefig(
         file_path,
         dpi=300,
-        transparent=True,
+        # transparent=True,
         bbox_inches='tight',
         pad_inches=0
     )

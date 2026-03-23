@@ -1,5 +1,4 @@
 from src.visualisation.datasets.economic import build_num_cp_df
-from src.visualisation.plots.economic import plot_num_cp
 
 
 def main():
@@ -8,7 +7,7 @@ def main():
     version = 'balanced'
 
     df_num_cp = build_num_cp_df(configurations, charging_strategies, version)
-    plot_num_cp(df_num_cp, version=version, save_img=True)
+    print(df_num_cp)
 
 
 if __name__ == '__main__':

@@ -1,16 +1,19 @@
 
 
 VERSION_LABELS = {
-    'norm_w_sum': 'Socio-techno-economic',
-    'min_economic': 'Economic',
-    'min_technical': 'Technical',
-    'min_econ_tech': 'Techno-economic',
+    'balanced': 'Socio-techno-economic',
+    'min_econ': 'Economic',
+    'min_tech': 'Technical',
+    'min_soc': 'Social',
+    'econ_tech': 'Techno-economic',
+    'econ_soc': 'Socio-economic',
+    'tech_soc': 'Socio-technical',
 }
 
 
 def format_config_label(config: str) -> str:
     _, num = config.split('_')
-    return f'Config {num}'
+    return f'Configuration {num}'
 
 
 def format_strategy_label(strategy: str) -> str:

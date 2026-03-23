@@ -61,12 +61,38 @@ def build_objective_dso_metrics_df(
     return pd.DataFrame(rows)
 
 
-
-def save_dso_metrics_df(df: pd.DataFrame, version: str, filename_suffix: str = 'models_comparison') -> None:
+def save_dso_metrics_df(df: pd.DataFrame, filename: str) -> None:
     folder = os.path.join(params.metrics_folder_path, 'dso_metrics')
     os.makedirs(folder, exist_ok=True)
 
-    filename = f'dso_metrics_{version}_{filename_suffix}.csv'
     filepath = os.path.join(folder, filename)
-
     df.to_csv(filepath, index=False)
+
+
+def build_p_ev_df(
+        configurations: list[str],
+        charging_strategies: list[str],
+        version: str,
+) -> pd.DataFrame:
+    rows = []
+
+    for config in configurations:
+        for strategy in charging_strategies:
+            model_results = io.load_model_results(config, strategy, version)
+
+            for ev_id in model_results.sets['EV_ID']:
+                for time in model_results.sets['TIME']:
+                    charging_power = model_results.variables['p_ev'][ev_id, time]
+
+                    if charging_power > 0:
+                        rows.append({
+                            'config': config,
+                            'config_label': format_config_label(config),
+                            'strategy': strategy,
+                            'strategy_label': format_strategy_label(strategy),
+                            'ev_id': ev_id,
+                            'time': time,
+                            'charging_power': charging_power,
+                        })
+
+    return pd.DataFrame(rows)

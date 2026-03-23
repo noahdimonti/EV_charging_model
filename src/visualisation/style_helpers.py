@@ -66,3 +66,8 @@ def timeseries_setup(ax=None):
     # Ensure minor ticks for clarity (optional)
     ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=[6, 12, 18, 24]))  # Minor ticks for every 6 hours
     ax.tick_params(axis='x', which='major', labelsize=12)  # Rotate day names for better readability
+
+    # Bold tick labels
+    ax.tick_params(axis='both', labelsize=style.tick_fontsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontweight('bold')
