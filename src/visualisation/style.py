@@ -1,6 +1,7 @@
 
 
 fig_size = (12, 8)
+layout_padding = 12
 
 # Colour settings
 household_baseline_load = 'skyblue'

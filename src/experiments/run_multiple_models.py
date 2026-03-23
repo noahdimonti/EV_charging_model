@@ -18,19 +18,23 @@ def main():
 
         'config_3_uncoordinated': [None, None, False, 4],
         'config_3_opportunistic': [5, 360, True, 32],
-        'config_3_flexible': [5, 360, True, 32],
+        'config_3_flexible': [5, 720, True, 32],
     }
 
-    version = 'econ_tech'
+    version = 'balanced'
+
     obj_weights = obj_weights_dict[version]
 
     configurations = [
         'config_1',
-        'config_2',
+        # 'config_2',
         'config_3',
     ]
+
+    # charging_strategies = ['uncoordinated']
+
     charging_strategies = [
-        'opportunistic',
+        # 'opportunistic',
         'flexible',
     ]
 

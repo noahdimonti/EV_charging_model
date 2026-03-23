@@ -71,3 +71,5 @@ def timeseries_setup(ax=None):
     ax.tick_params(axis='both', labelsize=style.tick_fontsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontweight('bold')
+
+

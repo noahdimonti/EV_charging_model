@@ -10,14 +10,17 @@ def main():
         'config_2',
         'config_3',
     ]
-    charging_strategies = [
-        # 'uncoordinated',
-        'opportunistic',
-        'flexible',
-    ]
 
-    version = 'min_soc'
-    save_df = True
+    charging_strategies = ['uncoordinated']
+
+    # charging_strategies = [
+    #     'uncoordinated',
+    #     'opportunistic',
+    #     'flexible',
+    # ]
+
+    version = 'balanced'
+    save_df = False
 
     print(
         "-----------------------------------------------------------",
