@@ -1,5 +1,7 @@
 
 
+fig_size = (12, 8)
+
 # Colour settings
 household_baseline_load = 'skyblue'
 models_colour_dict = {

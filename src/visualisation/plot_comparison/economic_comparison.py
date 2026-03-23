@@ -5,8 +5,7 @@ import matplotlib.ticker as ticker
 import seaborn as sns
 import os
 from src.config import params, ev_params
-from src.visualisation import io
-from src.visualisation import style
+from src.visualisation import io, style, style_helpers
 from pprint import pprint
 
 
@@ -14,7 +13,7 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
     all_results = []
     for config in configurations:
         for strategy in charging_strategies:
-            results = plot_setups.get_model_results_data(config, strategy, version)
+            results = io.load_model_results(config, strategy, version)
 
             # Capitalise config and strategy names
             config_name, config_num = config.split('_')
@@ -38,7 +37,7 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
 
     df_results = pd.DataFrame(all_results)
 
-    plt.figure(figsize=plot_setups.fig_size)
+    plt.figure(figsize=style.fig_size)
 
     ax = sns.barplot(
         x='config',
@@ -48,7 +47,7 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
         palette='Set2'
     )
 
-    plot_setups.setup(
+    style_helpers.setup(
         title='Number of Charging Points',
         ylabel='Number of Charging Points',
         xlabel='Configuration',
@@ -81,13 +80,13 @@ def num_cp_plot(configurations: list[str], charging_strategies: list[str], versi
             f'{label} kW',
             ha='center',
             va='bottom',
-            fontsize=plot_configs.tick_fontsize,
+            fontsize=style.tick_fontsize,
             fontweight='bold'
         )
 
     # Save plot
     if save_img:
-        plot_setups.save_figure(f'num_cp_plot_{params.num_of_evs}EVs_{version}')
+        io.save_figure(f'num_cp_plot_{params.num_of_evs}EVs_{version}')
     # plt.show()
 
 
