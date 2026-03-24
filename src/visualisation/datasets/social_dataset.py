@@ -54,6 +54,8 @@ def _build_wait_time_rows(
     config_label = format_config_label(config)
     strategy_label = format_strategy_label(strategy)
 
+    # print(f'\n--- Model: {config} {strategy} ---')
+
     for ev_id in model_results.sets['EV_ID']:
         for t_arr in ev_params.t_arr_dict[ev_id]:
             wait_time = None
@@ -62,6 +64,21 @@ def _build_wait_time_rows(
                 if future_t >= t_arr and model_results.variables['p_ev'][ev_id, future_t] > 0:
                     delta = future_t - t_arr
                     wait_time = round(delta.total_seconds() / 3600, 2)
+                    # if wait_time > 50:
+                    #     print(f'\nWait time over 50 hrs: {wait_time}')
+                    #     print(f'EV ID: {ev_id}')
+                    #     print(f'Arrival time: {t_arr}')
+                    #     print(f'Arrival SOC: {model_results.variables['soc_ev'][ev_id, t_arr]}')
+                    #     print(f'Charging time: {future_t}')
+                    #     print(f'SOC pre charging: {model_results.variables['soc_ev'][ev_id, future_t]}')
+                    # elif wait_time > 24 and wait_time < 50:
+                    #     print(f'\nWait time over 24 hrs: {wait_time}')
+                    #     print(f'EV ID: {ev_id}')
+                    #     print(f'Arrival time: {t_arr}')
+                    #     print(f'Arrival SOC: {model_results.variables['soc_ev'][ev_id, t_arr]}')
+                    #     print(f'Charging time: {future_t}')
+                    #     print(f'SOC pre charging: {model_results.variables['soc_ev'][ev_id, future_t]}')
+
                     break
 
             rows.append({

@@ -27,14 +27,14 @@ def main():
 
     configurations = [
         'config_1',
-        # 'config_2',
+        'config_2',
         'config_3',
     ]
 
     # charging_strategies = ['uncoordinated']
 
     charging_strategies = [
-        # 'opportunistic',
+        'opportunistic',
         'flexible',
     ]
 

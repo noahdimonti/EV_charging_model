@@ -5,8 +5,8 @@ from src.config import params
 
 
 def get_filepath(version: str, min_soc: float, max_soc: float, cap: str, avg_dist: int) -> str:
-    file_prefix = f'raw_values_compiled_metrics_{params.num_of_evs}EVs_{params.num_of_days}days_{version}'
-    file_parameters = f'{min_soc}min_{max_soc}max_cap{cap}_{avg_dist}km.csv'
+    file_prefix = f'raw_values_metrics_{params.num_of_evs}EVs_{params.num_of_days}days_{version}_sens_analysis'
+    file_parameters = f'avgdist{avg_dist}km_min{min_soc}_max{max_soc}_cap{cap}.csv'
     file_path = '_'.join([file_prefix, file_parameters])
 
     return file_path
@@ -14,8 +14,6 @@ def get_filepath(version: str, min_soc: float, max_soc: float, cap: str, avg_dis
 
 def build_sensitivity_df(version: str, params_comb: list[dict]) -> pd.DataFrame:
     all_data = []
-
-    folder = os.path.join(params.compiled_metrics_folder_path, 'sensitivity_analysis')
 
     metrics_keep = [
         'num_cp',
@@ -34,17 +32,19 @@ def build_sensitivity_df(version: str, params_comb: list[dict]) -> pd.DataFrame:
             parameter['cap'],
             parameter['avg_dist'],
         )
-        file = os.path.join(folder, filepath)
+        file = os.path.join(params.sensitivity_analysis_res_path, filepath)
 
         df = pd.read_csv(file, index_col=0).T
         df = df[metrics_keep]
+        print(f'version: {filepath}')
+        print(df.T)
 
         df['model_case'] = filepath.replace('.csv', '')
         all_data.append(df)
 
     df_all = pd.concat(all_data, ignore_index=True)
 
-    soc_vals = df_all['model_case'].str.extract(r'(\d\.\d)min_(\d\.\d)max')
+    soc_vals = df_all['model_case'].str.extract(r'min(\d\.\d)_max(\d\.\d)')
 
     df_all['soc_range'] = (
         (soc_vals[0].astype(float) * 100).astype(int).astype(str)
@@ -55,7 +55,7 @@ def build_sensitivity_df(version: str, params_comb: list[dict]) -> pd.DataFrame:
 
     df_all['capacity'] = (
         df_all['model_case']
-        .str.extract(r'cap(\d+-\d+)')[0]
+        .str.extract(r'cap(\d+_\d+)')[0]
         + ' kWh'
     )
 

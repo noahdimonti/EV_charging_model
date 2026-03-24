@@ -58,7 +58,7 @@ def analyse_multiple_models(configurations: list,
     return raw_metrics_results, formatted_results
 
 
-def analyse_one_model(model_results: ModelResults):
+def analyse_one_model_formatted(model_results: ModelResults):
     # Get evaluation metrics from results
     evaluation_metrics = EvaluationMetrics(model_results)
 
@@ -75,8 +75,11 @@ def analyse_one_model(model_results: ModelResults):
 def analyse_one_model_from_file(config, strategy, version):
     # Load model
     model_results = load_model(config, strategy, version)
+    df_metrics = analyse_one_model_formatted(model_results)
 
-    df_metrics = analyse_one_model(model_results)
+    # evaluation_metrics = EvaluationMetrics(model_results).metrics
+    # model_name = f'{config}_{strategy}'
+    # df_metrics = pd.DataFrame.from_dict(evaluation_metrics, orient='index', columns=[model_name])
 
-    print(df_metrics)
+    return df_metrics
 

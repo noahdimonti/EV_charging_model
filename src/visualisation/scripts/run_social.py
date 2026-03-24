@@ -16,13 +16,13 @@ def main():
     version = 'balanced'
 
     df_soc = build_soc_df(configurations, charging_strategies, version)
-    plot_soc_boxplot(df_soc, version=version, save_img=True)
+    # plot_soc_boxplot(df_soc, version=version, save_img=True)
 
     df_wait = build_wait_time_df(configurations, charging_strategies, version)
-    plot_wait_time_boxplot(df_wait, version=version, save_img=True, save_csv=True)
+    # plot_wait_time_boxplot(df_wait, version=version, save_img=True, save_csv=True)
 
     df_days = build_num_charging_days_df(configurations, charging_strategies, version)
-    plot_num_charging_days(df_days, version=version, save_img=True)
+    # plot_num_charging_days(df_days, version=version, save_img=True)
 
 
 if __name__ == '__main__':

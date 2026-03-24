@@ -11,13 +11,13 @@ def main():
         'config_3',
     ]
 
-    charging_strategies = ['uncoordinated']
+    # charging_strategies = ['uncoordinated']
 
-    # charging_strategies = [
-    #     'uncoordinated',
-    #     'opportunistic',
-    #     'flexible',
-    # ]
+    charging_strategies = [
+        'uncoordinated',
+        'opportunistic',
+        'flexible',
+    ]
 
     version = 'balanced'
     save_df = False
@@ -38,7 +38,8 @@ def main():
         save_df
     )
 
-    print(f'\nFormatted Metrics\n{formatted_metrics}')
+    print(f'\nRaw metrics\n{raw_metrics}')
+    # print(f'\nFormatted Metrics\n{formatted_metrics}')
 
 
 if __name__ == '__main__':
