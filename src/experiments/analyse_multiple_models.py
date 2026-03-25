@@ -8,18 +8,16 @@ def main():
     configurations = [
         'config_1',
         'config_2',
-        'config_3',
+        # 'config_3',
     ]
 
-    # charging_strategies = ['uncoordinated']
-
     charging_strategies = [
-        'uncoordinated',
+        # 'uncoordinated',
         'opportunistic',
         'flexible',
     ]
 
-    version = 'balanced'
+    version = 'multimodel_v1'
     save_df = False
 
     print(
@@ -38,8 +36,8 @@ def main():
         save_df
     )
 
-    print(f'\nRaw metrics\n{raw_metrics}')
-    # print(f'\nFormatted Metrics\n{formatted_metrics}')
+    # print(f'\nRaw metrics\n{raw_metrics}')
+    print(f'\nFormatted Metrics\n{formatted_metrics}')
 
 
 if __name__ == '__main__':

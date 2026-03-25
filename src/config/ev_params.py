@@ -38,3 +38,20 @@ class EVParams:
 
     # EV charging efficiency
     charging_efficiency = 0.95  # (%)
+
+    print('\n=== EV SNAPSHOT CHECK ===')
+
+    print('FILE:', filename)
+    print('NUM EV:', len(ev_instance_list))
+
+    print('\nSOC INIT (first 5):')
+    print(sorted(soc_init_dict.items())[:5])
+
+    print('\nSOC MAX (first 5):')
+    print(sorted(soc_max_dict.items())[:5])
+
+    print('\nARRIVAL (first 3):')
+    print({k: v[:2] for k, v in list(t_arr_dict.items())[:3]})
+
+    print('\nDEPARTURE (first 3):')
+    print({k: v[:2] for k, v in list(t_dep_dict.items())[:3]})

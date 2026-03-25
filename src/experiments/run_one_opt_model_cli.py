@@ -32,18 +32,19 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    version = (f'balanced_sens_analysis_avgdist{avg_travel_distance}km_'
-               f'min{min_initial_soc}_max{max_initial_soc}_'
-               f'cap{ev_capacity_range_low}_{ev_capacity_range_high}')
-    main(
-        [
-            '-c', 'config_2',
-            '-s', 'opportunistic',
-            '-w', 'balanced',
-            '-v', version,
-            '-m', '3',
-            '-t', '360',
-            '-n', '16',
+    # version = (f'balanced_sens_analysis_avgdist{avg_travel_distance}km_'
+    #            f'min{min_initial_soc}_max{max_initial_soc}_'
+    #            f'cap{ev_capacity_range_low}_{ev_capacity_range_high}')
 
-        ]
+    main(
+        # [
+        #     '-c', 'config_2',
+        #     '-s', 'opportunistic',
+        #     '-w', 'balanced',
+        #     '-v', version,
+        #     '-m', '3',
+        #     '-t', '360',
+        #     '-n', '1',
+        #
+        # ]
     )
