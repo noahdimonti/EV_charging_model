@@ -1,5 +1,6 @@
 import os
 import pickle
+import glob
 from src.config import params
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulation_models.run_simulation import run_simulation_model
@@ -10,6 +11,13 @@ def run_multiple_models(configurations: list,
                         version: str,
                         obj_weights: dict[str, int|float],
                         solver_settings: dict):
+    # Check if version is unique
+    pattern = os.path.join(params.model_results_folder_path, f'*_{version}.pkl')
+    version_found = any(glob.iglob(pattern))
+
+    if version_found:
+        raise ValueError(f"Version {version} already exists. Please provide a unique version name.")
+
     for config in configurations:
         opt_results_per_config = {}
 
