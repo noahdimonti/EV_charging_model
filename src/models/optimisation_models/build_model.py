@@ -11,8 +11,6 @@ from src.models.optimisation_models.assets.charging_point import ChargingPoint
 from src.models.optimisation_models.assets.electric_vehicle import ElectricVehicle
 from src.models.optimisation_models.objectives import EconomicObjective, TechnicalObjective, SocialObjective
 
-from archived.data.outputs.metrics.compiled_metrics.payoff_table import payoff_table
-
 
 class BuildModel:
     def __init__(self,
@@ -43,14 +41,6 @@ class BuildModel:
         self.model.TIME = pyo.Set(initialize=params.timestamps)
         self.model.DAY = pyo.Set(initialize=[_ for _ in params.T_d.keys()])
         self.model.WEEK = pyo.Set(initialize=[_ for _ in params.D_w.keys()])
-
-    def _normalise_cost(self, obj_expr, name):
-        payoff = payoff_table[f'{self.config.value}_{self.charging_strategy.value}']
-        min_val = payoff[f'{name}_min']
-        max_val = payoff[f'{name}_max']
-        scaling_constant = 100
-
-        return (obj_expr - min_val) / (max_val - min_val) * scaling_constant
 
     def define_objective_components(self):
         # Economic objective
@@ -93,24 +83,9 @@ class BuildModel:
         self.model.social_objective = pyo.Expression(expr=social_cost)
 
 
-        # Normalise objectives
-        norm_economic_cost = self._normalise_cost(economic_cost, 'economic')
-        self.model.norm_economic_objective = pyo.Expression(expr=norm_economic_cost)
-
-        norm_technical_cost = self._normalise_cost(technical_cost, 'technical')
-        self.model.norm_technical_objective = pyo.Expression(expr=norm_technical_cost)
-
-        norm_social_cost = self._normalise_cost(social_cost, 'social')
-        self.model.norm_social_objective = pyo.Expression(expr=norm_social_cost)
-
-
         # Objective formulation
         self.model.obj_function = pyo.Objective(
             expr=(
-                    # self.obj_weights['economic'] * self.model.norm_economic_objective +
-                    # self.obj_weights['technical'] * self.model.norm_technical_objective +
-                    # self.obj_weights['social'] * self.model.norm_social_objective
-
                     self.obj_weights['economic'] * self.model.economic_objective +
                     self.obj_weights['technical'] * self.model.technical_objective +
                     self.obj_weights['social'] * self.model.social_objective

@@ -46,15 +46,6 @@ class ModelResults:
             for model_set in model.component_objects(pyo.Set, active=True):
                 self.sets[model_set.name] = model_set.data()
 
-            # Objective values
-            self.norm_objective_value = pyo.value(model.obj_function)
-            self.total_objective_value = pyo.value(model.total_objective_value)
-            self.normalised_values = {
-                'norm_economic': pyo.value(model.norm_economic_objective),
-                'norm_technical': pyo.value(model.norm_technical_objective),
-                'norm_social': pyo.value(model.norm_social_objective)
-            }
-
             for obj in model.component_objects(pyo.Expression, active=True):
                 self.objective_components[obj.name] = pyo.value(obj)
 
@@ -255,12 +246,6 @@ class EvaluationMetrics:
             if hasattr(self.model, 'obj_weights'):
                 self.metrics.update(self.model.obj_weights)
 
-            if hasattr(self.model, 'norm_objective_value'):
-                self.metrics.update({'normalised_objective': self.model.norm_objective_value})
-
-            if hasattr(self.model, 'normalised_values'):
-                self.metrics.update(self.model.normalised_values)
-
             self.metrics.update({'total_objective_value': self.model.total_objective_value})
             self.metrics.update({
                 'economic_objective': self.model.objective_components['economic_objective'],
@@ -293,14 +278,6 @@ class EvaluationMetrics:
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-
-                # 'Economic weight': f'{self.model.obj_weights['economic']}',
-                # 'Technical weight': f'{self.model.obj_weights['technical']}',
-                # 'Social weight': f'{self.model.obj_weights['social']}',
-                #
-                # 'Normalised objective value': f'{self.model.norm_objective_value:,.4f}',
-                # 'Total objective value': f'{self.model.total_objective_value:,.2f}',
-
                 'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
                 'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',
                 'Social objective': f'{self.model.objective_components['social_objective']:,.2f}',
