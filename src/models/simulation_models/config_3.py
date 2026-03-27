@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import copy
 from collections import deque, defaultdict
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
 from src.models.simulation_models.config_2 import ChargingPointSlot
 from src.data_processing.electric_vehicle import ElectricVehicle
 
@@ -54,9 +53,8 @@ class UncoordinatedModelConfig3:
             self.ev_data[ev].charging_power.loc[t] = 0
             self.ev_data[ev].soc.loc[t] = self.ev_data[ev].soc_init
 
-    @staticmethod
-    def _next_departure(ev_id, t):
-        return min((dep_time for dep_time in ev_params.t_dep_dict[ev_id] if dep_time > t),
+    def _next_departure(self, ev_id, t):
+        return min((dep_time for dep_time in self.ev_data[ev_id].t_dep if dep_time > t),
                    default=max(params.timestamps))
 
     def _get_soc_priority(self, ev_id, t):
@@ -153,7 +151,7 @@ class UncoordinatedModelConfig3:
 
             # Subtract travel energy if t is at arrival time
             if t in self.ev_data[ev].t_arr:
-                k = ev_params.t_arr_dict[ev].index(t)
+                k = self.ev_data[ev].t_arr.index(t)
                 prev_soc -= self.ev_data[ev].travel_energy[k]
 
             if ev in self.is_charging[cp_id]:
@@ -235,7 +233,6 @@ class UncoordinatedModelConfig3:
         for ev in range(self.num_ev):
             plt.plot(self.ev_data[ev].soc)
             plt.show()
-
 
 
 

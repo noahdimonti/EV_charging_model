@@ -6,7 +6,7 @@ import pyomo.environ as pyo
 from collections import defaultdict
 from pprint import pprint
 from src.config import params
-from src.config.ev_params import EVData
+from src.config.ev_params import EVData, load_ev_data
 from src.models.utils.configs import CPConfig, ChargingStrategy
 
 
@@ -15,11 +15,13 @@ class ModelResults:
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
                  obj_weights: None | dict[str, int|float],
+                 ev_data: EVData | None = None,
                  mip_gap=None):
         self.config = config
         self.charging_strategy = charging_strategy
         self.mip_gap = mip_gap
         self.obj_weights = obj_weights
+        self.ev_data = ev_data or getattr(model, 'ev_data', None)
         self.norm_objective_value = None
         self.total_objective_value = None
 
@@ -106,10 +108,20 @@ class ModelResults:
             print(f'Error saving results: {e}')
 
 
+def resolve_ev_data(model: ModelResults, ev_data: EVData | None = None) -> EVData:
+    if ev_data is not None:
+        return ev_data
+
+    if getattr(model, 'ev_data', None) is not None:
+        return model.ev_data
+
+    return load_ev_data()
+
+
 class EvaluationMetrics:
-    def __init__(self, model: ModelResults, ev_data: EVData):
+    def __init__(self, model: ModelResults, ev_data: EVData | None = None):
         self.model = model
-        self.ev_data = ev_data
+        self.ev_data = resolve_ev_data(model, ev_data)
 
         self.config = self.model.config
         self.charging_strategy = self.model.charging_strategy
@@ -262,26 +274,26 @@ class EvaluationMetrics:
     # Format metrics
     def format_metrics(self):
         formatted_metrics = {
-            'Charging point info': f'{self.metrics['num_cp']} CPs ({self.metrics['p_cp_rated']:,.2f} kW)',
+            'Charging point info': f"{self.metrics['num_cp']} CPs ({self.metrics['p_cp_rated']:,.2f} kW)",
 
-            'Investment cost': f'${self.metrics['investment_cost']:,.2f}',
+            'Investment cost': f"${self.metrics['investment_cost']:,.2f}",
 
-            'Peak demand increase': f'{self.metrics['p_peak_increase']:,.2f}%',
-            'PAPR': f'{self.metrics['papr']:,.2f}',
+            'Peak demand increase': f"{self.metrics['p_peak_increase']:,.2f}%",
+            'PAPR': f"{self.metrics['papr']:,.2f}",
 
-            'Average SOC at dep time': f'{self.metrics['avg_soc_t_dep_percent']:,.2f}%',
-            'Lowest SOC at dep time': f'{self.metrics['lowest_soc']:,.2f}%',
-            'SOC min-max range': f'{self.metrics['soc_range']:,.2f}%',
-            'Average num of charging days': f'{self.metrics['avg_num_charging_days']:,.2f}',
+            'Average SOC at dep time': f"{self.metrics['avg_soc_t_dep_percent']:,.2f}%",
+            'Lowest SOC at dep time': f"{self.metrics['lowest_soc']:,.2f}%",
+            'SOC min-max range': f"{self.metrics['soc_range']:,.2f}%",
+            'Average num of charging days': f"{self.metrics['avg_num_charging_days']:,.2f}",
 
         }
 
         if self.charging_strategy.value != 'uncoordinated':
             formatted_metrics.update({
                 'Optimality gap': f'{self.mip_gap:,.4f}%',
-                'Economic objective': f'{self.model.objective_components['economic_objective']:,.2f}',
-                'Technical objective': f'{self.model.objective_components['technical_objective']:,.2f}',
-                'Social objective': f'{self.model.objective_components['social_objective']:,.2f}',
+                'Economic objective': f"{self.model.objective_components['economic_objective']:,.2f}",
+                'Technical objective': f"{self.model.objective_components['technical_objective']:,.2f}",
+                'Social objective': f"{self.model.objective_components['social_objective']:,.2f}",
             })
 
         return formatted_metrics

@@ -1,6 +1,5 @@
 import pandas as pd
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
 from src.data_processing.electric_vehicle import ElectricVehicle
 
 
@@ -62,7 +61,7 @@ class UncoordinatedModelConfig1:
 
         # Subtract travel energy if t is at arrival time
         if t in ev.t_arr:
-            k = ev_params.t_arr_dict[i].index(t)
+            k = ev.t_arr.index(t)
             prev_soc -= ev.travel_energy[k]
 
         # Predict SOC based on available charging power
@@ -75,4 +74,3 @@ class UncoordinatedModelConfig1:
         else:
             # Assign available power to charging power and SOC accordingly
             return available_power, potential_soc
-

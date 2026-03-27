@@ -1,7 +1,6 @@
 import pandas as pd
 
-from src.config.ev_params import EVParams as ev_params
-from src.models.results.model_results import EvaluationMetrics
+from src.models.results.model_results import EvaluationMetrics, resolve_ev_data
 from src.visualisation import io
 from src.visualisation.labels import format_config_label, format_strategy_label
 
@@ -16,16 +15,17 @@ def build_soc_df(
     for config in configurations:
         for strategy in charging_strategies:
             model_results = io.load_model_results(config, strategy, version)
+            ev_data = resolve_ev_data(model_results)
 
             config_label = format_config_label(config)
             strategy_label = format_strategy_label(strategy)
 
             for ev_id in model_results.sets['EV_ID']:
                 for time in model_results.sets['TIME']:
-                    if time in ev_params.t_dep_dict[ev_id]:
+                    if time in ev_data.t_dep_dict[ev_id]:
                         soc_t_dep = (
                             model_results.variables['soc_ev'][ev_id, time]
-                            / ev_params.soc_max_dict[ev_id]
+                            / ev_data.soc_max_dict[ev_id]
                         ) * 100
 
                         rows.append({
@@ -49,6 +49,7 @@ def _build_wait_time_rows(
         version: str,
 ) -> list[dict]:
     model_results = io.load_model_results(config, strategy, version)
+    ev_data = resolve_ev_data(model_results)
     rows = []
 
     config_label = format_config_label(config)
@@ -57,7 +58,7 @@ def _build_wait_time_rows(
     # print(f'\n--- Model: {config} {strategy} ---')
 
     for ev_id in model_results.sets['EV_ID']:
-        for t_arr in ev_params.t_arr_dict[ev_id]:
+        for t_arr in ev_data.t_arr_dict[ev_id]:
             wait_time = None
 
             for future_t in model_results.sets['TIME']:
@@ -132,5 +133,4 @@ def build_num_charging_days_df(
     df['config_num'] = df['config'].str.extract(r'(\d+)').astype(int)
 
     return df
-
 

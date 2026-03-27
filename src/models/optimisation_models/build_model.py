@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
-from src.config.ev_params import load_ev_data
+from src.config.ev_params import EVData
 from src.models.utils.configs import (
     CPConfig,
     ChargingStrategy
@@ -19,7 +19,7 @@ class BuildModel:
                  charging_strategy: ChargingStrategy,
                  version: str,
                  obj_weights: dict[str, int|float],
-                 ev_data):
+                 ev_data: EVData):
         self.config = config
         self.charging_strategy = charging_strategy
         self.version = version
@@ -29,6 +29,7 @@ class BuildModel:
         self.model = pyo.ConcreteModel(
             name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs_{self.version}'
         )
+        self.model.ev_data = ev_data
         self.assets = {}
 
         # Validate configuration and charging mode
@@ -124,4 +125,3 @@ class BuildModel:
 
     def get_optimisation_model(self):
         return self.model
-

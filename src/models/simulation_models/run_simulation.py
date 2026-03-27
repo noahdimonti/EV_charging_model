@@ -1,4 +1,5 @@
 from src.config import params
+from src.config.ev_params import EVData, load_ev_data
 from src.models.results.model_results import ModelResults
 from src.models.simulation_models.simulation_model import simulate_and_process
 from src.models.utils.log_model_info import log_with_runtime, print_runtime
@@ -9,9 +10,11 @@ def run_simulation_model(
         config: str,
         charging_strategy: str,
         version: str,
-        config_attribute: dict[str, int | float | dict[int, list]]) -> ModelResults:
+        config_attribute: dict[str, int | float | dict[int, list]],
+        ev_data: EVData | None = None) -> ModelResults:
     # Validate config and charging strategy
     validate_config_strategy(config, charging_strategy)
+    ev_data = ev_data or load_ev_data()
 
     # Define labels
     label = f'Running simulation for {config}_{charging_strategy}_{params.num_of_evs}EVs model'
@@ -22,7 +25,8 @@ def run_simulation_model(
             label,
             simulate_and_process,
             config,
-            config_attribute
+            config_attribute,
+            ev_data
         )
 
         print_runtime(finished_label, simulation_time)
@@ -32,7 +36,8 @@ def run_simulation_model(
             simulation_results,
             config_map[config],
             strategy_map[charging_strategy],
-            obj_weights=None
+            obj_weights=None,
+            ev_data=ev_data
         )
         results.save_model_to_pickle(version=version)
 
@@ -40,4 +45,3 @@ def run_simulation_model(
 
     except Exception as e:
         print(f'{params.RED}An error occurred: {e}.{params.RESET}')
-

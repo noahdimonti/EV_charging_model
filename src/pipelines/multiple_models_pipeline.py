@@ -2,6 +2,7 @@ import os
 import pickle
 import glob
 from src.config import params
+from src.config.ev_params import load_ev_data
 from src.models.optimisation_models.run_optimisation import run_optimisation_model
 from src.models.simulation_models.run_simulation import run_simulation_model
 
@@ -17,6 +18,8 @@ def run_multiple_models(configurations: list,
 
     if version_found:
         raise ValueError(f"Version {version} already exists. Please provide a unique version name.")
+
+    ev_data = load_ev_data()
 
     for config in configurations:
         opt_results_per_config = {}
@@ -43,7 +46,8 @@ def run_multiple_models(configurations: list,
                 time_limit=time_limit,
                 mip_gap=mip_gap,
                 obj_weights=obj_weights,
-                thread_count=thread_count
+                thread_count=thread_count,
+                ev_data=ev_data
             )
 
             # Store optimisation model results
@@ -72,6 +76,7 @@ def run_multiple_models(configurations: list,
                 config=config,
                 charging_strategy='uncoordinated',
                 version=version,
-                config_attribute=config_attr
+                config_attribute=config_attr,
+                ev_data=ev_data
             )
             opt_results_per_config['uncoordinated'] = simulation_result

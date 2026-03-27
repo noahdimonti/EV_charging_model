@@ -7,7 +7,7 @@ import os
 
 import math
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
+from src.models.results.model_results import resolve_ev_data
 from src.visualisation import io
 from src.visualisation import style
 from pprint import pprint
@@ -19,6 +19,7 @@ def get_soc_df(configurations, charging_strategies, version):
     for config in configurations:
         for strategy in charging_strategies:
             results = plot_setups.get_model_results_data(config, strategy, version)
+            ev_data = resolve_ev_data(results)
 
             # Capitalise config and strategy names
             config_name, config_num = config.split('_')
@@ -29,8 +30,8 @@ def get_soc_df(configurations, charging_strategies, version):
             for i in results.sets['EV_ID']:
                 for t in results.sets['TIME']:
 
-                    if t in ev_params.t_dep_dict[i]:
-                        soc_t_dep = (results.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100
+                    if t in ev_data.t_dep_dict[i]:
+                        soc_t_dep = (results.variables['soc_ev'][i, t] / ev_data.soc_max_dict[i]) * 100
                         all_results.append({
                             'config': cap_config,
                             'strategy': cap_strategy,
@@ -45,6 +46,7 @@ def get_soc_df(configurations, charging_strategies, version):
 
 def get_wait_time_list(config, strategy, version):
     results = plot_setups.get_model_results_data(config, strategy, version)
+    ev_data = resolve_ev_data(results)
     results_list = []
 
     # Capitalise config and strategy names
@@ -57,9 +59,9 @@ def get_wait_time_list(config, strategy, version):
 
     t_arr_count = 0
     for i in results.sets['EV_ID']:
-        for t_arr in ev_params.t_arr_dict[i]:
+        for t_arr in ev_data.t_arr_dict[i]:
             # print(f'EV ID {i}, t_arr: {t_arr}')
-            soc_t_arr = (results.variables['soc_ev'][i, t_arr] / ev_params.soc_max_dict[i]) * 100
+            soc_t_arr = (results.variables['soc_ev'][i, t_arr] / ev_data.soc_max_dict[i]) * 100
             wait_time = None
 
             t_arr_count += 1
@@ -352,5 +354,4 @@ if __name__ == '__main__':
         'norm_w_sum',
         True
     )
-
 

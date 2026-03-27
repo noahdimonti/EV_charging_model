@@ -6,7 +6,7 @@ import os
 from pprint import pprint
 from src.visualisation import io, style
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
+from src.models.results.model_results import resolve_ev_data
 
 
 def get_p_ev_df(configurations, charging_strategies, version):
@@ -14,6 +14,7 @@ def get_p_ev_df(configurations, charging_strategies, version):
     for config in configurations:
         for strategy in charging_strategies:
             results = plot_setups.get_model_results_data(config, strategy, version)
+            ev_data = resolve_ev_data(results)
 
             # Capitalise config and strategy names
             config_name, config_num = config.split('_')
@@ -25,7 +26,7 @@ def get_p_ev_df(configurations, charging_strategies, version):
 
             for i in results.sets['EV_ID']:
                 print(f'\nEV {i} arrival times:')
-                pprint(ev_params.t_arr_dict[i])
+                pprint(ev_data.t_arr_dict[i])
                 for t in results.sets['TIME']:
                     p_ev = results.variables['p_ev'][i, t]
                     if p_ev > 0:

@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
-from src.config.ev_params import load_ev_data
+from src.config.ev_params import EVData, load_ev_data
 from src.models.optimisation_models.build_model import BuildModel
 from src.models.utils.log_model_info import log_with_runtime, print_runtime
 from src.models.optimisation_models.optimisation_model import solve_model, log_solver_results
@@ -14,6 +14,7 @@ def run_optimisation_model(
         version: str,
         obj_weights: dict[str, int|float],
         model: pyo.ConcreteModel = None,
+        ev_data: EVData | None = None,
         solver='gurobi',
         verbose=False,
         time_limit=None,
@@ -25,14 +26,17 @@ def run_optimisation_model(
 
     # Build model
     if model is None:
+        ev_data = ev_data or load_ev_data()
         model_builder = BuildModel(
             config=config_map[config],
             charging_strategy=strategy_map[charging_strategy],
             version=version,
             obj_weights=obj_weights,
-            ev_data=load_ev_data()
+            ev_data=ev_data
         )
         model = model_builder.get_optimisation_model()
+    else:
+        ev_data = ev_data or getattr(model, 'ev_data', None) or load_ev_data()
 
     # Define labels
     label = f'Solving {model.name} model'
@@ -68,7 +72,8 @@ def run_optimisation_model(
             config=config_map[config],
             charging_strategy=strategy_map[charging_strategy],
             mip_gap=calc_mip_gap,
-            obj_weights=obj_weights
+            obj_weights=obj_weights,
+            ev_data=ev_data
         )
 
         results.solver_status = solver_status
@@ -83,5 +88,4 @@ def run_optimisation_model(
     except Exception as e:
         print(f'{params.RED}An error occurred during optimisation: {e}.{params.RESET}')
         return None
-
 

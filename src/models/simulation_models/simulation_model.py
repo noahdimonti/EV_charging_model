@@ -1,19 +1,20 @@
 import pandas as pd
 from copy import deepcopy
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
+from src.config.ev_params import EVData
 from src.models.simulation_models import config_1, config_2, config_3
 from src.data_processing.electric_vehicle import ElectricVehicle
 
 
 def simulate_uncoordinated_model(
         config: str,
-        config_attribute: dict[str, int | float | dict[int, list]]) -> list[ElectricVehicle]:
+        config_attribute: dict[str, int | float | dict[int, list]],
+        ev_data: EVData) -> list[ElectricVehicle]:
     # Household load
     household_load = params.household_load
 
     # Initialise EV data
-    ev_data = deepcopy(ev_params.ev_instance_list)
+    ev_instances = deepcopy(ev_data.ev_instance_list)
 
     # Set rated power of CP
     p_cp_rated_scaled = config_attribute['p_cp_rated'] / params.charging_power_resolution_factor
@@ -26,7 +27,7 @@ def simulate_uncoordinated_model(
     num_ev_at_home_list = []
     for t in params.timestamps:
         num_ev_at_home = sum(
-            ev.at_home_status.loc[t].values.item() for ev in ev_data
+            ev.at_home_status.loc[t].values.item() for ev in ev_instances
         )
         num_ev_at_home_list.append({
             'timestamp': t,
@@ -37,7 +38,7 @@ def simulate_uncoordinated_model(
 
     if config == 'config_1':
         config_1_simulator = config_1.UncoordinatedModelConfig1(
-            ev_data,
+            ev_instances,
             household_load,
             num_ev_at_home_df,
             p_cp_rated_scaled
@@ -47,7 +48,7 @@ def simulate_uncoordinated_model(
     elif config == 'config_2':
         if isinstance(config_attribute['num_cp'], int):
             config_2_simulator = config_2.UncoordinatedModelConfig2(
-                ev_data,
+                ev_instances,
                 household_load,
                 p_cp_rated_scaled,
                 config_attribute['num_cp']
@@ -60,7 +61,7 @@ def simulate_uncoordinated_model(
     elif config == 'config_3':
         if isinstance(config_attribute['ev_to_cp_assignment'], dict):
             config_3_simulator = config_3.UncoordinatedModelConfig3(
-                ev_data,
+                ev_instances,
                 household_load,
                 p_cp_rated_scaled,
                 config_attribute['ev_to_cp_assignment']
@@ -99,9 +100,9 @@ def process_model_results(
     return all_results
 
 
-def simulate_and_process(config, config_attribute):
+def simulate_and_process(config, config_attribute, ev_data: EVData):
     try:
-        model = simulate_uncoordinated_model(config, config_attribute)
+        model = simulate_uncoordinated_model(config, config_attribute, ev_data)
         results = process_model_results(model, config_attribute)
 
         print(f'Simulation status: ok\n')
@@ -110,5 +111,3 @@ def simulate_and_process(config, config_attribute):
 
     except Exception as e:
         print(f'An error occurred: {e}')
-
-
