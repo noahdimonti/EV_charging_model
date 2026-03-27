@@ -6,7 +6,7 @@ import pyomo.environ as pyo
 from collections import defaultdict
 from pprint import pprint
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
+from src.config.ev_params import EVData
 from src.models.utils.configs import CPConfig, ChargingStrategy
 
 
@@ -107,8 +107,9 @@ class ModelResults:
 
 
 class EvaluationMetrics:
-    def __init__(self, model: ModelResults):
+    def __init__(self, model: ModelResults, ev_data: EVData):
         self.model = model
+        self.ev_data = ev_data
 
         self.config = self.model.config
         self.charging_strategy = self.model.charging_strategy
@@ -166,11 +167,11 @@ class EvaluationMetrics:
     def _ev_user_metrics(self):
         # Average SOC at departure time
         sum_all_soc_t_dep = sum(
-                            (self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i])  # convert SOC to percentage
+                            (self.variables['soc_ev'][i, t] / self.ev_data.soc_max_dict[i])  # convert SOC to percentage
                             for i in self.sets['EV_ID']
-                            for t in ev_params.t_dep_dict[i]
+                            for t in self.ev_data.t_dep_dict[i]
                         )
-        total_dep_times = sum(len(ev_params.t_dep_dict[i]) for i in self.sets['EV_ID'])  # total number of dep times for all EVs
+        total_dep_times = sum(len(self.ev_data.t_dep_dict[i]) for i in self.sets['EV_ID'])  # total number of dep times for all EVs
 
         avg_soc_t_dep_percent = round(
                 ((sum_all_soc_t_dep / total_dep_times) * 100), 4
@@ -180,13 +181,13 @@ class EvaluationMetrics:
         avg_soc_to_max_deviation = 100 - avg_soc_t_dep_percent
 
         # SOC range
-        lowest_soc_percent = min([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
+        lowest_soc_percent = min([((self.variables['soc_ev'][i, t] / self.ev_data.soc_max_dict[i]) * 100)
                                   for i in self.sets['EV_ID']
-                                  for t in ev_params.t_dep_dict[i]])
+                                  for t in self.ev_data.t_dep_dict[i]])
 
-        highest_soc_percent = max([((self.variables['soc_ev'][i, t] / ev_params.soc_max_dict[i]) * 100)
+        highest_soc_percent = max([((self.variables['soc_ev'][i, t] / self.ev_data.soc_max_dict[i]) * 100)
                                    for i in self.sets['EV_ID']
-                                   for t in ev_params.t_dep_dict[i]])
+                                   for t in self.ev_data.t_dep_dict[i]])
 
         soc_range = highest_soc_percent - lowest_soc_percent
 

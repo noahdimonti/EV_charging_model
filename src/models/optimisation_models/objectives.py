@@ -1,6 +1,5 @@
 import pyomo.environ as pyo
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
 
 
 class EconomicObjective:
@@ -171,12 +170,13 @@ class TechnicalObjective:
 
 
 class SocialObjective:
-    def __init__(self, model):
+    def __init__(self, model, ev_data):
         self.model = model
+        self.ev_data = ev_data
 
     def f_soc(self):
         soc_max_deviation = sum(
-            self.model.soc_max[i] - self.model.soc_ev[i, t] for i in self.model.EV_ID for t in ev_params.t_dep_dict[i])
+            self.model.soc_max[i] - self.model.soc_ev[i, t] for i in self.model.EV_ID for t in self.ev_data.t_dep_dict[i])
 
         return soc_max_deviation
 
@@ -186,17 +186,17 @@ class SocialObjective:
         self.model.daily_soc_avg_t_dep = pyo.Var(self.model.DAY, within=pyo.NonNegativeReals)
 
         def daily_soc_avg_t_dep_rule(model, d):
-            n = len(ev_params.t_dep_on_day[d])
+            n = len(self.ev_data.t_dep_on_day[d])
             return model.daily_soc_avg_t_dep[d] == (1 / n) * sum(
-                model.soc_ev[i, t] for (i, t) in ev_params.t_dep_on_day[d]
+                model.soc_ev[i, t] for (i, t) in self.ev_data.t_dep_on_day[d]
             )
 
         self.model.daily_soc_avg_t_dep_constraint = pyo.Constraint(self.model.DAY, rule=daily_soc_avg_t_dep_rule)
 
         self.model.soc_avg_deviation_constraints = pyo.ConstraintList()
 
-        for d in ev_params.t_dep_on_day:
-            for (i, t) in ev_params.t_dep_on_day[d]:
+        for d in self.ev_data.t_dep_on_day:
+            for (i, t) in self.ev_data.t_dep_on_day[d]:
                 self.model.soc_avg_deviation_constraints.add(
                     self.model.soc_avg_deviation[i, t] >= self.model.soc_ev[i, t] - self.model.daily_soc_avg_t_dep[d]
                 )

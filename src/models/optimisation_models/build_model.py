@@ -1,5 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
+from src.config.ev_params import load_ev_data
 from src.models.utils.configs import (
     CPConfig,
     ChargingStrategy
@@ -17,11 +18,13 @@ class BuildModel:
                  config: CPConfig,
                  charging_strategy: ChargingStrategy,
                  version: str,
-                 obj_weights: dict[str, int|float]):
+                 obj_weights: dict[str, int|float],
+                 ev_data):
         self.config = config
         self.charging_strategy = charging_strategy
         self.version = version
         self.obj_weights = obj_weights
+        self.ev_data = ev_data
 
         self.model = pyo.ConcreteModel(
             name=f'{config.value}_{charging_strategy.value}_{params.num_of_evs}EVs_{self.version}'
@@ -73,7 +76,7 @@ class BuildModel:
         self.model.technical_objective = pyo.Expression(expr=technical_cost)
 
         # Social objective
-        social_obj = SocialObjective(self.model)
+        social_obj = SocialObjective(self.model, self.ev_data)
 
         social_cost = (
                 social_obj.f_soc() +
@@ -104,8 +107,12 @@ class BuildModel:
         self.assets['household'] = HouseholdLoad(self.model)
         self.assets['ccp'] = CommonConnectionPoint(self.model)
         self.assets['cp'] = ChargingPoint(self.model, self.config, self.charging_strategy)
-        self.assets['ev'] = ElectricVehicle(self.model, self.config,
-                                            self.charging_strategy)
+        self.assets['ev'] = ElectricVehicle(
+            self.model,
+            self.config,
+            self.charging_strategy,
+            self.ev_data
+        )
 
         # Initialise constraints
         self.assets['ccp'].initialise_constraints()

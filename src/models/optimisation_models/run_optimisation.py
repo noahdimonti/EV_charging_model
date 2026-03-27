@@ -1,5 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
+from src.config.ev_params import load_ev_data
 from src.models.optimisation_models.build_model import BuildModel
 from src.models.utils.log_model_info import log_with_runtime, print_runtime
 from src.models.optimisation_models.optimisation_model import solve_model, log_solver_results
@@ -28,7 +29,8 @@ def run_optimisation_model(
             config=config_map[config],
             charging_strategy=strategy_map[charging_strategy],
             version=version,
-            obj_weights=obj_weights
+            obj_weights=obj_weights,
+            ev_data=load_ev_data()
         )
         model = model_builder.get_optimisation_model()
 

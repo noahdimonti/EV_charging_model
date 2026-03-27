@@ -2,6 +2,7 @@ import pandas as pd
 import pickle
 import os
 from src.config import params
+from src.config.ev_params import EVData
 from src.models.results.model_results import compile_multiple_models_metrics, ModelResults, EvaluationMetrics
 from pprint import pprint
 
@@ -58,28 +59,4 @@ def analyse_multiple_models(configurations: list,
     return raw_metrics_results, formatted_results
 
 
-def analyse_one_model_formatted(model_results: ModelResults):
-    # Get evaluation metrics from results
-    evaluation_metrics = EvaluationMetrics(model_results)
-
-    # Format and collect metrics
-    formatted_metrics = evaluation_metrics.format_metrics()
-
-    # Convert metrics into a dataframe
-    model_name = f'{model_results.config.value}_{model_results.charging_strategy.value}'
-    df_metrics = pd.DataFrame.from_dict(formatted_metrics, orient='index', columns=[model_name])
-
-    return df_metrics
-
-
-def analyse_one_model_from_file(config, strategy, version):
-    # Load model
-    model_results = load_model(config, strategy, version)
-    df_metrics = analyse_one_model_formatted(model_results)
-
-    # evaluation_metrics = EvaluationMetrics(model_results).metrics
-    # model_name = f'{config}_{strategy}'
-    # df_metrics = pd.DataFrame.from_dict(evaluation_metrics, orient='index', columns=[model_name])
-
-    return df_metrics
 

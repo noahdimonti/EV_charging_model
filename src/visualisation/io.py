@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pickle
 from src.config import params
-from src.models.results.model_results import EvaluationMetrics, ModelResults
+from src.models.results.model_results import ModelResults
 
 
 def build_model_results_filename(config: str, strategy: str, version: str) -> str:

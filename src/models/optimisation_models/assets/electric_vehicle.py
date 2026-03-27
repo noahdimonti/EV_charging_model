@@ -1,6 +1,6 @@
 import pyomo.environ as pyo
 from src.config import params
-from src.config.ev_params import EVParams as ev_params
+from src.config.ev_params import EVData
 from src.models.utils.configs import (
     CPConfig,
     ChargingStrategy
@@ -8,20 +8,21 @@ from src.models.utils.configs import (
 
 
 class ElectricVehicle:
-    def __init__(self, model, config, charging_strategy):
+    def __init__(self, model, config, charging_strategy, ev_data: EVData):
         self.model = model
         self.config = config
         self.charging_strategy = charging_strategy
+        self.ev_data = ev_data
         self.initialise_parameters()
         self.initialise_variables()
 
     def initialise_parameters(self):
-        self.model.soc_critical = pyo.Param(self.model.EV_ID, initialize=ev_params.soc_critical_dict)
-        self.model.soc_max = pyo.Param(self.model.EV_ID, initialize=ev_params.soc_max_dict)
-        self.model.soc_init = pyo.Param(self.model.EV_ID, initialize=ev_params.soc_init_dict)
+        self.model.soc_critical = pyo.Param(self.model.EV_ID, initialize=self.ev_data.soc_critical_dict)
+        self.model.soc_max = pyo.Param(self.model.EV_ID, initialize=self.ev_data.soc_max_dict)
+        self.model.soc_init = pyo.Param(self.model.EV_ID, initialize=self.ev_data.soc_init_dict)
         self.model.ev_at_home_status = pyo.Param(self.model.EV_ID, self.model.TIME,
                                                  initialize=lambda model, i, t:
-                                                 ev_params.at_home_status_dict[i].loc[t, f'EV_ID{i}'],
+                                                 self.ev_data.at_home_status_dict[i].loc[t, f'EV_ID{i}'],
                                                  within=pyo.Binary)
 
     def initialise_variables(self):
@@ -101,10 +102,10 @@ class ElectricVehicle:
     # --------------------------
     def _soc_constraints(self):
         def get_trip_number_k(i, t):
-            if t in ev_params.t_arr_dict[i]:
-                k = ev_params.t_arr_dict[i].index(t)
-            elif t in ev_params.t_dep_dict[i]:
-                k = ev_params.t_dep_dict[i].index(t)
+            if t in self.ev_data.t_arr_dict[i]:
+                k = self.ev_data.t_arr_dict[i].index(t)
+            elif t in self.ev_data.t_dep_dict[i]:
+                k = self.ev_data.t_dep_dict[i].index(t)
             else:
                 return None
             return k
@@ -122,23 +123,23 @@ class ElectricVehicle:
                 return model.soc_ev[i, t] == model.soc_init[i]
 
             # constraint to set ev soc at arrival time
-            elif t in ev_params.t_arr_dict[i]:
+            elif t in self.ev_data.t_arr_dict[i]:
                 k = get_trip_number_k(i, t)
-                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - ev_params.travel_energy_dict[i][
+                return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] - self.ev_data.travel_energy_dict[i][
                     k]
 
             # otherwise soc follows regular charging constraint
             else:
                 return model.soc_ev[i, t] == model.soc_ev[i, model.TIME.prev(t)] + (
-                        ev_params.charging_efficiency * model.p_ev[i, t])
+                        self.ev_data.charging_efficiency * model.p_ev[i, t])
 
         self.model.soc_evolution = pyo.Constraint(self.model.EV_ID, self.model.TIME, rule=soc_evolution)
 
         def minimum_required_soc_at_departure(model, i, t):
             # SOC required before departure time
-            if t in ev_params.t_dep_dict[i]:
+            if t in self.ev_data.t_dep_dict[i]:
                 k = get_trip_number_k(i, t)
-                return model.soc_ev[i, t] >= model.soc_critical[i] + ev_params.travel_energy_dict[i][k]
+                return model.soc_ev[i, t] >= model.soc_critical[i] + self.ev_data.travel_energy_dict[i][k]
             return pyo.Constraint.Skip
 
         self.model.minimum_required_soc_at_departure_constraint = pyo.Constraint(
