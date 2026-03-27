@@ -212,6 +212,8 @@ daily_supply_charge_dict = {
     'tou': tou_daily_supply_charge
 }
 
+tariff_type = 'flat'
+
 
 # --------------------------
 # Power Grid Settings

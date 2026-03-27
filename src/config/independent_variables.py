@@ -1,2 +1,0 @@
-
-tariff_type = 'flat'

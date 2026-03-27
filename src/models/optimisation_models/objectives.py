@@ -1,5 +1,5 @@
 import pyomo.environ as pyo
-from src.config import params, independent_variables
+from src.config import params
 from src.config.ev_params import EVParams as ev_params
 
 
@@ -45,10 +45,10 @@ class EconomicObjective:
 
     def energy_purchase_cost(self):
         operational_cost = params.daily_supply_charge_dict[
-                               independent_variables.tariff_type] * params.num_of_evs * params.num_of_days
+                               params.tariff_type] * params.num_of_evs * params.num_of_days
 
         energy_purchase_cost = sum(
-            params.tariff_dict[independent_variables.tariff_type][t] * self.model.p_grid[t] for t in self.model.TIME
+            params.tariff_dict[params.tariff_type][t] * self.model.p_grid[t] for t in self.model.TIME
         )
 
         return operational_cost + energy_purchase_cost
