@@ -38,20 +38,20 @@ def simulate_uncoordinated_model(
 
     if config == 'config_1':
         config_1_simulator = config_1.UncoordinatedModelConfig1(
-            ev_instances,
-            household_load,
-            num_ev_at_home_df,
-            p_cp_rated_scaled
+            ev_data=ev_instances,
+            household_load=household_load,
+            num_ev_at_home=num_ev_at_home_df,
+            p_cp_rated_scaled=p_cp_rated_scaled
         )
         return config_1_simulator.simulate()
 
     elif config == 'config_2':
         if isinstance(config_attribute['num_cp'], int):
             config_2_simulator = config_2.UncoordinatedModelConfig2(
-                ev_instances,
-                household_load,
-                p_cp_rated_scaled,
-                config_attribute['num_cp']
+                ev_data=ev_instances,
+                household_load=household_load,
+                p_cp_rated_scaled=p_cp_rated_scaled,
+                num_cp=config_attribute['num_cp']
             )
             return config_2_simulator.simulate()
 
@@ -61,10 +61,10 @@ def simulate_uncoordinated_model(
     elif config == 'config_3':
         if isinstance(config_attribute['ev_to_cp_assignment'], dict):
             config_3_simulator = config_3.UncoordinatedModelConfig3(
-                ev_instances,
-                household_load,
-                p_cp_rated_scaled,
-                config_attribute['ev_to_cp_assignment']
+                ev_data=ev_instances,
+                household_load=household_load,
+                p_cp_rated_scaled=p_cp_rated_scaled,
+                ev_to_cp_assignment=config_attribute['ev_to_cp_assignment']
             )
             return config_3_simulator.simulate()
 
