@@ -10,8 +10,8 @@ from src.models.simulation_models.run_simulation import run_simulation_model
 def run_multiple_models(configurations: list,
                         charging_strategies: list,
                         version: str,
-                        obj_weights: dict[str, int|float],
-                        solver_settings: dict):
+                        solver_settings: dict,
+                        obj_weights: dict[str, int|float] | None = None):
     # Check if version is unique
     pattern = os.path.join(params.model_results_folder_path, f'*_{version}.pkl')
     version_found = any(glob.iglob(pattern))
