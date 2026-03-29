@@ -12,12 +12,16 @@ def run_multiple_models(configurations: list,
                         version: str,
                         solver_settings: dict,
                         obj_weights: dict[str, int|float] | None = None):
-    # Check if version is unique
-    pattern = os.path.join(params.model_results_folder_path, f'*_{version}.pkl')
-    version_found = any(glob.iglob(pattern))
 
-    if version_found:
-        raise ValueError(f"Version {version} already exists. Please provide a unique version name.")
+    # Check if version is unique
+    for config in configurations:
+        for strategy in charging_strategies:
+            filename = f'{config}_{strategy}_{params.num_of_evs}EVs_{params.num_of_days}days_{version}.pkl'
+            filepath = os.path.join(params.model_results_folder_path, filename)
+            version_found = os.path.exists(filepath)
+
+            if version_found:
+                raise ValueError(f"\nVersion {version} already exists for {config} {strategy}. Please provide a unique version name.")
 
     ev_data = load_ev_data()
 
