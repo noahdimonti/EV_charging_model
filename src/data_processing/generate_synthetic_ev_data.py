@@ -71,9 +71,9 @@ def create_ev_instances(timestamps, num_of_evs: int, min_init_soc: float, max_in
         ev.travel_energy = travel_energy
 
         ev.battery_capacity = capacity_of_EVs[ev_id]
-        ev.soc_init = SOC_init_of_EVs[ev_id] * capacity_of_EVs[ev_id]
-        ev.soc_max = params.SOC_max * capacity_of_EVs[ev_id]
-        ev.soc_critical = params.SOC_critical * capacity_of_EVs[ev_id]
+        ev.soc_init = SOC_init_of_EVs[ev_id] * capacity_of_EVs[ev_id]  # soc init in decimal * capacity in kWh
+        ev.soc_max = params.SOC_max * capacity_of_EVs[ev_id]  # soc max in decimal * capacity in kWh
+        ev.soc_critical = params.SOC_critical * capacity_of_EVs[ev_id]  # soc critical in decimal * capacity in kWh
 
     return ev_instances_list
 
