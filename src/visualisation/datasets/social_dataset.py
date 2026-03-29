@@ -65,24 +65,6 @@ def _build_wait_time_rows(
                 if future_t >= t_arr and model_results.variables['p_ev'][ev_id, future_t] > 0:
                     delta = future_t - t_arr
                     wait_time = round(delta.total_seconds() / 3600, 2)
-                    if wait_time > 24:
-                        max_soc = ev_data.soc_max_dict[ev_id]
-                        soc_arr_kwh = model_results.variables['soc_ev'][ev_id, t_arr]
-                        soc_pre_charge_kwh = model_results.variables['soc_ev'][ev_id, future_t]
-
-                        soc_arr_percent = (soc_arr_kwh / max_soc) * 100
-                        soc_pre_charge_percent = (soc_pre_charge_kwh / max_soc) * 100
-
-                        print(f'\nWait time over 24 hrs: {wait_time}')
-                        print(f'EV ID: {ev_id}')
-
-                        print(f'Arrival time: {t_arr}')
-
-                        print(f'Arrival SOC: {soc_arr_percent}%')
-
-                        print(f'Charging time: {future_t}')
-                        print(f'SOC pre charging: {soc_pre_charge_percent}%')
-
                     break
 
             rows.append({
