@@ -55,8 +55,6 @@ def _build_wait_time_rows(
     config_label = format_config_label(config)
     strategy_label = format_strategy_label(strategy)
 
-    # print(f'\n--- Model: {config} {strategy} ---')
-
     for ev_id in model_results.sets['EV_ID']:
         for t_arr in ev_data.t_arr_dict[ev_id]:
             wait_time = None
