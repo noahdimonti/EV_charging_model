@@ -4,7 +4,6 @@ from src.visualisation.datasets.social_dataset import (
     build_wait_time_df,
     build_wait_time_soc_scatter_df,
     build_num_charging_days_df,
-    _build_wait_time_rows
 )
 from src.visualisation.plots.social_plot import (
     plot_soc_boxplot,
@@ -12,8 +11,6 @@ from src.visualisation.plots.social_plot import (
     plot_wait_time_soc_scatter,
     plot_num_charging_days,
 )
-from src.models.results.model_results import EvaluationMetrics, resolve_ev_data
-from src.visualisation.io import load_model_results
 
 
 def main():

@@ -1,7 +1,9 @@
+import pandas as pd
 from src.visualisation.datasets.economic_dataset import build_num_cp_df
 
 
 def main():
+    pd.options.display.max_columns = None
     configurations = ['config_1', 'config_2', 'config_3']
     charging_strategies = ['uncoordinated', 'opportunistic', 'flexible']
     version = 'balanced'
