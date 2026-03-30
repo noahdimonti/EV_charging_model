@@ -1,0 +1,4 @@
+,config,num_cp,p_cp_rated,p_peak_increase,papr,avg_soc_t_dep_percent,lowest_soc,gini_coefficient
+0,1,10,2.40 kW,3.01%,2.4443,94.67%,47.78%,0.0482
+1,2,5,2.40 kW,3.01%,2.4446,95.24%,47.78%,0.0438
+2,3,6,2.40 kW,3.01%,2.4457,94.53%,47.78%,0.0491
