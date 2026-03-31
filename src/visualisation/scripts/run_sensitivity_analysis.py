@@ -33,7 +33,6 @@ def main() -> None:
     }
 
     df_all = build_sensitivity_df(version, params_combination)
-    print(df_all)
 
     df_soc = df_all[df_all['capacity'] == '35-60 kWh']
     df_soc = df_soc[df_soc['distance'] == '25 km']

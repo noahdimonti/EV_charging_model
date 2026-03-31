@@ -5,7 +5,7 @@ from src.config import params
 
 
 def get_filepath(version: str, min_soc: float, max_soc: float, cap: str, avg_dist: int) -> str:
-    file_prefix = f'raw_values_metrics_{params.num_of_evs}EVs_{params.num_of_days}days_{version}_sens_analysis'
+    file_prefix = f'sensitivity_analysis_raw_{params.num_of_evs}EVs_{params.num_of_days}days_{version}_sens_analysis'
     file_parameters = f'avgdist{avg_dist}km_min{min_soc}_max{max_soc}_cap{cap}.csv'
     file_path = '_'.join([file_prefix, file_parameters])
 
@@ -36,8 +36,6 @@ def build_sensitivity_df(version: str, params_comb: list[dict]) -> pd.DataFrame:
 
         df = pd.read_csv(file, index_col=0).T
         df = df[metrics_keep]
-        print(f'version: {filepath}')
-        print(df.T)
 
         df['model_case'] = filepath.replace('.csv', '')
         all_data.append(df)
@@ -56,6 +54,7 @@ def build_sensitivity_df(version: str, params_comb: list[dict]) -> pd.DataFrame:
     df_all['capacity'] = (
         df_all['model_case']
         .str.extract(r'cap(\d+_\d+)')[0]
+        .str.replace("_", "-", regex=False)
         + ' kWh'
     )
 
