@@ -22,6 +22,9 @@ def analyse_multiple_models(configurations: list,
                             charging_strategies: list,
                             version: str,
                             save_df: bool = True) -> (pd.DataFrame, pd.DataFrame):
+    """
+    Returns a tuple of raw and formatted pd DataFrames
+    """
     formatted_models_metrics = {}
     raw_val_metrics = {}
 
