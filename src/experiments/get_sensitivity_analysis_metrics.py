@@ -1,8 +1,9 @@
 import pandas as pd
 import os
+
 from src.config import params
-from src.config.params import num_of_days
-from src.pipelines.analyse_results import analyse_one_model_from_file
+from src.models.results.model_results import EvaluationMetrics
+from src.pipelines.analyse_results import analyse_multiple_models, load_model
 
 
 def main():
@@ -25,17 +26,39 @@ def main():
                    f'avgdist{comb['avg_dist']}km_'
                    f'min{comb['min_soc']}_max{comb['max_soc']}_'
                    f'cap{comb['cap']}')
-        df = analyse_one_model_from_file(config, strategy, version)
 
-        print(f'\nVersion: {version}')
-        print(df)
+        print(f'\nVersion: {version}\n')
+
+        results = load_model(config, strategy, version)
+
+        # Instantiate evaluation metrics from results
+        evaluation_metrics = EvaluationMetrics(results)
+
+        # Get raw and formatted metrics
+        raw_metrics = evaluation_metrics.metrics
+        formatted_metrics = evaluation_metrics.format_metrics()
+
+        raw_df = pd.DataFrame.from_dict(raw_metrics, orient='index', columns=['value'])
+        formatted_df = pd.DataFrame.from_dict(formatted_metrics, orient='index', columns=['value'])
+
+        raw_metrics_filename = (f'sensitivity_analysis_raw_'
+                                f'{params.num_of_evs}EVs_{params.num_of_days}days_{version}.csv')
+        formatted_filename = (f'sensitivity_analysis_formatted_'
+                              f'{params.num_of_evs}EVs_{params.num_of_days}days_{version}.csv')
+
+        raw_path = os.path.join(params.sensitivity_analysis_res_path, raw_metrics_filename)
+        formatted_path = os.path.join(params.sensitivity_analysis_res_path, formatted_filename)
 
         # Save df
-        filename = f'raw_values_metrics_{params.num_of_evs}EVs_{num_of_days}days_{version}.csv'
-        filepath = os.path.join(params.sensitivity_analysis_res_path, filename)
+        try:
+            raw_df.to_csv(raw_path)
+            formatted_df.to_csv(formatted_path)
 
-        df.to_csv(filepath)
-        print(f'Metrics successfully saved to {filepath}')
+            print(f'Metrics df saved to:\n{raw_path}\n{formatted_path}')
+        except Exception as e:
+            print(f'An error occurred while saving files: {e}')
+
+
 
 
 
