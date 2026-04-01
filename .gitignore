@@ -246,11 +246,4 @@ fabric.properties
 .DS_Store
 
 
-
-# Archives
-/archived
-
-
-src/experiments/var_setup.py
-src/experiments/debugging.py
-run_all_obj_weights.fish
+data/
