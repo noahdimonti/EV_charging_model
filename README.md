@@ -1,5 +1,8 @@
 # EV Charging Model
 
+[![DOI](https://zenodo.org/badge/881729306.svg)](https://doi.org/10.5281/zenodo.19364798)
+
+
 This repository contains the code developed for an MPhil research project in the School of Engineering at The Australian National University. The work studies EV charging in a hypothetical residential setting and compares different charging infrastructure configurations and coordination strategies.
 
 The models are used to evaluate trade-offs across three stakeholder perspectives:
