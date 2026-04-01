@@ -6,12 +6,12 @@ version = f'{obj_weights_type}{debugging_version}'
 
 configurations = [
     'config_1',
-    # 'config_2',
-    # 'config_3',
+    'config_2',
+    'config_3',
 ]
 
 charging_strategies = [
-    # 'uncoordinated',
+    'uncoordinated',
     'opportunistic',
-    # 'flexible',
+    'flexible',
 ]
